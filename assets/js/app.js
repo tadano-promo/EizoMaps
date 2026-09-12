@@ -239,8 +239,8 @@
   EM.mountChrome = function () {
     var header = el('header', { class: 'site-header' }, [
       el('div', { class: 'wrap' }, [
-        el('a', { href: '/', class: 'logo', 'aria-label': 'EizoMaps ホーム' }, [
-          el('span', { text: 'EIZO' }), el('b', { text: 'MAPS' })
+        el('a', { href: '/', class: 'logo', 'aria-label': 'Eizo Maps ホーム' }, [
+          el('span', { text: 'Eizo' }), el('b', { text: 'Maps' })
         ]),
         el('button', {
           class: 'nav-toggle', type: 'button', id: 'navToggle',
@@ -297,7 +297,7 @@
     // フッター
     var fcols = el('div', { class: 'cols' });
     fcols.appendChild(el('div', null, [
-      el('a', { href: '/', class: 'logo', 'aria-label': 'EizoMaps' }, [el('span', { text: 'EIZO' }), el('b', { text: 'MAPS' })]),
+      el('a', { href: '/', class: 'logo', 'aria-label': 'Eizo Maps' }, [el('span', { text: 'Eizo' }), el('b', { text: 'Maps' })]),
       el('p', { class: 'small f-note', text: 'クリエイターとクライアントを対等につなぐ、映像制作の信頼プラットフォーム。' })
     ]));
     var fl = el('ul');
