@@ -1,0 +1,20 @@
+# 秘密情報 ─ 絶対にコミットしないこと
+.env
+.env.*
+*.key
+*.pem
+secrets.json
+service_role*
+supabase/.temp/
+supabase/.branches/
+
+# OS / エディタ
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/
+*.swp
+
+# 依存関係・ビルド成果物（本プロジェクトでは通常発生しません）
+node_modules/
+dist/
