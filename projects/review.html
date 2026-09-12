@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; base-uri 'self'; object-src 'none'; form-action 'self'; script-src 'self' https://cdn.jsdelivr.net; style-src 'self' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src 'self' data: https://img.youtube.com https://i.ytimg.com https://i.vimeocdn.com https://*.supabase.co; connect-src 'self' https://*.supabase.co wss://*.supabase.co https://vimeo.com; frame-src https://www.youtube.com https://player.vimeo.com; upgrade-insecure-requests">
+<meta name="referrer" content="strict-origin-when-cross-origin">
+<title>評価を投稿 — EizoMaps</title>
+<meta name="description" content="取引相手を評価します。">
+<meta name="robots" content="noindex, nofollow">
+<meta property="og:site_name" content="EizoMaps">
+<meta property="og:title" content="評価を投稿 — EizoMaps">
+<meta property="og:description" content="取引相手を評価します。">
+<meta property="og:type" content="website">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bebas+Neue&amp;family=DM+Mono:wght@400;500&amp;family=Noto+Sans+JP:wght@300;400;500;700&amp;display=swap">
+<link rel="stylesheet" href="/assets/css/style.css">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.116.0/dist/umd/supabase.js" integrity="sha384-iLddHTLokph6Omwoyid4XKxHaWa6w41BnoEj0q5oOrzmYPpHIKt1wyjReA7s//pP" crossorigin="anonymous" referrerpolicy="no-referrer" defer></script>
+<script src="/assets/js/config.js" defer></script>
+<script src="/assets/js/app.js" defer></script>
+<script src="/assets/js/page-review.js" defer></script>
+</head>
+<body>
+<main class="section">
+  <div class="wrap doc">
+    <p class="eyebrow">Review</p>
+    <h1>評価を投稿する</h1>
+    <div class="notice" id="pageMsg" hidden></div>
+
+    <div class="card" id="projectCard" hidden></div>
+
+    <form id="reviewForm" class="stack" novalidate hidden>
+      <div class="field">
+        <span class="label">スコア <span class="muted">（0.0〜5.0・0.1刻み）</span></span>
+        <div class="row">
+          <input type="range" id="score" min="0" max="5" step="0.1" value="4.0" aria-label="スコア">
+          <span class="rating"><span class="score" id="scoreOut">4.0</span><span class="stars" id="starsOut"></span></span>
+        </div>
+      </div>
+      <label class="field">
+        <span class="label">コメント <span class="muted">（必須・20文字以上2000文字まで）</span></span>
+        <textarea id="comment" minlength="20" maxlength="2000" rows="7" required placeholder="やり取りの進め方、納期、仕上がりなど、これから依頼する人の参考になることを書いてください。"></textarea>
+        <span class="hint" id="commentCount">0 文字</span>
+      </label>
+
+      <div class="notice">
+        <p class="small">投稿した評価はすぐには公開されません。運営が内容を確認してから公開されます。</p>
+        <p class="small">公開時はお名前を表示しない「検証済み匿名」の形式になりますが、取引があったことはシステムが保証します。</p>
+      </div>
+
+      <div class="form-actions">
+        <button class="btn btn--primary" type="submit" id="submitBtn">評価を投稿する</button>
+        <a class="btn" id="backLink" href="/projects/">戻る</a>
+      </div>
+    </form>
+  </div>
+</main>
+</body>
+</html>

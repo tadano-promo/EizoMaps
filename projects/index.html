@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; base-uri 'self'; object-src 'none'; form-action 'self'; script-src 'self' https://cdn.jsdelivr.net; style-src 'self' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src 'self' data: https://img.youtube.com https://i.ytimg.com https://i.vimeocdn.com https://*.supabase.co; connect-src 'self' https://*.supabase.co wss://*.supabase.co https://vimeo.com; frame-src https://www.youtube.com https://player.vimeo.com; upgrade-insecure-requests">
+<meta name="referrer" content="strict-origin-when-cross-origin">
+<title>案件管理 — EizoMaps</title>
+<meta name="description" content="案件のステータスとやり取りの記録。">
+<meta name="robots" content="noindex, nofollow">
+<meta property="og:site_name" content="EizoMaps">
+<meta property="og:title" content="案件管理 — EizoMaps">
+<meta property="og:description" content="案件のステータスとやり取りの記録。">
+<meta property="og:type" content="website">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bebas+Neue&amp;family=DM+Mono:wght@400;500&amp;family=Noto+Sans+JP:wght@300;400;500;700&amp;display=swap">
+<link rel="stylesheet" href="/assets/css/style.css">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.116.0/dist/umd/supabase.js" integrity="sha384-iLddHTLokph6Omwoyid4XKxHaWa6w41BnoEj0q5oOrzmYPpHIKt1wyjReA7s//pP" crossorigin="anonymous" referrerpolicy="no-referrer" defer></script>
+<script src="/assets/js/config.js" defer></script>
+<script src="/assets/js/app.js" defer></script>
+<script src="/assets/js/page-projects.js" defer></script>
+</head>
+<body>
+<main class="section">
+  <div class="wrap">
+    <p class="eyebrow">Projects</p>
+    <h1 id="pageTitle">案件管理</h1>
+    <div class="notice" id="pageMsg" hidden></div>
+
+    <div id="listView">
+      <section>
+        <h2>依頼した案件</h2>
+        <div class="stack" id="asClient"></div>
+      </section>
+      <hr class="divider">
+      <section>
+        <h2>受けた案件</h2>
+        <div class="stack" id="asCreator"></div>
+      </section>
+    </div>
+
+    <div id="detailView" hidden>
+      <p><a class="btn btn--sm btn--ghost" href="/projects/">← 案件一覧へ</a></p>
+      <div id="detailHead"></div>
+      <hr class="divider">
+      <section>
+        <h2>ステータス</h2>
+        <div id="statusBox"></div>
+      </section>
+      <hr class="divider">
+      <section>
+        <h2>やり取り</h2>
+        <div class="stack" id="messages"></div>
+        <form id="messageForm" class="stack" novalidate>
+          <label class="field">
+            <span class="label">メッセージ <span class="muted">（4000文字まで）</span></span>
+            <textarea id="messageBody" maxlength="4000" rows="4" required></textarea>
+          </label>
+          <div class="form-actions">
+            <button class="btn btn--primary" type="submit">送信</button>
+          </div>
+        </form>
+      </section>
+    </div>
+  </div>
+</main>
+</body>
+</html>

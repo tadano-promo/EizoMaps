@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; base-uri 'self'; object-src 'none'; form-action 'self'; script-src 'self' https://cdn.jsdelivr.net; style-src 'self' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src 'self' data: https://img.youtube.com https://i.ytimg.com https://i.vimeocdn.com https://*.supabase.co; connect-src 'self' https://*.supabase.co wss://*.supabase.co https://vimeo.com; frame-src https://www.youtube.com https://player.vimeo.com; upgrade-insecure-requests">
+<meta name="referrer" content="strict-origin-when-cross-origin">
+<title>ポートフォリオ管理 — EizoMaps</title>
+<meta name="description" content="作品の登録と、営業用の共有リンク作成。">
+<meta name="robots" content="noindex, nofollow">
+<meta property="og:site_name" content="EizoMaps">
+<meta property="og:title" content="ポートフォリオ管理 — EizoMaps">
+<meta property="og:description" content="作品の登録と、営業用の共有リンク作成。">
+<meta property="og:type" content="website">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bebas+Neue&amp;family=DM+Mono:wght@400;500&amp;family=Noto+Sans+JP:wght@300;400;500;700&amp;display=swap">
+<link rel="stylesheet" href="/assets/css/style.css">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.116.0/dist/umd/supabase.js" integrity="sha384-iLddHTLokph6Omwoyid4XKxHaWa6w41BnoEj0q5oOrzmYPpHIKt1wyjReA7s//pP" crossorigin="anonymous" referrerpolicy="no-referrer" defer></script>
+<script src="/assets/js/config.js" defer></script>
+<script src="/assets/js/app.js" defer></script>
+<script src="/assets/js/video.js" defer></script>
+<script src="/assets/js/page-portfolio.js" defer></script>
+</head>
+<body>
+<main class="section">
+  <div class="wrap">
+    <p class="eyebrow">Portfolio</p>
+    <h1>ポートフォリオ管理</h1>
+    <div class="notice" id="pageMsg" hidden></div>
+
+    <section class="card">
+      <h2>作品を追加</h2>
+      <form id="addForm" class="stack" novalidate>
+        <label class="field">
+          <span class="label">動画URL <span class="muted">（YouTube / Vimeo）</span></span>
+          <input type="url" id="videoUrl" placeholder="https://www.youtube.com/watch?v=..." required>
+          <span class="hint">URL を貼ると、サムネイルを自動で取得します。動画ファイルのアップロードには対応していません。</span>
+        </label>
+        <div id="previewBox" hidden>
+          <div class="thumb" id="previewThumb"></div>
+        </div>
+        <label class="field">
+          <span class="label">タイトル <span class="muted">（必須・80文字まで）</span></span>
+          <input type="text" id="title" maxlength="80" required>
+        </label>
+        <label class="field">
+          <span class="label">説明 <span class="muted">（1000文字まで）</span></span>
+          <textarea id="description" maxlength="1000" rows="4"></textarea>
+        </label>
+        <div class="field">
+          <span class="label">タグ <span class="muted">（最大8件）</span></span>
+          <div class="chips" id="tagChips"></div>
+        </div>
+        <label class="field">
+          <span class="label">公開範囲</span>
+          <select id="visibility">
+            <option value="public">公開（プロフィールに表示）</option>
+            <option value="link_only">限定リンクのみ（共有した相手だけ）</option>
+          </select>
+        </label>
+        <div class="form-actions">
+          <button class="btn btn--primary" type="submit" id="addBtn">登録する</button>
+        </div>
+      </form>
+    </section>
+
+    <hr class="divider">
+    <div class="row row--between">
+      <h2>登録済みの作品 <span class="muted small" id="pfCount"></span></h2>
+    </div>
+    <div class="stack" id="pfList"></div>
+
+    <hr class="divider">
+    <section>
+      <p class="eyebrow">Share links</p>
+      <h2>営業用の共有リンク</h2>
+      <p class="small muted">見せたい作品だけを選んだページを発行できます。リンクを知っている人だけが閲覧できます。</p>
+      <form id="shareForm" class="card stack" novalidate>
+        <label class="field">
+          <span class="label">リンクの名前 <span class="muted">（自分用のメモ・80文字まで）</span></span>
+          <input type="text" id="shareTitle" maxlength="80" placeholder="例：◯◯商事さま向け">
+        </label>
+        <div class="field">
+          <span class="label">含める作品</span>
+          <div class="stack" id="sharePicker"></div>
+        </div>
+        <div class="form-actions">
+          <button class="btn btn--primary" type="submit">リンクを発行</button>
+        </div>
+      </form>
+      <div class="stack" id="shareList"></div>
+    </section>
+  </div>
+</main>
+</body>
+</html>

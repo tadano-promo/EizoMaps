@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; base-uri 'self'; object-src 'none'; form-action 'self'; script-src 'self' https://cdn.jsdelivr.net; style-src 'self' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src 'self' data: https://img.youtube.com https://i.ytimg.com https://i.vimeocdn.com https://*.supabase.co; connect-src 'self' https://*.supabase.co wss://*.supabase.co https://vimeo.com; frame-src https://www.youtube.com https://player.vimeo.com; upgrade-insecure-requests">
+<meta name="referrer" content="strict-origin-when-cross-origin">
+<title>EizoMaps — 映像制作の信頼プラットフォーム</title>
+<meta name="description" content="クリエイターとクライアントを対等につなぐ、映像制作の信頼プラットフォーム。ポートフォリオを一枚のリンクにまとめ、実績と評価を可視化します。">
+<link rel="canonical" href="https://eizo-maps.com/">
+<meta property="og:site_name" content="EizoMaps">
+<meta property="og:title" content="EizoMaps — 映像制作の信頼プラットフォーム">
+<meta property="og:description" content="クリエイターとクライアントを対等につなぐ、映像制作の信頼プラットフォーム。ポートフォリオを一枚のリンクにまとめ、実績と評価を可視化します。">
+<meta property="og:type" content="website">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bebas+Neue&amp;family=DM+Mono:wght@400;500&amp;family=Noto+Sans+JP:wght@300;400;500;700&amp;display=swap">
+<link rel="stylesheet" href="/assets/css/style.css">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.116.0/dist/umd/supabase.js" integrity="sha384-iLddHTLokph6Omwoyid4XKxHaWa6w41BnoEj0q5oOrzmYPpHIKt1wyjReA7s//pP" crossorigin="anonymous" referrerpolicy="no-referrer" defer></script>
+<script src="/assets/js/config.js" defer></script>
+<script src="/assets/js/app.js" defer></script>
+</head>
+<body>
+<main>
+  <section class="hero">
+    <div class="wrap inner">
+      <p class="eyebrow">Video Production Trust Platform</p>
+      <h1>クリエイターとクライアントを、<br>対等につなぐ。</h1>
+      <p class="lead">
+        散らばったポートフォリオを一枚のリンクにまとめ、案件の記録と評価を残す。
+        EizoMaps は、映像をつくる人と依頼する人が、お互いを正しく評価しあうための道具です。
+      </p>
+      <div class="cta">
+        <a class="btn btn--primary" href="/auth/">クリエイター登録（無料）</a>
+        <a class="btn" href="/creators/">クリエイターを探す</a>
+      </div>
+    </div>
+  </section>
+
+  <section class="section">
+    <div class="wrap">
+      <p class="eyebrow">What you get</p>
+      <h2>3つの軸で、仕事の土台を整える</h2>
+      <div class="grid grid--3">
+        <div class="card">
+          <p class="num">01</p>
+          <h3>ポートフォリオ</h3>
+          <p class="small muted">YouTube / Vimeo の URL を貼るだけ。サムネイルは自動取得。見せたい作品だけを選んで、ワンタップで営業用の共有リンクがつくれます。</p>
+        </div>
+        <div class="card">
+          <p class="num">02</p>
+          <h3>案件の記録</h3>
+          <p class="small muted">依頼・進行・納品・入金までのステータスと日時を残します。「言った言わない」をなくすための、当事者だけが見られる記録です。</p>
+        </div>
+        <div class="card">
+          <p class="num">03</p>
+          <h3>双方向の評価</h3>
+          <p class="small muted">クリエイターもクライアントも評価します。取引実績のある人しか投稿できない、検証済み匿名レビューです。</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="section section--tight">
+    <div class="wrap">
+      <p class="eyebrow">How it works</p>
+      <h2>使いはじめの流れ</h2>
+      <div class="grid grid--2">
+        <div class="card">
+          <h3>クリエイターの方</h3>
+          <ol class="small muted">
+            <li>メールまたは Google で登録</li>
+            <li>プロフィールと職種を設定</li>
+            <li>作品の URL を貼ってポートフォリオを作成</li>
+            <li>営業先ごとに共有リンクを発行して送る</li>
+          </ol>
+          <a class="btn btn--sm" href="/auth/">登録する</a>
+        </div>
+        <div class="card">
+          <h3>依頼したい方</h3>
+          <ol class="small muted">
+            <li>職種・エリアからクリエイターを探す</li>
+            <li>ポートフォリオと評価を確認する</li>
+            <li>案件の内容を伝えて相談する</li>
+            <li>納品・入金まで記録に残す</li>
+          </ol>
+          <a class="btn btn--sm" href="/creators/">探す</a>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="section section--tight">
+    <div class="wrap">
+      <div class="card">
+        <p class="eyebrow">Our position</p>
+        <h2>制作会社やプロデューサーを、置き換えるものではありません</h2>
+        <p class="small muted">
+          映像は人が動かす仕事です。EizoMaps は、その人たちの判断を助ける道具として設計しています。
+          発注の意思決定を自動化したり、間に立つ人をなくすことは目指していません。
+        </p>
+      </div>
+    </div>
+  </section>
+</main>
+</body>
+</html>

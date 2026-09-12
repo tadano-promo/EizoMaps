@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; base-uri 'self'; object-src 'none'; form-action 'self'; script-src 'self' https://cdn.jsdelivr.net; style-src 'self' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src 'self' data: https://img.youtube.com https://i.ytimg.com https://i.vimeocdn.com https://*.supabase.co; connect-src 'self' https://*.supabase.co wss://*.supabase.co https://vimeo.com; frame-src https://www.youtube.com https://player.vimeo.com; upgrade-insecure-requests">
+<meta name="referrer" content="strict-origin-when-cross-origin">
+<title>マイページ — EizoMaps</title>
+<meta name="description" content="プロフィールの編集と公開設定。">
+<meta name="robots" content="noindex, nofollow">
+<meta property="og:site_name" content="EizoMaps">
+<meta property="og:title" content="マイページ — EizoMaps">
+<meta property="og:description" content="プロフィールの編集と公開設定。">
+<meta property="og:type" content="website">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bebas+Neue&amp;family=DM+Mono:wght@400;500&amp;family=Noto+Sans+JP:wght@300;400;500;700&amp;display=swap">
+<link rel="stylesheet" href="/assets/css/style.css">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.116.0/dist/umd/supabase.js" integrity="sha384-iLddHTLokph6Omwoyid4XKxHaWa6w41BnoEj0q5oOrzmYPpHIKt1wyjReA7s//pP" crossorigin="anonymous" referrerpolicy="no-referrer" defer></script>
+<script src="/assets/js/config.js" defer></script>
+<script src="/assets/js/app.js" defer></script>
+<script src="/assets/js/page-mypage.js" defer></script>
+</head>
+<body>
+<main class="section">
+  <div class="wrap">
+    <div class="doc">
+      <p class="eyebrow">My page</p>
+      <h1>プロフィール</h1>
+      <div class="notice" id="pageMsg" hidden></div>
+
+      <form id="profileForm" class="stack" novalidate>
+        <div class="row">
+          <div id="avatarPreview"></div>
+          <div>
+            <label class="btn btn--sm" for="avatarFile">画像を変更</label>
+            <input type="file" id="avatarFile" accept="image/png,image/jpeg,image/webp" class="sr-only">
+            <p class="small muted">JPEG / PNG / WebP、2MB まで</p>
+          </div>
+        </div>
+
+        <label class="field">
+          <span class="label">表示名 <span class="muted">（必須・40文字まで）</span></span>
+          <input type="text" id="displayName" maxlength="40" required>
+        </label>
+
+        <label class="field">
+          <span class="label">肩書き <span class="muted">（80文字まで）</span></span>
+          <input type="text" id="headline" maxlength="80" placeholder="例：CM・企業VPのディレクター／構成から納品まで">
+        </label>
+
+        <label class="field">
+          <span class="label">自己紹介 <span class="muted">（2000文字まで）</span></span>
+          <textarea id="bio" maxlength="2000" rows="7"></textarea>
+        </label>
+
+        <div class="field">
+          <span class="label">職種 <span class="muted">（最大6件）</span></span>
+          <div class="chips" id="genreChips"></div>
+        </div>
+
+        <div class="row">
+          <label class="field">
+            <span class="label">活動エリア（都道府県）</span>
+            <select id="areaPref"><option value="">未設定</option></select>
+          </label>
+          <label class="field">
+            <span class="label">市区町村</span>
+            <input type="text" id="areaCity" maxlength="40" placeholder="例：渋谷区">
+          </label>
+        </div>
+
+        <div class="row">
+          <label class="field">
+            <span class="label">キャリア年数</span>
+            <input type="number" id="years" min="0" max="70" step="1">
+          </label>
+          <label class="field">
+            <span class="label">平均返信時間（時間）</span>
+            <input type="number" id="responseHours" min="0" max="720" step="1" placeholder="例：24">
+          </label>
+        </div>
+
+        <label class="field">
+          <span class="label">ウェブサイト（https のみ）</span>
+          <input type="url" id="websiteUrl" maxlength="500" placeholder="https://">
+        </label>
+
+        <label class="checkbox">
+          <input type="checkbox" id="isPublished">
+          <span>プロフィールを公開する（検索結果に表示されます）</span>
+        </label>
+
+        <div class="form-actions">
+          <button class="btn btn--primary" type="submit" id="saveBtn">保存する</button>
+          <a class="btn" id="viewPublicLink" href="#" hidden>公開ページを見る</a>
+        </div>
+      </form>
+
+      <hr class="divider">
+      <h2>アカウント</h2>
+      <label class="field">
+        <span class="label">利用種別</span>
+        <select id="accountType">
+          <option value="creator">クリエイター</option>
+          <option value="client">クライアント</option>
+          <option value="both">両方</option>
+        </select>
+      </label>
+      <div class="form-actions">
+        <button class="btn btn--sm" type="button" id="saveAccountBtn">利用種別を保存</button>
+        <button class="btn btn--sm btn--danger" type="button" id="logoutBtn">ログアウト</button>
+      </div>
+    </div>
+  </div>
+</main>
+</body>
+</html>

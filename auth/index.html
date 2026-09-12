@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; base-uri 'self'; object-src 'none'; form-action 'self'; script-src 'self' https://cdn.jsdelivr.net; style-src 'self' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src 'self' data: https://img.youtube.com https://i.ytimg.com https://i.vimeocdn.com https://*.supabase.co; connect-src 'self' https://*.supabase.co wss://*.supabase.co https://vimeo.com; frame-src https://www.youtube.com https://player.vimeo.com; upgrade-insecure-requests">
+<meta name="referrer" content="strict-origin-when-cross-origin">
+<title>ログイン / 新規登録 — EizoMaps</title>
+<meta name="description" content="EizoMaps にログイン、または新規登録します。">
+<meta name="robots" content="noindex, nofollow">
+<meta property="og:site_name" content="EizoMaps">
+<meta property="og:title" content="ログイン / 新規登録 — EizoMaps">
+<meta property="og:description" content="EizoMaps にログイン、または新規登録します。">
+<meta property="og:type" content="website">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bebas+Neue&amp;family=DM+Mono:wght@400;500&amp;family=Noto+Sans+JP:wght@300;400;500;700&amp;display=swap">
+<link rel="stylesheet" href="/assets/css/style.css">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.116.0/dist/umd/supabase.js" integrity="sha384-iLddHTLokph6Omwoyid4XKxHaWa6w41BnoEj0q5oOrzmYPpHIKt1wyjReA7s//pP" crossorigin="anonymous" referrerpolicy="no-referrer" defer></script>
+<script src="/assets/js/config.js" defer></script>
+<script src="/assets/js/app.js" defer></script>
+<script src="/assets/js/page-auth.js" defer></script>
+</head>
+<body>
+<main class="section">
+  <div class="wrap">
+    <div class="doc">
+      <p class="eyebrow">Account</p>
+      <h1 id="authTitle">ログイン</h1>
+      <div class="notice" id="authMsg" hidden></div>
+
+      <div class="view-switch" role="group" aria-label="表示切替">
+        <button type="button" id="tabLogin" aria-pressed="true">ログイン</button>
+        <button type="button" id="tabSignup" aria-pressed="false">新規登録</button>
+      </div>
+
+      <form id="authForm" class="stack" novalidate>
+        <label class="field">
+          <span class="label">メールアドレス</span>
+          <input type="email" id="email" name="email" autocomplete="email" required inputmode="email" placeholder="you@example.com">
+        </label>
+        <label class="field">
+          <span class="label">パスワード</span>
+          <input type="password" id="password" name="password" autocomplete="current-password" required minlength="8" placeholder="8文字以上">
+          <span class="hint" id="pwHint">8文字以上で設定してください。</span>
+        </label>
+        <div class="field" id="typeField" hidden>
+          <span class="label">利用種別</span>
+          <select id="accountType">
+            <option value="creator">クリエイターとして使う</option>
+            <option value="client">依頼する側として使う</option>
+            <option value="both">両方</option>
+          </select>
+        </div>
+        <label class="checkbox" id="agreeWrap" hidden>
+          <input type="checkbox" id="agree">
+          <span class="small"><a href="/terms/">利用規約</a>と<a href="/privacy/">プライバシーポリシー</a>に同意します</span>
+        </label>
+        <div class="form-actions">
+          <button class="btn btn--primary" type="submit" id="submitBtn">ログイン</button>
+          <button class="btn" type="button" id="googleBtn">Google で続ける</button>
+        </div>
+      </form>
+
+      <hr class="divider">
+      <p class="small muted">パスワードをお忘れの方は <button class="btn btn--sm btn--ghost" type="button" id="resetBtn">再設定メールを送る</button></p>
+    </div>
+  </div>
+</main>
+</body>
+</html>

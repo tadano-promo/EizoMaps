@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; base-uri 'self'; object-src 'none'; form-action 'self'; script-src 'self' https://cdn.jsdelivr.net; style-src 'self' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src 'self' data: https://img.youtube.com https://i.ytimg.com https://i.vimeocdn.com https://*.supabase.co; connect-src 'self' https://*.supabase.co wss://*.supabase.co https://vimeo.com; frame-src https://www.youtube.com https://player.vimeo.com; upgrade-insecure-requests">
+<meta name="referrer" content="strict-origin-when-cross-origin">
+<title>問題報告 — EizoMaps</title>
+<meta name="description" content="未払いなどのトラブルを運営に報告します。内容は公開されません。">
+<meta name="robots" content="noindex, nofollow">
+<meta property="og:site_name" content="EizoMaps">
+<meta property="og:title" content="問題報告 — EizoMaps">
+<meta property="og:description" content="未払いなどのトラブルを運営に報告します。内容は公開されません。">
+<meta property="og:type" content="website">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bebas+Neue&amp;family=DM+Mono:wght@400;500&amp;family=Noto+Sans+JP:wght@300;400;500;700&amp;display=swap">
+<link rel="stylesheet" href="/assets/css/style.css">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.116.0/dist/umd/supabase.js" integrity="sha384-iLddHTLokph6Omwoyid4XKxHaWa6w41BnoEj0q5oOrzmYPpHIKt1wyjReA7s//pP" crossorigin="anonymous" referrerpolicy="no-referrer" defer></script>
+<script src="/assets/js/config.js" defer></script>
+<script src="/assets/js/app.js" defer></script>
+<script src="/assets/js/page-report.js" defer></script>
+</head>
+<body>
+<main class="section">
+  <div class="wrap doc">
+    <p class="eyebrow">Report</p>
+    <h1>問題報告</h1>
+    <div class="notice" id="pageMsg" hidden></div>
+
+    <div class="notice">
+      <p class="small"><strong>報告の内容が公開されることはありません。</strong>閲覧できるのは、報告したご本人と運営だけです。</p>
+      <p class="small">EizoMaps は記録を残し、相談先をご案内する役割に徹しています。紛争解決の代行は行っていません。</p>
+    </div>
+
+    <form id="reportForm" class="stack" novalidate>
+      <label class="field">
+        <span class="label">種別 <span class="muted">（必須）</span></span>
+        <select id="category" required></select>
+      </label>
+      <label class="field">
+        <span class="label">関連する案件</span>
+        <select id="projectId"><option value="">指定しない</option></select>
+        <span class="hint">案件を選ぶと、ステータスの記録が証跡として紐づきます。</span>
+      </label>
+      <label class="field">
+        <span class="label">詳細 <span class="muted">（必須・20文字以上4000文字まで）</span></span>
+        <textarea id="detail" minlength="20" maxlength="4000" rows="9" required placeholder="いつ、何が、どうなったかを時系列で書いてください。金額、納品日、最後に連絡が取れた日などがあると確認が早くなります。"></textarea>
+        <span class="hint" id="detailCount">0 文字</span>
+      </label>
+      <label class="field">
+        <span class="label">証拠のURL（https のみ）</span>
+        <input type="url" id="evidenceUrl" maxlength="500" placeholder="https://">
+        <span class="hint">やり取りのスクリーンショットなどを置いた場所があればご記入ください。</span>
+      </label>
+      <div class="form-actions">
+        <button class="btn btn--primary" type="submit" id="submitBtn">報告を送る</button>
+      </div>
+    </form>
+
+    <div id="doneView" hidden>
+      <div class="notice notice--ok">報告を受け付けました。内容は公開されません。運営が確認のうえ、必要に応じてご連絡します。</div>
+      <hr class="divider">
+      <h2>公的な相談窓口</h2>
+      <p class="small muted">未払いなどのトラブルには、無料で相談できる公的な窓口があります。あわせてご利用ください。</p>
+      <ul class="small">
+        <li><strong>フリーランス・トラブル110番</strong>（第二東京弁護士会・厚生労働省委託）— 弁護士に無料で相談できます</li>
+        <li><strong>公正取引委員会</strong> — 下請法・フリーランス法違反の申告窓口</li>
+        <li><strong>中小企業庁 下請かけこみ寺</strong> — 取引上の悩みの相談窓口</li>
+        <li><strong>厚生労働省 フリーランス法に関する相談窓口</strong></li>
+      </ul>
+      <p class="small muted">2024年11月施行のフリーランス・事業者間取引適正化等法により、発注者の義務と行政による救済の仕組みが定められています。</p>
+      <div class="form-actions">
+        <a class="btn" href="/projects/">案件一覧へ</a>
+        <a class="btn btn--ghost" href="/">トップへ</a>
+      </div>
+    </div>
+  </div>
+</main>
+</body>
+</html>

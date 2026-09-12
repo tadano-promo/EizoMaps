@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; base-uri 'self'; object-src 'none'; form-action 'self'; script-src 'self' https://cdn.jsdelivr.net; style-src 'self' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src 'self' data: https://img.youtube.com https://i.ytimg.com https://i.vimeocdn.com https://*.supabase.co; connect-src 'self' https://*.supabase.co wss://*.supabase.co https://vimeo.com; frame-src https://www.youtube.com https://player.vimeo.com; upgrade-insecure-requests">
+<meta name="referrer" content="strict-origin-when-cross-origin">
+<title>クリエイターを探す — EizoMaps</title>
+<meta name="description" content="職種・エリアから映像クリエイターを探せます。カメラマン、エディター、ディレクターほか15職種。">
+<link rel="canonical" href="https://eizo-maps.com/creators/">
+<meta property="og:site_name" content="EizoMaps">
+<meta property="og:title" content="クリエイターを探す — EizoMaps">
+<meta property="og:description" content="職種・エリアから映像クリエイターを探せます。カメラマン、エディター、ディレクターほか15職種。">
+<meta property="og:type" content="website">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bebas+Neue&amp;family=DM+Mono:wght@400;500&amp;family=Noto+Sans+JP:wght@300;400;500;700&amp;display=swap">
+<link rel="stylesheet" href="/assets/css/style.css">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.116.0/dist/umd/supabase.js" integrity="sha384-iLddHTLokph6Omwoyid4XKxHaWa6w41BnoEj0q5oOrzmYPpHIKt1wyjReA7s//pP" crossorigin="anonymous" referrerpolicy="no-referrer" defer></script>
+<script src="/assets/js/config.js" defer></script>
+<script src="/assets/js/app.js" defer></script>
+<script src="/assets/js/page-creators.js" defer></script>
+</head>
+<body>
+<main class="section">
+  <div class="wrap">
+    <p class="eyebrow">Find creators</p>
+    <h1>クリエイターを探す</h1>
+
+    <form class="search-bar" id="searchForm" role="search">
+      <input type="text" id="q" name="q" placeholder="名前・肩書き・エリアで検索" autocomplete="off" aria-label="キーワード検索">
+      <button class="btn btn--primary" type="submit">検索</button>
+    </form>
+
+    <div class="filters">
+      <div class="filter-row">
+        <span class="label">職種</span>
+        <div class="chips" id="genreChips"></div>
+      </div>
+      <div class="filter-row">
+        <span class="label">エリア</span>
+        <select id="areaSelect" aria-label="エリアで絞り込み"><option value="">すべて</option></select>
+        <span class="label">表示</span>
+        <div class="view-switch" role="group" aria-label="表示切替">
+          <button type="button" id="viewList" aria-pressed="true">リスト</button>
+          <button type="button" id="viewMap" aria-pressed="false">エリア</button>
+        </div>
+        <button class="btn btn--sm btn--ghost" type="button" id="clearBtn">条件をクリア</button>
+      </div>
+    </div>
+
+    <hr class="divider">
+    <p class="small muted" id="resultCount" aria-live="polite"></p>
+
+    <div id="listView" class="grid grid--2"></div>
+    <div id="mapView" class="area-map" hidden></div>
+  </div>
+</main>
+</body>
+</html>
