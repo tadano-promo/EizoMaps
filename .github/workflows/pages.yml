@@ -1,0 +1,69 @@
+# GitHub Pages へのデプロイ
+# main ブランチに push すると、リポジトリのルートをそのまま公開します。
+name: Deploy to GitHub Pages
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: true
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - uses: actions/checkout@v4
+
+      # 公開前に、管理者用の鍵が紛れ込んでいないか確認する。
+      # 「service_role」という単語はコメントや手順書にも出てくるため、
+      # 単語ではなく「鍵そのものの形」を見て判定する。
+      #   - sb_secret_... 形式のシークレットキー
+      #   - JWT 形式の鍵のうち、中身の role が service_role のもの
+      # （anon / publishable キーは公開前提なので、見つかっても止めない）
+      - name: Secret scan
+        run: |
+          set -uo pipefail
+          fail=0
+
+          if grep -rIn --exclude-dir=.git --exclude-dir=.github -E 'sb_secret_[A-Za-z0-9]' . ; then
+            echo '::error::シークレットキー（sb_secret_...）が見つかりました。公開を中止します。'
+            fail=1
+          fi
+
+          for tok in $(grep -rhoIE 'eyJ[A-Za-z0-9_-]{8,}\.[A-Za-z0-9_-]{20,}\.[A-Za-z0-9_-]{20,}' \
+                        --exclude-dir=.git --exclude-dir=.github . | sort -u); do
+            payload=$(printf '%s' "$tok" | cut -d. -f2 | tr '_-' '/+')
+            case $(( ${#payload} % 4 )) in
+              2) payload="${payload}==" ;;
+              3) payload="${payload}=" ;;
+            esac
+            role=$(printf '%s' "$payload" | base64 -d 2>/dev/null | tr -d ' ' | grep -o '"role":"[^"]*"' || true)
+            echo "検出した鍵の role: ${role:-(判定不可)}"
+            case "$role" in
+              *service_role*)
+                echo '::error::service_role キーがリポジトリに含まれています。公開を中止します。'
+                fail=1
+                ;;
+            esac
+          done
+
+          if [ "$fail" -ne 0 ]; then exit 1; fi
+          echo 'OK: 管理者用の鍵は含まれていません'
+
+      - uses: actions/configure-pages@v5
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: .
+      - id: deployment
+        uses: actions/deploy-pages@v4
