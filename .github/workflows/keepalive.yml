@@ -1,9 +1,9 @@
 # Supabase 無料枠の自動停止を防ぐための ping
 # 無料プロジェクトは7日間アクセスがないと一時停止するため、毎日1回叩きます。
 #
-# 事前に設定するもの（Settings > Secrets and variables > Actions）:
-#   Variables: SUPABASE_URL       例) https://xxxxxxxxxxxx.supabase.co
-#   Secrets:   SUPABASE_ANON_KEY  anon public キー
+# 接続先は assets/js/config.js から読み取ります。
+# そこに入っているのは Publishable key（公開前提の鍵）なので、
+# GitHub の Secrets に登録し直す必要はありません。
 #
 # 注意: リポジトリが60日間まったく更新されないと、GitHub は
 #       スケジュール実行を自動停止します。その場合は Actions 画面から
@@ -19,20 +19,33 @@ jobs:
   ping:
     runs-on: ubuntu-latest
     steps:
+      - uses: actions/checkout@v4
+
       - name: Ping Supabase
-        env:
-          SUPABASE_URL: ${{ vars.SUPABASE_URL }}
-          SUPABASE_ANON_KEY: ${{ secrets.SUPABASE_ANON_KEY }}
         run: |
           set -euo pipefail
-          if [ -z "${SUPABASE_URL:-}" ] || [ -z "${SUPABASE_ANON_KEY:-}" ]; then
-            echo '::error::SUPABASE_URL（Variables）と SUPABASE_ANON_KEY（Secrets）を設定してください。'
+          cfg=assets/js/config.js
+          url=$(grep -F 'SUPABASE_URL:' "$cfg" | head -1 | cut -d"'" -f2)
+          key=$(grep -F 'SUPABASE_ANON_KEY:' "$cfg" | head -1 | cut -d"'" -f2)
+
+          if [ -z "$url" ] || [ -z "$key" ]; then
+            echo '::error::assets/js/config.js から接続先を読み取れませんでした。'
             exit 1
           fi
+          case "$key" in
+            YOUR-*)
+              echo '::error::config.js が未設定のままです。'
+              exit 1 ;;
+            sb_secret_*)
+              echo '::error::config.js にシークレットキーが入っています。ただちに差し替えてください。'
+              exit 1 ;;
+          esac
+
+          echo "ping 先: ${url}"
           code=$(curl -sS -o /tmp/out.txt -w '%{http_code}' \
-            -X POST "${SUPABASE_URL}/rest/v1/rpc/ping" \
-            -H "apikey: ${SUPABASE_ANON_KEY}" \
-            -H "Authorization: Bearer ${SUPABASE_ANON_KEY}" \
+            -X POST "${url}/rest/v1/rpc/ping" \
+            -H "apikey: ${key}" \
+            -H "Authorization: Bearer ${key}" \
             -H 'Content-Type: application/json' \
             -d '{}')
           echo "HTTP ${code}"
