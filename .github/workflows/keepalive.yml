@@ -1,0 +1,44 @@
+# Supabase 無料枠の自動停止を防ぐための ping
+# 無料プロジェクトは7日間アクセスがないと一時停止するため、毎日1回叩きます。
+#
+# 事前に設定するもの（Settings > Secrets and variables > Actions）:
+#   Variables: SUPABASE_URL       例) https://xxxxxxxxxxxx.supabase.co
+#   Secrets:   SUPABASE_ANON_KEY  anon public キー
+#
+# 注意: リポジトリが60日間まったく更新されないと、GitHub は
+#       スケジュール実行を自動停止します。その場合は Actions 画面から
+#       手動実行（Run workflow）すると再開します。
+name: Supabase keepalive
+
+on:
+  schedule:
+    - cron: '17 3 * * *'   # 毎日 03:17 UTC（日本時間 12:17）
+  workflow_dispatch:
+
+jobs:
+  ping:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Ping Supabase
+        env:
+          SUPABASE_URL: ${{ vars.SUPABASE_URL }}
+          SUPABASE_ANON_KEY: ${{ secrets.SUPABASE_ANON_KEY }}
+        run: |
+          set -euo pipefail
+          if [ -z "${SUPABASE_URL:-}" ] || [ -z "${SUPABASE_ANON_KEY:-}" ]; then
+            echo '::error::SUPABASE_URL（Variables）と SUPABASE_ANON_KEY（Secrets）を設定してください。'
+            exit 1
+          fi
+          code=$(curl -sS -o /tmp/out.txt -w '%{http_code}' \
+            -X POST "${SUPABASE_URL}/rest/v1/rpc/ping" \
+            -H "apikey: ${SUPABASE_ANON_KEY}" \
+            -H "Authorization: Bearer ${SUPABASE_ANON_KEY}" \
+            -H 'Content-Type: application/json' \
+            -d '{}')
+          echo "HTTP ${code}"
+          cat /tmp/out.txt
+          echo
+          if [ "$code" != "200" ]; then
+            echo '::error::ping に失敗しました。'
+            exit 1
+          fi
