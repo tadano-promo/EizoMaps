@@ -92,14 +92,16 @@ p  { margin: 0 0 1em; }
 }
 .site-header .wrap { display: flex; align-items: center; justify-content: space-between; gap: 16px; }
 
+/* ロゴは小文字を含むため Bebas Neue（大文字のみ）は使わない */
 .logo {
-  font-family: var(--font-disp);
-  font-size: 26px;
-  letter-spacing: .06em;
-  display: inline-flex; align-items: baseline; gap: 2px;
+  font-family: var(--font-jp);
+  font-weight: 700;
+  font-size: 21px;
+  letter-spacing: -.01em;
+  display: inline-flex; align-items: baseline; gap: .28em;
   white-space: nowrap;
 }
-.logo b { color: var(--accent); font-weight: 400; }
+.logo b { color: var(--accent); font-weight: 700; }
 
 .nav-toggle {
   width: 42px; height: 38px;
