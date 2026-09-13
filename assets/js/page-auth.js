@@ -1,4 +1,4 @@
-/* EizoMaps — サインアップ / ログイン */
+/* Eizo Maps — サインアップ / ログイン */
 (function (EM) {
   'use strict';
   document.addEventListener('DOMContentLoaded', function () {

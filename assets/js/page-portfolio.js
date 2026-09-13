@@ -1,4 +1,4 @@
-/* EizoMaps — ポートフォリオ管理と共有リンク */
+/* Eizo Maps — ポートフォリオ管理と共有リンク */
 (function (EM) {
   'use strict';
   document.addEventListener('DOMContentLoaded', function () {

@@ -1,4 +1,4 @@
-/* EizoMaps — 依頼フォーム */
+/* Eizo Maps — 依頼フォーム */
 (function (EM) {
   'use strict';
   document.addEventListener('DOMContentLoaded', function () {

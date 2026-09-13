@@ -1,4 +1,4 @@
-/* EizoMaps — 評価投稿 */
+/* Eizo Maps — 評価投稿 */
 (function (EM) {
   'use strict';
   document.addEventListener('DOMContentLoaded', function () {

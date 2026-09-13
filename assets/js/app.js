@@ -1,5 +1,5 @@
 /* =====================================================================
-   EizoMaps — 共通ライブラリ
+   Eizo Maps — 共通ライブラリ
    ---------------------------------------------------------------
    ★XSS対策の方針
      ユーザーが入力した文字列は innerHTML に絶対に渡しません。
@@ -310,7 +310,7 @@
     document.body.appendChild(el('footer', { class: 'site-footer' }, [
       el('div', { class: 'wrap' }, [
         fcols,
-        el('p', { class: 'copy', text: '© ' + new Date().getFullYear() + ' EizoMaps — Atreyu' })
+        el('p', { class: 'copy', text: '© ' + new Date().getFullYear() + ' Eizo Maps — Atreyu' })
       ])
     ]));
 

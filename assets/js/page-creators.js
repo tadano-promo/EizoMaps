@@ -1,4 +1,4 @@
-/* EizoMaps — クリエイター検索・一覧・エリア表示 */
+/* Eizo Maps — クリエイター検索・一覧・エリア表示 */
 (function (EM) {
   'use strict';
 

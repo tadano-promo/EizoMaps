@@ -1,4 +1,4 @@
-/* EizoMaps — マイページ（プロフィール編集） */
+/* Eizo Maps — マイページ（プロフィール編集） */
 (function (EM) {
   'use strict';
   document.addEventListener('DOMContentLoaded', function () {

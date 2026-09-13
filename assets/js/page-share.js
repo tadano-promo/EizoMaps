@@ -1,4 +1,4 @@
-/* EizoMaps — 限定共有ポートフォリオページ
+/* Eizo Maps — 限定共有ポートフォリオページ
    token はテーブルを直接読まず、RPC 経由でのみ解決する */
 (function (EM) {
   'use strict';
@@ -27,7 +27,7 @@
       sb.rpc('touch_share_link', { p_token: token.toLowerCase() });
 
       var c = d.creator || {};
-      document.title = (d.title || c.display_name || 'ポートフォリオ') + ' — EizoMaps';
+      document.title = (d.title || c.display_name || 'ポートフォリオ') + ' — Eizo Maps';
 
       EM.clear(head);
       head.appendChild(el('p', { class: 'eyebrow', text: 'Portfolio' }));

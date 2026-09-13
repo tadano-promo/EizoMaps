@@ -1,4 +1,4 @@
-/* EizoMaps — 案件一覧・詳細・ステータス遷移・メッセージ */
+/* Eizo Maps — 案件一覧・詳細・ステータス遷移・メッセージ */
 (function (EM) {
   'use strict';
   document.addEventListener('DOMContentLoaded', function () {
@@ -85,7 +85,7 @@
     }
 
     function renderDetail(p, role, myReview) {
-      document.title = p.title + ' — EizoMaps';
+      document.title = p.title + ' — Eizo Maps';
       EM.$('#pageTitle').textContent = p.title;
 
       var who = role === 'client'

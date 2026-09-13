@@ -1,4 +1,4 @@
-/* EizoMaps — 問題報告（内容は公開しない） */
+/* Eizo Maps — 問題報告（内容は公開しない） */
 (function (EM) {
   'use strict';
   document.addEventListener('DOMContentLoaded', function () {

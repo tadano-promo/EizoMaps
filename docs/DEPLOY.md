@@ -1,4 +1,4 @@
-# EizoMaps 構築手順書
+# Eizo Maps 構築手順書
 
 上から順に進めてください。所要時間の目安は 1〜2時間です。
 費用は発生しません（すべて無料枠）。
@@ -55,7 +55,7 @@
 
 ```bash
 git add .
-git commit -m "EizoMaps v1: フェーズ1〜2（土台＋コア機能）"
+git commit -m "Eizo Maps v1: フェーズ1〜2（土台＋コア機能）"
 git push origin main
 ```
 

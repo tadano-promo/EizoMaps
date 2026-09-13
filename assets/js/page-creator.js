@@ -1,4 +1,4 @@
-/* EizoMaps — クリエイター詳細 */
+/* Eizo Maps — クリエイター詳細 */
 (function (EM) {
   'use strict';
   document.addEventListener('DOMContentLoaded', function () {
@@ -28,7 +28,7 @@
       if (!c) { EM.notice(msg, 'このクリエイターは見つかりませんでした（非公開の可能性があります）。', 'error'); return; }
 
       var gmap = {}; (res[1].data || []).forEach(function (g) { gmap[g.id] = g.name_ja; });
-      document.title = c.display_name + ' — EizoMaps';
+      document.title = c.display_name + ' — Eizo Maps';
 
       renderProfile(c, gmap, (res[3].data && res[3].data.completed_count) || 0);
       renderPortfolio(res[2].data || []);
