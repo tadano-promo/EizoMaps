@@ -1168,4 +1168,6 @@ grant execute on function public.project_my_role(uuid)        to authenticated;
 --  migrations/ の中を番号順にすべて実行してください。
 --    001_stock_pages.sql            … ストックページ（パスワード保護）
 --    002_announcements_ads_admin.sql … お知らせ・広告枠・管理者・記事の土台
+--    003_schedule.sql                … スケジュール（縦型カレンダー）と空き状況
+--    004_improvement_proposals.sql   … 改善提案のストック
 -- =====================================================================
