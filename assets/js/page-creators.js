@@ -18,6 +18,8 @@
     var listView = EM.$('#listView'), mapView = EM.$('#mapView'), count = EM.$('#resultCount');
     var state = { q: '', genres: [], area: '', view: 'list' };
     var all = [], genres = [], ratings = {}, completed = {};
+    // 空き状況の絞り込み。busyIds が null のときは絞り込みをしていない状態。
+    var busyIds = null;
 
     // エリア選択肢
     var areaSelect = EM.$('#areaSelect');
@@ -83,6 +85,7 @@
           var ids = (c.creator_genres || []).map(function (x) { return x.genre_id; });
           for (var i = 0; i < state.genres.length; i++) if (ids.indexOf(state.genres[i]) === -1) return false;
         }
+        if (busyIds && busyIds[c.id]) return false;
         if (q) {
           var hay = [c.display_name, c.headline, c.area_pref, c.area_city].join(' ').toLowerCase();
           var gnames = (c.creator_genres || []).map(function (x) {
@@ -94,6 +97,33 @@
         return true;
       });
     }
+
+    /* 空き状況での絞り込み。
+       サーバーからは「その期間に埋まっている人の ID」だけが返る。
+       予定の件名や場所は一切返らない。 */
+    function applyAvailability() {
+      var from = EM.$('#freeFrom').value, to = EM.$('#freeTo').value;
+      var note = EM.$('#freeNote');
+      if (!from && !to) { busyIds = null; note.textContent = ''; render(); return; }
+      if (!from || !to) { note.textContent = '開始日と終了日の両方を入れてください'; return; }
+      if (to < from) { note.textContent = '終了日は開始日以降にしてください'; return; }
+      note.textContent = '確認中…';
+      sb.rpc('creators_busy_between', { p_from: from, p_to: to }).then(function (r) {
+        if (r.error) throw r.error;
+        busyIds = {};
+        (r.data || []).forEach(function (x) {
+          busyIds[typeof x === 'string' ? x : (x && x.creators_busy_between)] = true;
+        });
+        note.textContent = '空き状況を公開している人のみ判定しています';
+        render();
+      }).catch(function (e) {
+        busyIds = null;
+        note.textContent = EM.errorText(e);
+        render();
+      });
+    }
+    EM.$('#freeFrom').addEventListener('change', applyAvailability);
+    EM.$('#freeTo').addEventListener('change', applyAvailability);
 
     function genreName(id) {
       var g = genres.filter(function (gg) { return gg.id === id; })[0];
@@ -192,7 +222,9 @@
     EM.$('#viewMap').addEventListener('click', function () { state.view = 'map'; render(); });
     EM.$('#clearBtn').addEventListener('click', function () {
       state = { q: '', genres: [], area: '', view: state.view };
+      busyIds = null;
       EM.$('#q').value = ''; areaSelect.value = '';
+      EM.$('#freeFrom').value = ''; EM.$('#freeTo').value = ''; EM.$('#freeNote').textContent = '';
       EM.$$('#genreChips .chip').forEach(function (b) { b.setAttribute('aria-pressed', 'false'); });
       render();
     });

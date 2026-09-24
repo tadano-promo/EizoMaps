@@ -49,6 +49,19 @@
         if (k === 'text') { node.textContent = String(v); }
         else if (k === 'class') { node.className = v; }
         else if (k === 'html') { throw new Error('html プロパティは使用禁止です（XSS対策）'); }
+        // style は必ずオブジェクトで渡す。
+        // 文字列を style 属性に入れる方法は CSP（style-src に unsafe-inline を
+        // 付けていない）に弾かれて“黙って効かない”ため、書けないようにしておく。
+        // CSSOM 経由の代入は CSP の対象外なので、こちらは安全に効く。
+        else if (k === 'style') {
+          if (typeof v === 'string') {
+            throw new Error('style は文字列ではなくオブジェクトで渡してください（CSP対策）');
+          }
+          Object.keys(v).forEach(function (prop) {
+            if (prop.slice(0, 2) === '--') node.style.setProperty(prop, String(v[prop]));
+            else node.style[prop] = v[prop];
+          });
+        }
         else if (k.slice(0, 2) === 'on' && typeof v === 'function') { node.addEventListener(k.slice(2), v); }
         else if (k === 'dataset') { Object.keys(v).forEach(function (d) { node.dataset[d] = v[d]; }); }
         else { node.setAttribute(k, v === true ? '' : String(v)); }
@@ -290,6 +303,7 @@
     ['/mypage/', 'マイページ'],
     ['/mypage/portfolio.html', 'ポートフォリオ管理'],
     ['/mypage/stock.html', 'ストックページ'],
+    ['/schedule/', 'スケジュール'],
     ['/projects/', '案件管理'],
     ['/report/', '問題報告']
   ];

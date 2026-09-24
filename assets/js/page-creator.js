@@ -36,6 +36,7 @@
       renderPortfolio(res[2].data || []);
       loadReviews(c.user_id);
       mountFollow(c);
+      mountAvailability(c);
     }).catch(function (e) { EM.notice(msg, EM.errorText(e), 'error'); });
 
     function renderProfile(c, gmap, completedCount, links) {
@@ -143,6 +144,38 @@
         });
         slot.appendChild(btn);
       }
+    }
+
+    /* 空き状況。公開している人だけ、埋まっている日付だけが返る。
+       件名・場所・メモはサーバーから出てこない。 */
+    function mountAvailability(c) {
+      var from = new Date();
+      var to = new Date(); to.setDate(to.getDate() + 59);
+      function ymd(d) {
+        return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0')
+             + '-' + String(d.getDate()).padStart(2, '0');
+      }
+      sb.rpc('creator_busy_days', { p_creator_id: c.id, p_from: ymd(from), p_to: ymd(to) })
+        .then(function (r) {
+          if (r.error || !r.data || !r.data.length) return;
+          var busy = {};
+          r.data.forEach(function (x) {
+            busy[typeof x === 'string' ? x : (x && x.creator_busy_days)] = true;
+          });
+          var strip = el('div', { class: 'avail' });
+          for (var i = 0; i < 60; i++) {
+            var d = new Date(); d.setDate(d.getDate() + i);
+            var key = ymd(d);
+            strip.appendChild(el('i', {
+              class: 'avail__day' + (busy[key] ? ' is-busy' : ''),
+              title: key + (busy[key] ? '：埋まっています' : '：空いています')
+            }));
+          }
+          box.appendChild(el('div', { class: 'avail-box' }, [
+            el('p', { class: 'small muted', text: '今後60日の空き状況（色つきが埋まっている日）' }),
+            strip
+          ]));
+        }).catch(function () { /* 補助情報なので失敗しても出さない */ });
     }
 
     function renderPortfolio(items) {

@@ -9,7 +9,8 @@
     var msg = EM.$('#pageMsg');
     if (!sb) return;
 
-    var anns = [], ads = [], articles = [], writers = [];
+    var anns = [], ads = [], articles = [], writers = [], proposals = [];
+    var propFilter = 'stocked';
     var adImageUrl = null;
 
     var ANN_COLS = 'id,kind,title,body,link_url,link_label,visibility,is_published,pinned,published_at,created_at';
@@ -17,6 +18,15 @@
     var ART_COLS = 'id,slug,title,excerpt,category,visibility,status,source,author_user_id,published_at,updated_at';
 
     var STATUS_LABEL = { draft: '下書き', review: '確認待ち', published: '公開中' };
+
+    var PROP_AREA = [['schedule','スケジュール'],['creators','クリエイター'],['projects','案件'],
+                     ['stock','ストックページ'],['admin','管理'],['email','メール'],
+                     ['infra','基盤'],['billing','課金'],['content','記事'],['other','その他']];
+    var PROP_ORIGIN = [['user_voice','ユーザーの声'],['usage','使われ方'],['ai','Claudeの提案'],['ops','運営の気づき']];
+    var PROP_LEVEL = [['high','大'],['mid','中'],['low','小']];
+    var PROP_STATUS = [['stocked','ストック'],['approved','やると決めた'],['building','着手中'],
+                       ['done','完了'],['rejected','見送り']];
+    function labelOf(list, v) { for (var i = 0; i < list.length; i++) if (list[i][0] === v) return list[i][1]; return v; }
 
     EM.requireUser().then(function (u) {
       if (!u) return;
@@ -38,14 +48,18 @@
         sb.from('announcements').select(ANN_COLS).order('created_at', { ascending: false }).limit(50),
         sb.from('ads').select(AD_COLS).order('slot').order('sort_order').limit(50),
         sb.from('articles').select(ART_COLS).order('updated_at', { ascending: false }).limit(50),
-        sb.rpc('admin_list_writers')
+        sb.rpc('admin_list_writers'),
+        sb.from('improvement_proposals')
+          .select('id,title,detail,area,origin,impact,effort,cost_note,status,decided_note,decided_at,created_at')
+          .order('created_at', { ascending: false }).limit(200)
       ]).then(function (r) {
         if (!r[0].error) renderOverview(r[0].data || {});
         anns     = (!r[1].error && r[1].data) || [];
         ads      = (!r[2].error && r[2].data) || [];
         articles = (!r[3].error && r[3].data) || [];
         writers  = (!r[4].error && r[4].data) || [];
-        renderAnns(); renderAds(); renderArticles(); renderWriters();
+        proposals = (!r[5].error && r[5].data) || [];
+        renderAnns(); renderAds(); renderArticles(); renderWriters(); renderProposals();
       });
     }
 
@@ -102,6 +116,31 @@
       Object.keys(EM.ANNOUNCE_KIND).forEach(function (k) {
         kind.appendChild(el('option', { value: k, text: EM.ANNOUNCE_KIND[k] }));
       });
+      fillSelect('#propArea', PROP_AREA);
+      fillSelect('#propOrigin', PROP_ORIGIN);
+      fillSelect('#propImpact', PROP_LEVEL);
+      fillSelect('#propEffort', PROP_LEVEL);
+      EM.$('#propImpact').value = 'mid';
+      EM.$('#propEffort').value = 'mid';
+      EM.$('#propOrigin').value = 'ops';
+      var fbox = EM.$('#propFilter');
+      [['stocked','ストック']].concat(PROP_STATUS.slice(1)).concat([['all','すべて']]).forEach(function (st) {
+        fbox.appendChild(el('button', {
+          class: 'chip', type: 'button', text: st[1],
+          'aria-pressed': st[0] === propFilter ? 'true' : 'false',
+          onclick: function () {
+            propFilter = st[0];
+            EM.$$('#propFilter .chip').forEach(function (c) { c.setAttribute('aria-pressed', 'false'); });
+            this.setAttribute('aria-pressed', 'true');
+            renderProposals();
+          }
+        }));
+      });
+    }
+    function fillSelect(sel, list) {
+      var node = EM.$(sel);
+      EM.clear(node);
+      list.forEach(function (x) { node.appendChild(el('option', { value: x[0], text: x[1] })); });
     }
 
     /* ---------------- お知らせ ---------------- */
@@ -386,6 +425,123 @@
       sb.rpc('set_article_status', { p_id: a.id, p_status: status })
         .then(function (r) { if (r.error) throw r.error; EM.toast('変更しました'); return reload(); })
         .catch(function (err) { EM.notice(msg, EM.errorText(err), 'error'); });
+    }
+
+    /* ---------------- 改善提案のストック ---------------- */
+    function propReset() {
+      EM.$('#propId').value = '';
+      EM.$('#propTitle').value = '';
+      EM.$('#propDetail').value = '';
+      EM.$('#propArea').value = 'other';
+      EM.$('#propOrigin').value = 'ops';
+      EM.$('#propImpact').value = 'mid';
+      EM.$('#propEffort').value = 'mid';
+      EM.$('#propCost').value = '';
+      EM.$('#propSaveBtn').textContent = 'ストックに追加';
+    }
+    EM.$('#propResetBtn').addEventListener('click', propReset);
+
+    EM.$('#propForm').addEventListener('submit', function (e) {
+      e.preventDefault();
+      var title = EM.$('#propTitle').value.trim();
+      if (!title) { EM.notice(msg, 'やりたいことを入力してください。', 'error'); return; }
+      var row = {
+        title: title,
+        detail: EM.$('#propDetail').value.trim() || null,
+        area: EM.$('#propArea').value,
+        origin: EM.$('#propOrigin').value,
+        impact: EM.$('#propImpact').value,
+        effort: EM.$('#propEffort').value,
+        cost_note: EM.$('#propCost').value.trim() || null
+      };
+      var id = EM.$('#propId').value;
+      var btn = EM.$('#propSaveBtn'); btn.setAttribute('aria-busy', 'true');
+      var q = id ? sb.from('improvement_proposals').update(row).eq('id', id)
+                 : sb.from('improvement_proposals').insert(row);
+      q.then(function (r) {
+        if (r.error) throw r.error;
+        propReset();
+        EM.notice(msg, '');
+        EM.toast('ストックしました');
+        return reload();
+      }).catch(function (err) { EM.notice(msg, EM.errorText(err), 'error'); })
+        .then(function () { btn.removeAttribute('aria-busy'); });
+    });
+
+    function renderProposals() {
+      var box = EM.$('#propList');
+      EM.clear(box);
+      var list = proposals.filter(function (p) {
+        return propFilter === 'all' ? true : p.status === propFilter;
+      });
+      if (!list.length) {
+        box.appendChild(el('p', { class: 'small muted', text: 'この状態の提案はありません。' }));
+        return;
+      }
+      list.forEach(function (p) {
+        var ops = el('div', { class: 'row-item__ops' });
+        if (p.status === 'stocked') {
+          ops.appendChild(el('button', { class: 'btn btn--sm btn--primary', type: 'button', text: 'やると決める',
+            onclick: function () { decide(p, 'approved'); } }));
+          ops.appendChild(el('button', { class: 'btn btn--sm', type: 'button', text: '見送る',
+            onclick: function () { decide(p, 'rejected'); } }));
+        } else if (p.status === 'approved') {
+          ops.appendChild(el('button', { class: 'btn btn--sm', type: 'button', text: '着手中にする',
+            onclick: function () { decide(p, 'building'); } }));
+          ops.appendChild(el('button', { class: 'btn btn--sm', type: 'button', text: 'ストックに戻す',
+            onclick: function () { decide(p, 'stocked'); } }));
+        } else if (p.status === 'building') {
+          ops.appendChild(el('button', { class: 'btn btn--sm btn--primary', type: 'button', text: '完了にする',
+            onclick: function () { decide(p, 'done'); } }));
+        } else {
+          ops.appendChild(el('button', { class: 'btn btn--sm', type: 'button', text: 'ストックに戻す',
+            onclick: function () { decide(p, 'stocked'); } }));
+        }
+        ops.appendChild(el('button', { class: 'btn btn--sm', type: 'button', text: '編集',
+          onclick: function () { propEdit(p); } }));
+
+        box.appendChild(el('div', { class: 'card stack' }, [
+          el('div', { class: 'row-item' }, [
+            el('div', { class: 'row-item__main' }, [
+              el('span', { class: 'tag tag--accent', text: labelOf(PROP_STATUS, p.status) }),
+              el('span', { class: 'tag', text: labelOf(PROP_AREA, p.area) }),
+              el('span', { class: 'tag', text: labelOf(PROP_ORIGIN, p.origin) }),
+              el('span', { class: 'tag', text: '効き目' + labelOf(PROP_LEVEL, p.impact) + '／手間' + labelOf(PROP_LEVEL, p.effort) }),
+              el('span', { class: 'row-item__title', text: p.title })
+            ]),
+            ops
+          ]),
+          p.detail ? multiline(p.detail, 'small muted') : null,
+          p.cost_note ? el('p', { class: 'small muted mono', text: '費用: ' + p.cost_note }) : null,
+          p.decided_at ? el('p', { class: 'small muted mono', text: '判断: ' + EM.date(p.decided_at) }) : null
+        ]));
+      });
+    }
+
+    function decide(p, status) {
+      var note = null;
+      if (status === 'approved' || status === 'rejected') {
+        note = prompt(status === 'approved' ? 'やると決めた理由（任意）' : '見送る理由（任意）', p.decided_note || '');
+        if (note === null) return;
+      }
+      var patch = { status: status };
+      if (note !== null && note !== undefined) patch.decided_note = note || null;
+      sb.from('improvement_proposals').update(patch).eq('id', p.id)
+        .then(function (r) { if (r.error) throw r.error; EM.toast('更新しました'); return reload(); })
+        .catch(function (err) { EM.notice(msg, EM.errorText(err), 'error'); });
+    }
+
+    function propEdit(p) {
+      EM.$('#propId').value = p.id;
+      EM.$('#propTitle').value = p.title;
+      EM.$('#propDetail').value = p.detail || '';
+      EM.$('#propArea').value = p.area;
+      EM.$('#propOrigin').value = p.origin;
+      EM.$('#propImpact').value = p.impact;
+      EM.$('#propEffort').value = p.effort;
+      EM.$('#propCost').value = p.cost_note || '';
+      EM.$('#propSaveBtn').textContent = 'この内容で更新する';
+      EM.$('#propForm').scrollIntoView({ behavior: 'smooth', block: 'center' });
     }
 
     /* ---------------- 執筆者 ---------------- */
