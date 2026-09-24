@@ -157,6 +157,52 @@
         <div id="articleList" class="stack"></div>
 
         <hr class="divider">
+        <h2>改善提案のストック</h2>
+        <p class="small muted">
+          思いついた案・ユーザーの声・使われ方から見えたことを、着手前にここへ溜めます。
+          <strong>「やる」と決めたものだけが動きます。</strong>決めるまでは何も始まりません。
+        </p>
+        <form id="propForm" class="card stack" novalidate>
+          <input type="hidden" id="propId">
+          <label class="field">
+            <span class="label">やりたいこと <span class="muted">（120文字まで）</span></span>
+            <input type="text" id="propTitle" maxlength="120" required placeholder="例：日程調整で3候補を自動提示する">
+          </label>
+          <label class="field">
+            <span class="label">中身 <span class="muted">（4000文字まで）</span></span>
+            <textarea id="propDetail" maxlength="4000" rows="4" placeholder="何を、なぜ、何が必要か"></textarea>
+          </label>
+          <div class="row">
+            <label class="field">
+              <span class="label">対象</span>
+              <select id="propArea"></select>
+            </label>
+            <label class="field">
+              <span class="label">出どころ</span>
+              <select id="propOrigin"></select>
+            </label>
+            <label class="field">
+              <span class="label">効き目</span>
+              <select id="propImpact"></select>
+            </label>
+            <label class="field">
+              <span class="label">手間</span>
+              <select id="propEffort"></select>
+            </label>
+          </div>
+          <label class="field">
+            <span class="label">お金のこと <span class="muted">（300文字まで・任意）</span></span>
+            <input type="text" id="propCost" maxlength="300" placeholder="例：無料枠内 / 有料プラン側の機能として設計">
+          </label>
+          <div class="form-actions">
+            <button class="btn btn--primary" type="submit" id="propSaveBtn">ストックに追加</button>
+            <button class="btn btn--sm" type="button" id="propResetBtn">新規入力に戻す</button>
+          </div>
+        </form>
+        <div class="chips" id="propFilter"></div>
+        <div id="propList" class="stack"></div>
+
+        <hr class="divider">
         <h2>執筆を許可する人</h2>
         <p class="small muted">Eizo Maps に登録済みのメールアドレスを指定してください。</p>
         <form id="writerForm" class="row" novalidate>
