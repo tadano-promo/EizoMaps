@@ -1,0 +1,181 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; base-uri 'self'; object-src 'none'; form-action 'self'; script-src 'self' https://cdn.jsdelivr.net; style-src 'self' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src 'self' data: https://img.youtube.com https://i.ytimg.com https://i.vimeocdn.com https://*.supabase.co; connect-src 'self' https://*.supabase.co wss://*.supabase.co https://vimeo.com; frame-src 'none'; upgrade-insecure-requests">
+<meta name="referrer" content="strict-origin-when-cross-origin">
+<title>管理画面 — Eizo Maps</title>
+<meta name="description" content="運営用の管理画面。">
+<meta name="robots" content="noindex, nofollow">
+<meta property="og:site_name" content="Eizo Maps">
+<meta property="og:title" content="管理画面 — Eizo Maps">
+<meta property="og:description" content="運営用の管理画面。">
+<meta property="og:type" content="website">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bebas+Neue&amp;family=DM+Mono:wght@400;500&amp;family=Noto+Sans+JP:wght@300;400;500;700&amp;display=swap">
+<link rel="stylesheet" href="/assets/css/style.css">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.116.0/dist/umd/supabase.js" integrity="sha384-iLddHTLokph6Omwoyid4XKxHaWa6w41BnoEj0q5oOrzmYPpHIKt1wyjReA7s//pP" crossorigin="anonymous" referrerpolicy="no-referrer" defer></script>
+<script src="/assets/js/config.js" defer></script>
+<script src="/assets/js/app.js" defer></script>
+<script src="/assets/js/page-admin.js" defer></script>
+</head>
+<body>
+<main class="section">
+  <div class="wrap">
+    <div class="doc">
+      <p class="eyebrow">Admin</p>
+      <h1>管理画面</h1>
+      <div class="notice" id="pageMsg" hidden></div>
+
+      <section id="adminBody" hidden>
+
+        <!-- 概況 -->
+        <div class="stat-grid" id="overview"></div>
+
+        <hr class="divider">
+        <h2>お知らせ</h2>
+        <p class="small muted">トップページの一番上に出ます。「公開する」を外すと下書きになります。</p>
+        <form id="annForm" class="card stack" novalidate>
+          <input type="hidden" id="annId">
+          <div class="row">
+            <label class="field">
+              <span class="label">種別</span>
+              <select id="annKind"></select>
+            </label>
+            <label class="field">
+              <span class="label">公開範囲</span>
+              <select id="annVisibility">
+                <option value="public">誰でも見られる</option>
+                <option value="members">ログインした人だけ</option>
+              </select>
+            </label>
+          </div>
+          <label class="field">
+            <span class="label">見出し <span class="muted">（100文字まで）</span></span>
+            <input type="text" id="annTitle" maxlength="100" required placeholder="例：ストックページを追加しました">
+          </label>
+          <label class="field">
+            <span class="label">本文 <span class="muted">（4000文字まで・改行はそのまま出ます）</span></span>
+            <textarea id="annBody" maxlength="4000" rows="5"></textarea>
+          </label>
+          <div class="row">
+            <label class="field">
+              <span class="label">リンク <span class="muted">（任意・https のみ）</span></span>
+              <input type="url" id="annLink" maxlength="500" placeholder="https://">
+            </label>
+            <label class="field">
+              <span class="label">リンクの文言 <span class="muted">（任意）</span></span>
+              <input type="text" id="annLinkLabel" maxlength="40" placeholder="詳しく見る">
+            </label>
+          </div>
+          <label class="checkbox">
+            <input type="checkbox" id="annPinned">
+            <span>重要なお知らせとして一番上に固定する</span>
+          </label>
+          <label class="checkbox">
+            <input type="checkbox" id="annPublished">
+            <span>公開する</span>
+          </label>
+          <div class="form-actions">
+            <button class="btn btn--primary" type="submit" id="annSaveBtn">保存する</button>
+            <button class="btn btn--sm" type="button" id="annResetBtn">新規入力に戻す</button>
+          </div>
+        </form>
+        <div id="annList" class="stack"></div>
+
+        <hr class="divider">
+        <h2>広告枠</h2>
+        <p class="small muted">画像とリンクだけを扱います。外部の広告スクリプトは読み込みません。</p>
+        <form id="adForm" class="card stack" novalidate>
+          <input type="hidden" id="adId">
+          <div class="row">
+            <label class="field">
+              <span class="label">掲載場所</span>
+              <select id="adSlotSel">
+                <option value="home_top">トップページ上部</option>
+                <option value="home_side">トップページ横</option>
+              </select>
+            </label>
+            <label class="field">
+              <span class="label">出稿主の表示名 <span class="muted">（任意）</span></span>
+              <input type="text" id="adSponsor" maxlength="60" placeholder="例：アトレイユ">
+            </label>
+          </div>
+          <label class="field">
+            <span class="label">見出し <span class="muted">（80文字まで）</span></span>
+            <input type="text" id="adTitle" maxlength="80" required>
+          </label>
+          <label class="field">
+            <span class="label">説明 <span class="muted">（200文字まで・任意）</span></span>
+            <input type="text" id="adBody" maxlength="200">
+          </label>
+          <label class="field">
+            <span class="label">リンク先 <span class="muted">（https のみ・必須）</span></span>
+            <input type="url" id="adLink" maxlength="500" required placeholder="https://">
+          </label>
+          <div class="field">
+            <span class="label">バナー画像 <span class="muted">（JPEG / PNG / WebP / GIF、3MB まで）</span></span>
+            <div class="row">
+              <div id="adImgPreview"></div>
+              <div>
+                <label class="btn btn--sm" for="adImgFile">画像を選ぶ</label>
+                <input type="file" id="adImgFile" accept="image/png,image/jpeg,image/webp,image/gif" class="sr-only">
+                <button class="btn btn--sm" type="button" id="adImgClear">画像を外す</button>
+              </div>
+            </div>
+          </div>
+          <div class="row">
+            <label class="field">
+              <span class="label">掲載開始 <span class="muted">（任意）</span></span>
+              <input type="datetime-local" id="adStart">
+            </label>
+            <label class="field">
+              <span class="label">掲載終了 <span class="muted">（任意）</span></span>
+              <input type="datetime-local" id="adEnd">
+            </label>
+            <label class="field">
+              <span class="label">並び順</span>
+              <input type="number" id="adOrder" min="0" max="999" step="1" value="0">
+            </label>
+          </div>
+          <label class="checkbox">
+            <input type="checkbox" id="adActive">
+            <span>掲載する</span>
+          </label>
+          <div class="form-actions">
+            <button class="btn btn--primary" type="submit" id="adSaveBtn">保存する</button>
+            <button class="btn btn--sm" type="button" id="adResetBtn">新規入力に戻す</button>
+          </div>
+        </form>
+        <div id="adList" class="stack"></div>
+
+        <hr class="divider">
+        <h2>記事</h2>
+        <p class="small muted">執筆者が書いた記事は「確認待ち」で届きます。公開できるのは運営だけです。</p>
+        <div id="articleList" class="stack"></div>
+
+        <hr class="divider">
+        <h2>執筆を許可する人</h2>
+        <p class="small muted">Eizo Maps に登録済みのメールアドレスを指定してください。</p>
+        <form id="writerForm" class="row" novalidate>
+          <label class="field">
+            <span class="label">メールアドレス</span>
+            <input type="email" id="writerEmail" maxlength="200" required placeholder="creator@example.com">
+          </label>
+          <label class="field">
+            <span class="label">メモ <span class="muted">（任意）</span></span>
+            <input type="text" id="writerNote" maxlength="200" placeholder="例：ノウハウ記事担当">
+          </label>
+          <div class="form-actions">
+            <button class="btn" type="submit">許可する</button>
+          </div>
+        </form>
+        <div id="writerList" class="stack"></div>
+      </section>
+    </div>
+  </div>
+</main>
+</body>
+</html>
