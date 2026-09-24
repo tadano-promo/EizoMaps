@@ -1166,5 +1166,6 @@ grant execute on function public.project_my_role(uuid)        to authenticated;
 --  ここから先の追加・変更は supabase/migrations/ に分けて置いています。
 --  新しく環境を作るときは、このファイルを実行したあと
 --  migrations/ の中を番号順にすべて実行してください。
---    001_stock_pages.sql … ストックページ（パスワード保護）
+--    001_stock_pages.sql            … ストックページ（パスワード保護）
+--    002_announcements_ads_admin.sql … お知らせ・広告枠・管理者・記事の土台
 -- =====================================================================
