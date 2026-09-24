@@ -19,9 +19,24 @@
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.116.0/dist/umd/supabase.js" integrity="sha384-iLddHTLokph6Omwoyid4XKxHaWa6w41BnoEj0q5oOrzmYPpHIKt1wyjReA7s//pP" crossorigin="anonymous" referrerpolicy="no-referrer" defer></script>
 <script src="/assets/js/config.js" defer></script>
 <script src="/assets/js/app.js" defer></script>
+<script src="/assets/js/page-home.js" defer></script>
 </head>
 <body>
 <main>
+  <!-- 公式のお知らせと広告枠。中身が無いときは丸ごと非表示にする -->
+  <section class="section section--tight news" id="newsSection" hidden>
+    <div class="wrap">
+      <div class="news__layout">
+        <div class="news__main">
+          <p class="eyebrow">Updates</p>
+          <h2 class="news__title">Eizo Maps からのお知らせ</h2>
+          <div id="newsList" class="stack"></div>
+        </div>
+        <aside class="news__side" id="adSlot" hidden></aside>
+      </div>
+    </div>
+  </section>
+
   <section class="hero">
     <div class="wrap inner">
       <p class="eyebrow">Video Production Trust Platform</p>

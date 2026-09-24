@@ -7,5 +7,6 @@ Disallow: /request/
 Disallow: /report/
 Disallow: /p/
 Disallow: /s/
+Disallow: /admin/
 
 Sitemap: https://eizo-maps.com/sitemap.xml
