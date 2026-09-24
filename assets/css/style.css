@@ -456,3 +456,86 @@ input[type=range]:focus-visible { outline: 2px solid var(--accent); outline-offs
 /* ---------- 案件詳細 ---------- */
 #statusBox .form-actions { margin-top: 16px; }
 #messages .card p:last-child { margin-bottom: 0; white-space: pre-wrap; }
+
+/* =====================================================================
+   ストックページ（パスワード保護のポートフォリオ）
+   ===================================================================== */
+
+/* --- 一覧の1行（編集画面で使う） --- */
+.row-item {
+  display: flex; align-items: center; justify-content: space-between;
+  gap: 12px; flex-wrap: wrap;
+}
+.row-item__main { display: flex; align-items: center; gap: 8px; flex: 1 1 240px; min-width: 0; }
+.row-item__title {
+  min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+  font-size: 14px;
+}
+.row-item__ops { display: flex; gap: 6px; flex-wrap: wrap; flex: none; }
+.row-item + .row-item { margin-top: 10px; }
+
+.stock-edit { padding: 14px 16px; }
+.stock-edit__body { margin-top: 12px; }
+.stock-edit__body .field { margin-bottom: 0; }
+.stock-edit__url { word-break: break-all; }
+
+/* --- ロック画面 --- */
+.lock { display: flex; justify-content: center; padding-block: clamp(24px, 6vw, 72px); }
+.lock__card { width: 100%; max-width: 460px; padding: 28px 24px; }
+.lock__who { display: flex; align-items: center; gap: 16px; margin-bottom: 22px; }
+.lock__who h1 { font-size: clamp(20px, 3vw, 26px); margin: 2px 0; }
+.lock__card .field { margin-bottom: 14px; }
+
+/* --- 閲覧画面 --- */
+.stock-head {
+  display: flex; align-items: flex-start; justify-content: space-between;
+  gap: 16px; flex-wrap: wrap; margin-bottom: 18px;
+}
+.stock-head__who { display: flex; align-items: center; gap: 16px; min-width: 0; }
+.stock-head__who h1 { font-size: clamp(22px, 3.4vw, 30px); margin: 2px 0; }
+.stock-intro { margin-bottom: 18px; }
+.stock-links { margin-bottom: 26px; }
+
+.stock-grid {
+  display: grid; gap: 18px;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  align-items: start;
+}
+.stock-block--full { grid-column: 1 / -1; }
+.stock-block--heading { margin-top: 18px; }
+.stock-block--heading h2 {
+  font-size: 18px; padding-bottom: 8px; border-bottom: 1px solid var(--border);
+}
+.stock-note { white-space: normal; line-height: 1.9; }
+.stock-src { display: inline-block; text-decoration: underline; }
+.stock-contact { margin-top: 32px; }
+
+@media (max-width: 720px) {
+  .stock-grid { grid-template-columns: minmax(0, 1fr); }
+  .stock-block--half { grid-column: 1 / -1; }
+}
+
+/* --- 動画の遅延読み込みカバー --- */
+.embed--vertical { aspect-ratio: 9/16; max-width: 300px; margin-inline: auto; }
+.embed__cover {
+  position: absolute; inset: 0; width: 100%; height: 100%;
+  border: 0; padding: 0; cursor: pointer;
+  background: var(--surface2); color: var(--text);
+  display: flex; align-items: center; justify-content: center;
+}
+.embed__cover img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; background: var(--surface2); }
+.embed__play {
+  position: relative; z-index: 1;
+  width: 54px; height: 54px; border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  background: rgba(10, 10, 15, .72); border: 1px solid var(--accent);
+  color: var(--accent); font-size: 17px; padding-left: 3px;
+  transition: transform var(--t);
+}
+.embed__cover:hover .embed__play { transform: scale(1.08); }
+.embed__cover .badge {
+  position: absolute; z-index: 1; left: 8px; bottom: 8px;
+  font-family: var(--font-mono); font-size: 10px; letter-spacing: .1em;
+  padding: 3px 7px; border-radius: 4px;
+  background: rgba(10, 10, 15, .78); border: 1px solid var(--border); color: var(--muted);
+}
