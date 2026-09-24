@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; base-uri 'self'; object-src 'none'; form-action 'self'; script-src 'self' https://cdn.jsdelivr.net; style-src 'self' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src 'self' data: https://img.youtube.com https://i.ytimg.com https://i.vimeocdn.com https://*.supabase.co; connect-src 'self' https://*.supabase.co wss://*.supabase.co https://vimeo.com; frame-src 'none'; upgrade-insecure-requests">
+<meta name="referrer" content="strict-origin-when-cross-origin">
+<title>スケジュール — Eizo Maps</title>
+<meta name="description" content="案件と個人の予定を、業界標準の縦型カレンダーで管理する。">
+<meta name="robots" content="noindex, nofollow">
+<meta property="og:site_name" content="Eizo Maps">
+<meta property="og:title" content="スケジュール — Eizo Maps">
+<meta property="og:description" content="案件と個人の予定を、業界標準の縦型カレンダーで管理する。">
+<meta property="og:type" content="website">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bebas+Neue&amp;family=DM+Mono:wght@400;500&amp;family=Noto+Sans+JP:wght@300;400;500;700&amp;display=swap">
+<link rel="stylesheet" href="/assets/css/style.css">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.116.0/dist/umd/supabase.js" integrity="sha384-iLddHTLokph6Omwoyid4XKxHaWa6w41BnoEj0q5oOrzmYPpHIKt1wyjReA7s//pP" crossorigin="anonymous" referrerpolicy="no-referrer" defer></script>
+<script src="/assets/js/config.js" defer></script>
+<script src="/assets/js/app.js" defer></script>
+<script src="/assets/js/page-schedule.js" defer></script>
+</head>
+<body>
+<main class="section">
+  <div class="wrap">
+    <p class="eyebrow">Schedule</p>
+    <h1>スケジュール</h1>
+    <div class="notice" id="pageMsg" hidden></div>
+
+    <section id="scheduleBody" hidden>
+      <div class="vcal-bar">
+        <div class="vcal-nav">
+          <button class="btn btn--sm" type="button" id="prevMonth" aria-label="前の月">←</button>
+          <span class="vcal-month num" id="monthLabel"></span>
+          <button class="btn btn--sm" type="button" id="nextMonth" aria-label="次の月">→</button>
+          <button class="btn btn--sm" type="button" id="thisMonth">今月</button>
+        </div>
+        <div class="vcal-nav">
+          <button class="btn btn--sm btn--primary" type="button" id="newEventBtn">予定を追加</button>
+        </div>
+      </div>
+
+      <div class="vcal-scroll">
+        <div class="vcal" id="vcal"></div>
+      </div>
+
+      <div class="vcal-legend chips" id="legend"></div>
+
+      <!-- 予定の入力 -->
+      <div class="card stack" id="eventForm" hidden>
+        <h2 id="eventFormTitle">予定を追加</h2>
+        <input type="hidden" id="evId">
+        <div class="row">
+          <label class="field">
+            <span class="label">案件 <span class="muted">（個人の予定なら「案件なし」）</span></span>
+            <select id="evProject"></select>
+          </label>
+          <label class="field">
+            <span class="label">種別</span>
+            <select id="evKind"></select>
+          </label>
+        </div>
+        <label class="field">
+          <span class="label">件名 <span class="muted">（100文字まで）</span></span>
+          <input type="text" id="evTitle" maxlength="100" required placeholder="例：本編撮影">
+        </label>
+        <div class="row">
+          <label class="field">
+            <span class="label">開始日</span>
+            <input type="date" id="evStart" required>
+          </label>
+          <label class="field">
+            <span class="label">終了日</span>
+            <input type="date" id="evEnd" required>
+          </label>
+        </div>
+        <div class="row">
+          <label class="field">
+            <span class="label">開始時刻 <span class="muted">（任意）</span></span>
+            <input type="time" id="evStartTime">
+          </label>
+          <label class="field">
+            <span class="label">終了時刻 <span class="muted">（任意）</span></span>
+            <input type="time" id="evEndTime">
+          </label>
+        </div>
+        <label class="field">
+          <span class="label">場所 <span class="muted">（120文字まで・任意）</span></span>
+          <input type="text" id="evLocation" maxlength="120" placeholder="例：都内スタジオ">
+        </label>
+        <label class="field">
+          <span class="label">メモ <span class="muted">（1000文字まで・任意）</span></span>
+          <textarea id="evNote" maxlength="1000" rows="3"></textarea>
+        </label>
+        <label class="checkbox">
+          <input type="checkbox" id="evBusy" checked>
+          <span>この予定を「埋まっている日」として扱う（仮押さえや下見は外せます）</span>
+        </label>
+        <label class="checkbox" id="evVisibilityRow" hidden>
+          <input type="checkbox" id="evVisibility">
+          <span>この案件の相手にも見せる（件名・場所・メモが相手に見えます）</span>
+        </label>
+        <div class="form-actions">
+          <button class="btn btn--primary" type="button" id="evSaveBtn">保存する</button>
+          <button class="btn btn--sm" type="button" id="evCancelBtn">閉じる</button>
+          <button class="btn btn--sm btn--danger" type="button" id="evDeleteBtn" hidden>削除</button>
+        </div>
+      </div>
+
+      <hr class="divider">
+      <h2>空き状況の公開</h2>
+      <p class="small muted">
+        公開すると、クリエイター検索で「この期間に空いている人」として見つけてもらえます。
+        相手に伝わるのは<strong>埋まっているかどうかだけ</strong>で、件名・場所・メモは一切渡りません。
+      </p>
+      <label class="checkbox">
+        <input type="checkbox" id="shareAvailability">
+        <span>空き状況を公開する</span>
+      </label>
+      <div class="form-actions">
+        <button class="btn btn--sm" type="button" id="saveShareBtn">この設定を保存</button>
+      </div>
+    </section>
+  </div>
+</main>
+</body>
+</html>
