@@ -218,6 +218,27 @@
                         text: EM.STATUS_LABEL[status] || status });
   };
 
+  /* ---------- 権限（運営 / 執筆者） ---------- */
+  // 画面の出し分けにだけ使う。実際の可否はすべてサーバー側（RLS と RPC）で判定する。
+  var _rolesPromise = null;
+  EM.roles = function () {
+    if (_rolesPromise) return _rolesPromise;
+    var sb = EM.sb();
+    if (!sb) return Promise.resolve({ admin: false, writer: false });
+    _rolesPromise = sb.rpc('my_roles')
+      .then(function (r) {
+        if (r.error || !r.data) return { admin: false, writer: false };
+        return { admin: !!r.data.admin, writer: !!r.data.writer };
+      })
+      .catch(function () { return { admin: false, writer: false }; });
+    return _rolesPromise;
+  };
+
+  EM.ANNOUNCE_KIND = {
+    update: 'アップデート', notice: 'お知らせ',
+    maintenance: 'メンテナンス', event: 'イベント'
+  };
+
   /* ---------- 外部リンク（SNS など） ---------- */
   EM.LINK_PLATFORMS = [
     ['x', 'X（旧Twitter）'],
@@ -323,6 +344,11 @@
       var ul = el('ul');
       if (u) {
         NAV_USER.forEach(function (n) { ul.appendChild(el('li', null, el('a', { href: n[0], text: n[1] }))); });
+        var staffSlot = el('li');
+        ul.appendChild(staffSlot);
+        EM.roles().then(function (roles) {
+          if (roles.admin) staffSlot.appendChild(el('a', { href: '/admin/', text: '管理画面' }));
+        });
         ul.appendChild(el('li', null, el('a', {
           href: '#', text: 'ログアウト',
           onclick: function (e) { e.preventDefault(); EM.signOut(); }
