@@ -14,14 +14,16 @@
 
     Promise.all([
       sb.from('creators')
-        .select('id,user_id,display_name,headline,bio,area_pref,area_city,years_of_experience,response_time_hours,avatar_url,website_url,creator_genres(genre_id)')
+        .select('id,user_id,display_name,headline,bio,area_pref,area_city,years_of_experience,response_time_hours,avatar_url,website_url,contact_pref,contact_dm_url,creator_genres(genre_id)')
         .eq('id', id).maybeSingle(),
       sb.from('genres').select('id,name_ja'),
       sb.from('portfolios')
         .select('id,title,description,provider,video_id,video_url,thumbnail_url,sort_order,created_at,portfolio_tags(tag)')
         .eq('creator_id', id).eq('visibility', 'public')
         .order('sort_order').order('created_at', { ascending: false }),
-      sb.from('creator_project_stats').select('completed_count').eq('creator_id', id).maybeSingle()
+      sb.from('creator_project_stats').select('completed_count').eq('creator_id', id).maybeSingle(),
+      sb.from('creator_links').select('platform,url,label,sort_order,created_at')
+        .eq('creator_id', id).order('sort_order').order('created_at')
     ]).then(function (res) {
       var c = res[0].data;
       if (res[0].error) { EM.notice(msg, EM.errorText(res[0].error), 'error'); return; }
@@ -30,12 +32,13 @@
       var gmap = {}; (res[1].data || []).forEach(function (g) { gmap[g.id] = g.name_ja; });
       document.title = c.display_name + ' — Eizo Maps';
 
-      renderProfile(c, gmap, (res[3].data && res[3].data.completed_count) || 0);
+      renderProfile(c, gmap, (res[3].data && res[3].data.completed_count) || 0, res[4].data || []);
       renderPortfolio(res[2].data || []);
       loadReviews(c.user_id);
+      mountFollow(c);
     }).catch(function (e) { EM.notice(msg, EM.errorText(e), 'error'); });
 
-    function renderProfile(c, gmap, completedCount) {
+    function renderProfile(c, gmap, completedCount, links) {
       var tags = el('div', { class: 'tags' });
       (c.creator_genres || []).forEach(function (x) {
         if (gmap[x.genre_id]) tags.appendChild(el('span', { class: 'tag tag--accent', text: gmap[x.genre_id] }));
@@ -63,10 +66,83 @@
       box.appendChild(stats);
       if (c.bio) box.appendChild(el('p', { class: 'f-note', text: c.bio }));
       if (site) box.appendChild(el('p', null, el('a', { class: 'btn btn--sm', href: site, rel: 'noopener noreferrer nofollow', target: '_blank', text: 'ウェブサイト' })));
-      box.appendChild(el('div', { class: 'form-actions' }, [
-        el('a', { class: 'btn btn--primary', href: '/request/?creator_id=' + encodeURIComponent(c.id), text: '依頼する' }),
-        el('a', { class: 'btn', href: '/contact/', text: 'お問い合わせ' })
-      ]));
+
+      // SNS などの外部リンク
+      if ((links || []).length) {
+        var row = el('div', { class: 'chips stock-links' });
+        links.forEach(function (l) {
+          var href = EM.safeUrl(l.url);
+          if (!href) return;
+          row.appendChild(el('a', {
+            class: 'chip', href: href, target: '_blank', rel: 'noopener noreferrer nofollow',
+            text: l.label || EM.platformLabel(l.platform)
+          }));
+        });
+        if (row.childNodes.length) box.appendChild(row);
+      }
+
+      // 依頼の受け取り方に合わせて導線を出し分ける
+      var pref = c.contact_pref || 'form';
+      var dm = EM.safeUrl(c.contact_dm_url);
+      var actions = el('div', { class: 'form-actions' });
+      if (pref === 'form' || pref === 'both') {
+        actions.appendChild(el('a', {
+          class: 'btn btn--primary',
+          href: '/request/?creator_id=' + encodeURIComponent(c.id), text: '依頼する'
+        }));
+      }
+      if ((pref === 'dm' || pref === 'both') && dm) {
+        actions.appendChild(el('a', {
+          class: pref === 'dm' ? 'btn btn--primary' : 'btn',
+          href: dm, target: '_blank', rel: 'noopener noreferrer nofollow',
+          text: 'SNS の DM で連絡する'
+        }));
+      }
+      actions.appendChild(el('span', { id: 'followSlot' }));
+      actions.appendChild(el('a', { class: 'btn', href: '/contact/', text: 'お問い合わせ' }));
+      if (pref === 'dm' && dm) {
+        box.appendChild(el('p', { class: 'small muted',
+          text: c.display_name + ' さんは SNS の DM での連絡を希望しています。' }));
+      }
+      box.appendChild(actions);
+    }
+
+    /* フォロー。ログインしている人にだけ出す。
+       いまは通知の宛先リストを作るためだけの機能。 */
+    function mountFollow(c) {
+      var slot = EM.$('#followSlot');
+      if (!slot) return;
+      EM.getUser().then(function (u) {
+        if (!u || u.id === c.user_id) return;
+        return sb.from('creator_follows').select('creator_id')
+          .eq('creator_id', c.id).eq('follower_user_id', u.id).maybeSingle()
+          .then(function (r) {
+            if (r.error) throw r.error;
+            paint(u, !!r.data);
+          });
+      }).catch(function () { /* フォローは補助機能なので失敗しても黙って出さない */ });
+
+      function paint(u, following) {
+        EM.clear(slot);
+        var btn = el('button', {
+          class: 'btn' + (following ? '' : ' btn--ghost'), type: 'button',
+          text: following ? 'フォロー中' : 'フォローする',
+          onclick: function () {
+            btn.setAttribute('aria-busy', 'true');
+            var q = following
+              ? sb.from('creator_follows').delete()
+                  .eq('creator_id', c.id).eq('follower_user_id', u.id)
+              : sb.from('creator_follows').insert({ creator_id: c.id, follower_user_id: u.id });
+            q.then(function (r) {
+              if (r.error) throw r.error;
+              paint(u, !following);
+              EM.toast(following ? 'フォローを解除しました' : 'フォローしました');
+            }).catch(function (err) { EM.notice(msg, EM.errorText(err), 'error'); })
+              .then(function () { btn.removeAttribute('aria-busy'); });
+          }
+        });
+        slot.appendChild(btn);
+      }
     }
 
     function renderPortfolio(items) {

@@ -11,6 +11,9 @@
   m = path.match(/^\/p\/([0-9a-f]{32})\/?$/i);
   if (m) { location.replace('/p/?t=' + encodeURIComponent(m[1].toLowerCase())); return; }
 
+  m = path.match(/^\/s\/([a-z0-9][a-z0-9_-]{2,31})\/?$/i);
+  if (m) { location.replace('/s/?u=' + encodeURIComponent(m[1].toLowerCase())); return; }
+
   m = path.match(/^\/creators\/([0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})\/?$/i);
   if (m) { location.replace('/creators/detail.html?id=' + encodeURIComponent(m[1])); return; }
 

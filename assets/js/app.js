@@ -218,6 +218,48 @@
                         text: EM.STATUS_LABEL[status] || status });
   };
 
+  /* ---------- 外部リンク（SNS など） ---------- */
+  EM.LINK_PLATFORMS = [
+    ['x', 'X（旧Twitter）'],
+    ['instagram', 'Instagram'],
+    ['tiktok', 'TikTok'],
+    ['youtube', 'YouTube'],
+    ['facebook', 'Facebook'],
+    ['threads', 'Threads'],
+    ['note', 'note'],
+    ['website', 'ウェブサイト'],
+    ['other', 'その他']
+  ];
+  EM.platformLabel = function (v) {
+    for (var i = 0; i < EM.LINK_PLATFORMS.length; i++) {
+      if (EM.LINK_PLATFORMS[i][0] === v) return EM.LINK_PLATFORMS[i][1];
+    }
+    return 'リンク';
+  };
+  // URL からサービスを推測する（入力の手間を減らすためだけの機能。
+  // 判定に失敗しても website / other として扱えば安全側に倒れる）
+  EM.guessPlatform = function (url) {
+    var u;
+    try { u = new URL(String(url || '')); } catch (e) { return 'website'; }
+    if (u.protocol !== 'https:') return 'website';
+    var h = u.hostname.replace(/^www\./, '').toLowerCase();
+    if (h === 'x.com' || h === 'twitter.com' || h === 'mobile.twitter.com') return 'x';
+    if (h === 'instagram.com') return 'instagram';
+    if (h.indexOf('tiktok.com') !== -1) return 'tiktok';
+    if (h === 'youtube.com' || h === 'youtu.be' || h === 'm.youtube.com') return 'youtube';
+    if (h === 'facebook.com' || h === 'fb.com') return 'facebook';
+    if (h === 'threads.net' || h === 'threads.com') return 'threads';
+    if (h === 'note.com') return 'note';
+    return 'website';
+  };
+
+  /* ---------- 依頼の受け取り方 ---------- */
+  EM.CONTACT_PREFS = [
+    ['form', 'Eizo Maps の依頼フォームで受け取る'],
+    ['dm',   'SNS の DM で受け取る'],
+    ['both', 'どちらでも受け取る']
+  ];
+
   /* ---------- ヘッダー / フッター ---------- */
   var NAV_PUBLIC = [
     ['/', 'ホーム'],
@@ -226,6 +268,7 @@
   var NAV_USER = [
     ['/mypage/', 'マイページ'],
     ['/mypage/portfolio.html', 'ポートフォリオ管理'],
+    ['/mypage/stock.html', 'ストックページ'],
     ['/projects/', '案件管理'],
     ['/report/', '問題報告']
   ];

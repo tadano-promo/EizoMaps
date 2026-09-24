@@ -26,7 +26,7 @@
       if (!u) return;
       user = u;
       return Promise.all([
-        sb.from('creators').select('id,display_name,headline,area_pref,avatar_url,is_published').eq('id', creatorId).maybeSingle(),
+        sb.from('creators').select('id,display_name,headline,area_pref,avatar_url,is_published,contact_pref,contact_dm_url').eq('id', creatorId).maybeSingle(),
         sb.from('clients').select('*').eq('user_id', u.id).maybeSingle()
       ]);
     }).then(function (res) {
@@ -49,6 +49,18 @@
           el('p', { class: 'small muted', text: [creator.headline, creator.area_pref].filter(Boolean).join(' / ') })
         ])
       ]));
+
+      // DM のみで受け付けているクリエイターには、フォームではなく DM へ案内する
+      if (creator.contact_pref === 'dm') {
+        var dm = EM.safeUrl(creator.contact_dm_url);
+        EM.notice(msg, creator.display_name + ' さんは SNS の DM での連絡を希望しています。', 'error');
+        if (dm) {
+          card.appendChild(el('div', { class: 'form-actions' },
+            el('a', { class: 'btn btn--primary', href: dm, target: '_blank',
+                      rel: 'noopener noreferrer nofollow', text: 'SNS の DM で連絡する' })));
+        }
+        return;
+      }
 
       if (client) {
         EM.$('#clientName').value = client.display_name || '';
