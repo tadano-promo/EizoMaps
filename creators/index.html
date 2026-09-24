@@ -38,6 +38,13 @@
         <div class="chips" id="genreChips"></div>
       </div>
       <div class="filter-row">
+        <span class="label">空いている期間</span>
+        <input type="date" id="freeFrom" aria-label="空き状況の開始日">
+        <span class="small muted">〜</span>
+        <input type="date" id="freeTo" aria-label="空き状況の終了日">
+        <span class="small muted" id="freeNote"></span>
+      </div>
+      <div class="filter-row">
         <span class="label">エリア</span>
         <select id="areaSelect" aria-label="エリアで絞り込み"><option value="">すべて</option></select>
         <span class="label">表示</span>
