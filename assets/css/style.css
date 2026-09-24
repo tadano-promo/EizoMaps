@@ -466,7 +466,7 @@ input[type=range]:focus-visible { outline: 2px solid var(--accent); outline-offs
   display: flex; align-items: center; justify-content: space-between;
   gap: 12px; flex-wrap: wrap;
 }
-.row-item__main { display: flex; align-items: center; gap: 8px; flex: 1 1 240px; min-width: 0; }
+.row-item__main { display: flex; align-items: center; gap: 8px; flex: 1 1 240px; min-width: 0; flex-wrap: wrap; }
 .row-item__title {
   min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
   font-size: 14px;
@@ -590,3 +590,99 @@ input[type=range]:focus-visible { outline: 2px solid var(--accent); outline-offs
   .news__layout { grid-template-columns: minmax(0, 1fr); }
   .news__side { order: 2; }
 }
+
+/* =====================================================================
+   縦型カレンダー（業界標準の縦型ガントチャート）
+   日付が縦、列が案件。狭い画面では横スクロールし、日付列は固定する。
+   ===================================================================== */
+.vcal-bar {
+  display: flex; align-items: center; justify-content: space-between;
+  gap: 12px; flex-wrap: wrap; margin: 18px 0 12px;
+}
+.vcal-nav { display: flex; align-items: center; gap: 8px; }
+.vcal-month { font-family: var(--font-disp); font-size: 26px; letter-spacing: .04em; min-width: 108px; text-align: center; }
+
+.vcal-scroll {
+  overflow-x: auto; overflow-y: hidden;
+  border: 1px solid var(--border); border-radius: var(--radius);
+  background: var(--surface);
+}
+.vcal {
+  display: grid;
+  grid-auto-rows: 34px;
+  min-width: max-content;
+  position: relative;
+}
+.vcal__head {
+  position: sticky; top: 0; z-index: 3;
+  display: flex; align-items: center;
+  padding: 0 10px; height: 34px;
+  background: var(--surface2); border-bottom: 1px solid var(--border);
+  border-left: 1px solid var(--border);
+  font-size: 12px; font-weight: 500;
+  white-space: nowrap; overflow: hidden;
+}
+.vcal__head span { overflow: hidden; text-overflow: ellipsis; }
+.vcal__head--date {
+  position: sticky; left: 0; z-index: 4;
+  border-left: 0;
+  font-family: var(--font-mono); font-size: 10px; letter-spacing: .12em;
+  color: var(--muted); text-transform: uppercase;
+}
+
+.vcal__day {
+  position: sticky; left: 0; z-index: 2;
+  display: flex; align-items: center; gap: 6px;
+  padding: 0 10px;
+  background: var(--surface);
+  border-top: 1px solid var(--border);
+  font-size: 12px;
+}
+.vcal__dnum { font-family: var(--font-mono); min-width: 18px; text-align: right; }
+.vcal__dwd { color: var(--muted); font-size: 11px; }
+.vcal__day.is-sat .vcal__dwd { color: #7ad1ff; }
+.vcal__day.is-sun .vcal__dwd { color: #ff8b6b; }
+.vcal__day.is-today { background: var(--surface2); }
+.vcal__day.is-today .vcal__dnum { color: var(--accent); font-weight: 700; }
+
+.vcal__col {
+  position: relative;
+  border-left: 1px solid var(--border);
+  background-image: linear-gradient(to bottom, var(--border) 1px, transparent 1px);
+  background-size: 100% 34px;
+}
+.vcal__bar {
+  position: absolute;
+  border: 0; border-left: 3px solid var(--bar, var(--accent));
+  border-radius: 4px;
+  background: color-mix(in srgb, var(--bar, var(--accent)) 16%, var(--surface2));
+  color: var(--text);
+  padding: 3px 6px; margin-left: 2px;
+  text-align: left; cursor: pointer;
+  display: flex; flex-direction: column; gap: 1px;
+  overflow: hidden; font-size: 11px; line-height: 1.3;
+  transition: filter var(--t);
+}
+.vcal__bar:hover { filter: brightness(1.35); }
+.vcal__bar.is-others { border-left-style: dashed; opacity: .8; }
+.vcal__bar.is-free { background: transparent; border: 1px dashed var(--bar, var(--accent)); border-left-width: 3px; }
+.vcal__bar-kind {
+  font-family: var(--font-mono); font-size: 9px; letter-spacing: .1em;
+  color: var(--bar, var(--accent));
+}
+.vcal__bar-title { font-weight: 500; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.vcal__bar-time { color: var(--muted); font-size: 10px; }
+
+.vcal-legend { margin: 12px 0 24px; }
+.vcal-key { display: inline-flex; align-items: center; gap: 6px; }
+.vcal-key__dot { width: 10px; height: 10px; border-radius: 2px; display: inline-block; }
+
+/* 空き状況 */
+.avail { display: flex; flex-wrap: wrap; gap: 3px; margin-top: 8px; }
+.avail__day {
+  width: 15px; height: 15px; border-radius: 3px;
+  border: 1px solid var(--border); background: var(--surface2);
+}
+.avail__day.is-busy { background: var(--accent2); border-color: var(--accent2); }
+
+.avail-box { margin-top: 18px; }
