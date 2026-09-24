@@ -1,0 +1,169 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; base-uri 'self'; object-src 'none'; form-action 'self'; script-src 'self' https://cdn.jsdelivr.net; style-src 'self' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src 'self' data: https://img.youtube.com https://i.ytimg.com https://i.vimeocdn.com https://*.supabase.co; connect-src 'self' https://*.supabase.co wss://*.supabase.co https://vimeo.com; frame-src 'none'; upgrade-insecure-requests">
+<meta name="referrer" content="strict-origin-when-cross-origin">
+<title>ストックページの編集 — Eizo Maps</title>
+<meta name="description" content="パスワードで保護したポートフォリオページを作る。">
+<meta name="robots" content="noindex, nofollow">
+<meta property="og:site_name" content="Eizo Maps">
+<meta property="og:title" content="ストックページの編集 — Eizo Maps">
+<meta property="og:description" content="パスワードで保護したポートフォリオページを作る。">
+<meta property="og:type" content="website">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bebas+Neue&amp;family=DM+Mono:wght@400;500&amp;family=Noto+Sans+JP:wght@300;400;500;700&amp;display=swap">
+<link rel="stylesheet" href="/assets/css/style.css">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.116.0/dist/umd/supabase.js" integrity="sha384-iLddHTLokph6Omwoyid4XKxHaWa6w41BnoEj0q5oOrzmYPpHIKt1wyjReA7s//pP" crossorigin="anonymous" referrerpolicy="no-referrer" defer></script>
+<script src="/assets/js/config.js" defer></script>
+<script src="/assets/js/app.js" defer></script>
+<script src="/assets/js/video.js" defer></script>
+<script src="/assets/js/page-stock.js" defer></script>
+</head>
+<body>
+<main class="section">
+  <div class="wrap">
+    <div class="doc">
+      <p class="eyebrow">Stock page</p>
+      <h1>ストックページ</h1>
+      <p class="lead">パスワードを知っている人だけが開けるページです。動画・資料・リンクをまとめて、相手に URL とパスワードだけ渡せます。</p>
+      <div class="notice" id="pageMsg" hidden></div>
+
+      <!-- まだページが無いとき -->
+      <section id="createSection" hidden>
+        <hr class="divider">
+        <h2>ページを作る</h2>
+        <form id="createForm" class="stack" novalidate>
+          <label class="field">
+            <span class="label">ページの URL <span class="muted">（半角英小文字・数字・ハイフン。3〜32文字）</span></span>
+            <input type="text" id="newSlug" maxlength="32" required placeholder="例：atreyu-works" autocomplete="off">
+            <span class="hint" id="slugPreview"></span>
+          </label>
+          <label class="field">
+            <span class="label">ページのタイトル <span class="muted">（60文字まで）</span></span>
+            <input type="text" id="newTitle" maxlength="60" required placeholder="例：多喜翠星 / 映像実績まとめ">
+          </label>
+          <div class="form-actions">
+            <button class="btn btn--primary" type="submit" id="createBtn">このページを作る</button>
+          </div>
+        </form>
+      </section>
+
+      <!-- ページがあるとき -->
+      <section id="editSection" hidden>
+
+        <hr class="divider">
+        <h2>公開の設定</h2>
+        <form id="pageForm" class="stack" novalidate>
+          <label class="field">
+            <span class="label">ページの URL</span>
+            <input type="text" id="slug" maxlength="32" required autocomplete="off">
+            <span class="hint" id="publicUrl"></span>
+          </label>
+          <label class="field">
+            <span class="label">ページのタイトル <span class="muted">（60文字まで）</span></span>
+            <input type="text" id="title" maxlength="60" required>
+          </label>
+          <label class="field">
+            <span class="label">冒頭のあいさつ・説明 <span class="muted">（2000文字まで）</span></span>
+            <textarea id="intro" maxlength="2000" rows="4" placeholder="例：ご覧いただきありがとうございます。直近の実績をまとめています。"></textarea>
+          </label>
+          <label class="checkbox">
+            <input type="checkbox" id="isActive">
+            <span>このページを公開する（パスワードを設定していないと公開できません）</span>
+          </label>
+          <div class="form-actions">
+            <button class="btn btn--primary" type="submit" id="savePageBtn">保存する</button>
+            <button class="btn btn--sm" type="button" id="copyUrlBtn">URL をコピー</button>
+            <a class="btn btn--sm" id="openPageLink" href="#" target="_blank" rel="noopener">ページを開く</a>
+          </div>
+          <p class="small muted" id="viewCount"></p>
+        </form>
+
+        <hr class="divider">
+        <h2>パスワード</h2>
+        <p class="small muted" id="pwState"></p>
+        <form id="pwForm" class="stack" novalidate>
+          <label class="field">
+            <span class="label">新しいパスワード <span class="muted">（6文字以上）</span></span>
+            <input type="password" id="newPassword" minlength="6" maxlength="72" required autocomplete="new-password">
+            <span class="hint">このページを見せたい相手に、URL と一緒に伝えてください。いつでも変更できます。</span>
+          </label>
+          <div class="form-actions">
+            <button class="btn btn--primary" type="submit" id="savePwBtn">パスワードを設定する</button>
+            <button class="btn btn--sm" type="button" id="showPwBtn">入力内容を表示</button>
+          </div>
+        </form>
+
+        <hr class="divider">
+        <h2>依頼の受け取り方</h2>
+        <form id="contactForm" class="stack" novalidate>
+          <label class="field">
+            <span class="label">依頼の連絡はどこで受け取りますか</span>
+            <select id="contactPref"></select>
+          </label>
+          <label class="field" id="dmField">
+            <span class="label">DM の宛先 URL <span class="muted">（https から始まるプロフィール URL）</span></span>
+            <input type="url" id="contactDmUrl" maxlength="500" placeholder="https://x.com/あなたのID">
+          </label>
+          <div class="form-actions">
+            <button class="btn btn--primary" type="submit">保存する</button>
+          </div>
+        </form>
+
+        <hr class="divider">
+        <h2>SNS・外部リンク <span class="muted small">（最大12件）</span></h2>
+        <p class="small muted">プロフィールページとストックページの両方に表示されます。</p>
+        <form id="linkForm" class="row" novalidate>
+          <label class="field">
+            <span class="label">URL</span>
+            <input type="url" id="linkUrl" maxlength="500" placeholder="https://x.com/..." required>
+          </label>
+          <label class="field">
+            <span class="label">種類</span>
+            <select id="linkPlatform"></select>
+          </label>
+          <label class="field">
+            <span class="label">表示名 <span class="muted">（任意）</span></span>
+            <input type="text" id="linkLabel" maxlength="40" placeholder="例：日々の制作の様子">
+          </label>
+          <div class="form-actions">
+            <button class="btn" type="submit">リンクを追加</button>
+          </div>
+        </form>
+        <div id="linkList" class="stack"></div>
+
+        <hr class="divider">
+        <h2>ページの中身</h2>
+        <p class="small muted">動画は YouTube・Vimeo・TikTok の URL を貼るだけで並びます。資料は共有リンクを貼ってください。</p>
+
+        <div class="card stack" id="addBox">
+          <div class="chips" id="kindChips"></div>
+
+          <label class="field" id="addUrlField">
+            <span class="label" id="addUrlLabel">URL</span>
+            <input type="url" id="addUrl" maxlength="1000" placeholder="https://www.youtube.com/watch?v=...">
+            <span class="hint" id="addUrlHint"></span>
+          </label>
+          <label class="field" id="addTitleField">
+            <span class="label"><span id="addTitleLabel">タイトル</span> <span class="muted" id="addTitleNote">（120文字まで・省略可）</span></span>
+            <input type="text" id="addTitle" maxlength="120">
+          </label>
+          <label class="field" id="addDescField">
+            <span class="label">説明 <span class="muted">（2000文字まで・省略可）</span></span>
+            <textarea id="addDesc" maxlength="2000" rows="3"></textarea>
+          </label>
+          <div class="form-actions">
+            <button class="btn btn--primary" type="button" id="addItemBtn">追加する</button>
+          </div>
+        </div>
+
+        <div id="itemList" class="stack"></div>
+      </section>
+    </div>
+  </div>
+</main>
+</body>
+</html>
