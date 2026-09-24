@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; base-uri 'self'; object-src 'none'; form-action 'self'; script-src 'self' https://cdn.jsdelivr.net; style-src 'self' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src 'self' data: https://img.youtube.com https://i.ytimg.com https://i.vimeocdn.com https://*.supabase.co; connect-src 'self' https://*.supabase.co wss://*.supabase.co https://vimeo.com; frame-src https://www.youtube.com https://player.vimeo.com https://www.tiktok.com; upgrade-insecure-requests">
+<meta name="referrer" content="strict-origin-when-cross-origin">
+<title>ストックページ — Eizo Maps</title>
+<meta name="description" content="パスワードで保護されたポートフォリオページです。">
+<meta name="robots" content="noindex, nofollow">
+<meta property="og:site_name" content="Eizo Maps">
+<meta property="og:title" content="ストックページ — Eizo Maps">
+<meta property="og:description" content="パスワードで保護されたポートフォリオページです。">
+<meta property="og:type" content="website">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bebas+Neue&amp;family=DM+Mono:wght@400;500&amp;family=Noto+Sans+JP:wght@300;400;500;700&amp;display=swap">
+<link rel="stylesheet" href="/assets/css/style.css">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.116.0/dist/umd/supabase.js" integrity="sha384-iLddHTLokph6Omwoyid4XKxHaWa6w41BnoEj0q5oOrzmYPpHIKt1wyjReA7s//pP" crossorigin="anonymous" referrerpolicy="no-referrer" defer></script>
+<script src="/assets/js/config.js" defer></script>
+<script src="/assets/js/app.js" defer></script>
+<script src="/assets/js/video.js" defer></script>
+<script src="/assets/js/page-stock-view.js" defer></script>
+</head>
+<body>
+<main class="section">
+  <div class="wrap">
+    <div class="notice" id="pageMsg" hidden></div>
+
+    <!-- ロック画面 -->
+    <section id="lockBox" class="lock" hidden>
+      <div class="lock__card card">
+        <div id="lockHead"></div>
+        <form id="lockForm" novalidate>
+          <label class="field">
+            <span class="label">パスワード</span>
+            <input type="password" id="password" required autocomplete="off" maxlength="72"
+                   placeholder="共有されたパスワード">
+          </label>
+          <div class="form-actions">
+            <button class="btn btn--primary btn--block" type="submit" id="openBtn">ページを開く</button>
+          </div>
+        </form>
+        <p class="small muted">パスワードがわからない場合は、URL を共有してくれた方にお問い合わせください。</p>
+      </div>
+    </section>
+
+    <!-- 中身 -->
+    <section id="contentBox" hidden>
+      <div id="stockHead"></div>
+      <div class="stock-grid" id="stockItems"></div>
+      <div id="stockFoot"></div>
+    </section>
+  </div>
+</main>
+</body>
+</html>
