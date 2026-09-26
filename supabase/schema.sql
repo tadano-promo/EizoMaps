@@ -1170,4 +1170,9 @@ grant execute on function public.project_my_role(uuid)        to authenticated;
 --    002_announcements_ads_admin.sql … お知らせ・広告枠・管理者・記事の土台
 --    003_schedule.sql                … スケジュール（縦型カレンダー）と空き状況
 --    004_improvement_proposals.sql   … 改善提案のストック
+--    005_google_calendar.sql         … Google カレンダー連携（任意）
+--
+--  Edge Function（supabase/functions/）も別途デプロイが必要です。
+--    google-calendar … Google カレンダーとのやり取り
+--    設定手順は docs/GOOGLE_CALENDAR.md を参照してください。
 -- =====================================================================
