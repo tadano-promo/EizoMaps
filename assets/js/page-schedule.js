@@ -45,7 +45,7 @@
       }
       projects = (!r[1].error && r[1].data) || [];
       fillProjectSelect();
-      return load();
+      return finishConnect().then(loadGcal).then(load);
     }).catch(function (e) { EM.notice(msg, EM.errorText(e), 'error'); });
 
     /* ---------------- 日付まわり ---------------- */
@@ -332,6 +332,151 @@
         .then(function (r) { if (r.error) throw r.error; closeForm(); return load(); })
         .catch(function (err) { EM.notice(msg, EM.errorText(err), 'error'); });
     }
+
+    /* ---------------- Google カレンダー連携 ----------------
+       Google を直接叩くのはサーバー側（Edge Function）だけ。
+       この画面がやるのは「許可をもらってくる」ことと「同期して」と頼むことだけ。 */
+    var gcal = null;
+
+    function gcalCall(body) {
+      return sb.functions.invoke('google-calendar', { body: body }).then(function (r) {
+        if (r.error) {
+          // 関数からのエラー本文を拾って日本語のまま出す
+          if (r.error.context && typeof r.error.context.json === 'function') {
+            return r.error.context.json().then(function (j) {
+              throw new Error((j && j.error) || r.error.message);
+            }, function () { throw new Error(r.error.message); });
+          }
+          throw new Error(r.error.message);
+        }
+        if (r.data && r.data.error) throw new Error(r.data.error);
+        return r.data;
+      });
+    }
+
+    function loadGcal() {
+      return sb.rpc('my_calendar_link').then(function (r) {
+        if (r.error) throw r.error;
+        gcal = r.data || { connected: false };
+        renderGcal();
+      }).catch(function () {
+        EM.$('#gcalState').textContent = '連携の状態を確認できませんでした。';
+      });
+    }
+
+    function renderGcal() {
+      var st = EM.$('#gcalState');
+      var connected = !!(gcal && gcal.connected);
+      EM.$('#gcalConnectBtn').hidden = connected;
+      EM.$('#gcalSyncBtn').hidden = !connected;
+      EM.$('#gcalSaveBtn').hidden = !connected;
+      EM.$('#gcalDisconnectBtn').hidden = !connected;
+      EM.$('#gcalOptions').hidden = !connected;
+
+      if (!connected) {
+        st.textContent = '連携していません。連携すると、この画面の予定が Google カレンダーにも入ります。';
+        return;
+      }
+      EM.$('#gcalPush').checked = !!gcal.sync_push;
+      EM.$('#gcalPull').checked = !!gcal.sync_pull;
+      var parts = [(gcal.google_email || 'Google アカウント') + ' と連携中'];
+      parts.push(gcal.last_sync_at ? '最終同期: ' + EM.date(gcal.last_sync_at) : 'まだ同期していません');
+      if (gcal.pending) parts.push('未同期の予定: ' + gcal.pending + '件');
+      if (gcal.google_busy_days) parts.push('Google側で埋まっている日: ' + gcal.google_busy_days + '日');
+      st.textContent = parts.join(' ／ ');
+      if (gcal.last_sync_error) {
+        EM.notice(msg, '前回の同期で問題がありました: ' + gcal.last_sync_error, 'error');
+      }
+    }
+
+    EM.$('#gcalConnectBtn').addEventListener('click', function () {
+      EM.notice(msg, '');
+      // access_type=offline と prompt=consent を付けないと、
+      // 裏で同期し続けるための許可（リフレッシュトークン）がもらえない。
+      sb.auth.linkIdentity({
+        provider: 'google',
+        options: {
+          scopes: 'https://www.googleapis.com/auth/calendar.events https://www.googleapis.com/auth/calendar.readonly',
+          redirectTo: (EM.config.SITE_ORIGIN || location.origin) + '/schedule/?gcal=back',
+          queryParams: { access_type: 'offline', prompt: 'consent' }
+        }
+      }).then(function (r) {
+        if (!r || !r.error) return;
+        var m = String(r.error.message || '');
+        // すでに Google でログインしている人は「追加」ではなく「取り直し」になる
+        if (/already|linked|exists/i.test(m)) {
+          return sb.auth.signInWithOAuth({
+            provider: 'google',
+            options: {
+              scopes: 'https://www.googleapis.com/auth/calendar.events https://www.googleapis.com/auth/calendar.readonly',
+              redirectTo: (EM.config.SITE_ORIGIN || location.origin) + '/schedule/?gcal=back',
+              queryParams: { access_type: 'offline', prompt: 'consent' }
+            }
+          });
+        }
+        EM.notice(msg, m + '（Supabase の Authentication 設定で「Manual linking」が有効か確認してください）', 'error');
+      });
+    });
+
+    // Google から戻ってきたら、許可を一度だけサーバーへ預ける
+    function finishConnect() {
+      if (EM.param('gcal') !== 'back') return Promise.resolve();
+      return sb.auth.getSession().then(function (r) {
+        var sess = r.data && r.data.session;
+        var rt = sess && sess.provider_refresh_token;
+        var ident = (sess && sess.user && sess.user.identities || []).filter(function (i) {
+          return i.provider === 'google';
+        })[0];
+        if (!rt) {
+          EM.notice(msg, 'Google からの許可を受け取れませんでした。Google アカウントの「サードパーティ アプリとの連携」で Eizo Maps の許可をいったん削除してから、もう一度お試しください。', 'error');
+          return;
+        }
+        return gcalCall({
+          action: 'connect',
+          refresh_token: rt,
+          google_email: (ident && ident.identity_data && ident.identity_data.email) || (sess.user && sess.user.email),
+          google_sub: ident && ident.id,
+          scope: 'calendar.events'
+        }).then(function () {
+          // ブラウザ側に許可が残らないよう、セッションを取り直す
+          return sb.auth.refreshSession();
+        }).then(function () {
+          EM.toast('連携しました');
+          return gcalCall({ action: 'sync' });
+        }).then(function () {
+          history.replaceState(null, '', '/schedule/');
+        });
+      }).catch(function (e) { EM.notice(msg, EM.errorText(e), 'error'); });
+    }
+
+    EM.$('#gcalSyncBtn').addEventListener('click', function () {
+      var b = this; b.setAttribute('aria-busy', 'true');
+      EM.notice(msg, '');
+      gcalCall({ action: 'sync' }).then(function (d) {
+        EM.toast('書き出し ' + ((d.pushed || 0) + (d.updated || 0)) + '件 ／ 取り込み ' + (d.busy_days || 0) + '日');
+        return loadGcal();
+      }).catch(function (e) { EM.notice(msg, EM.errorText(e), 'error'); })
+        .then(function () { b.removeAttribute('aria-busy'); });
+    });
+
+    EM.$('#gcalSaveBtn').addEventListener('click', function () {
+      sb.rpc('set_calendar_sync', {
+        p_push: EM.$('#gcalPush').checked,
+        p_pull: EM.$('#gcalPull').checked
+      }).then(function (r) {
+        if (r.error) throw r.error;
+        EM.toast('保存しました');
+        return loadGcal();
+      }).catch(function (e) { EM.notice(msg, EM.errorText(e), 'error'); });
+    });
+
+    EM.$('#gcalDisconnectBtn').addEventListener('click', function () {
+      if (!confirm('Google カレンダーとの連携を解除しますか？\nGoogle 側に書き出した予定はそのまま残ります。')) return;
+      gcalCall({ action: 'disconnect' }).then(function () {
+        EM.toast('連携を解除しました');
+        return loadGcal();
+      }).catch(function (e) { EM.notice(msg, EM.errorText(e), 'error'); });
+    });
 
     function saveShare() {
       if (!creator) { EM.notice(msg, 'クリエイタープロフィールを作成すると公開できます。', 'error'); return; }
