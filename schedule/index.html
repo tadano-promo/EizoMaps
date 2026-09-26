@@ -109,6 +109,33 @@
       </div>
 
       <hr class="divider">
+      <h2>Google カレンダー連携 <span class="muted small">（任意）</span></h2>
+      <p class="small muted">
+        連携しなくても Eizo Maps だけで完結します。Google カレンダーを使っている方は、
+        連携すると<strong>ここで入れた予定がそのまま Google 側にも入り</strong>、
+        <strong>Google 側の予定も「埋まっている日」に含められます</strong>。
+      </p>
+      <div class="card stack" id="gcalBox">
+        <p class="small muted" id="gcalState">確認中…</p>
+        <div id="gcalOptions" hidden>
+          <label class="checkbox">
+            <input type="checkbox" id="gcalPush">
+            <span>Eizo Maps の予定を Google カレンダーに書き出す</span>
+          </label>
+          <label class="checkbox">
+            <input type="checkbox" id="gcalPull">
+            <span>Google カレンダーの予定を「埋まっている日」に含める（件名や場所は取り込みません）</span>
+          </label>
+        </div>
+        <div class="form-actions">
+          <button class="btn btn--primary" type="button" id="gcalConnectBtn" hidden>Google カレンダーと連携する</button>
+          <button class="btn btn--primary" type="button" id="gcalSyncBtn" hidden>今すぐ同期する</button>
+          <button class="btn btn--sm" type="button" id="gcalSaveBtn" hidden>この設定を保存</button>
+          <button class="btn btn--sm btn--danger" type="button" id="gcalDisconnectBtn" hidden>連携を解除する</button>
+        </div>
+      </div>
+
+      <hr class="divider">
       <h2>空き状況の公開</h2>
       <p class="small muted">
         公開すると、クリエイター検索で「この期間に空いている人」として見つけてもらえます。
