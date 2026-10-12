@@ -739,3 +739,18 @@ select.select--sm { width: auto; min-width: 0; padding: 6px 30px 6px 10px; font-
 .lib-pick__title { font-weight: 500; line-height: 1.5; }
 .lib-pick__meta { font-size: 12px; color: var(--muted); }
 .stock-shared-note { font-size: 12px; color: var(--muted); }
+
+/* 評価 v2（2026-10-12） */
+.tag--warn { border-color: #ff8b6b; color: #ffb39c; background: rgba(255, 139, 107, .08); white-space: normal; }
+.review-marks { margin: 8px 0 6px; gap: 6px; }
+.review-marks .tag { font-size: 11px; }
+.review-note { line-height: 1.9; margin-bottom: 18px; }
+.review-form { margin-top: 24px; }
+.myreview { border: 1px solid var(--border); border-radius: var(--radius-s); padding: 14px 16px; background: var(--surface2); }
+.myreview + .myreview { margin-top: 12px; }
+.myreview__head { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; justify-content: space-between; }
+.myreview__body { margin: 8px 0; line-height: 1.8; }
+.myreview .form-actions { margin-top: 10px; }
+.admin-review { border: 1px solid var(--border); border-radius: var(--radius-s); padding: 14px 16px; }
+.admin-review + .admin-review { margin-top: 12px; }
+.admin-review__private { white-space: pre-line; font-size: 12px; color: #c9c9d6; background: var(--surface2); padding: 8px 10px; border-left: 3px solid var(--accent); margin: 8px 0; line-height: 1.7; }

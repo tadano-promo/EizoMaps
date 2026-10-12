@@ -35,6 +35,7 @@
       renderProfile(c, gmap, (res[3].data && res[3].data.completed_count) || 0, res[4].data || []);
       renderPortfolio(res[2].data || []);
       loadReviews(c.user_id);
+      mountReviewForm(c);
       mountFollow(c);
       mountAvailability(c);
     }).catch(function (e) { EM.notice(msg, EM.errorText(e), 'error'); });
@@ -200,9 +201,106 @@
       });
     }
 
+    // 評価に付ける印（取引の種類・異議申し立て）
+    function reviewMarks(v) {
+      var marks = el('div', { class: 'tags review-marks' });
+      marks.appendChild(el('span', { class: 'tag',
+        text: v.source === 'external' ? 'Eizo Maps外の取引（自己申告）' : 'Eizo Maps での取引' }));
+      if (v.objected) {
+        marks.appendChild(el('span', { class: 'tag tag--warn', text: '本人から異議申し立てあり（運営が確認中）' }));
+      } else if (v.objection_kept) {
+        marks.appendChild(el('span', { class: 'tag tag--warn', text: '本人から異議申し立てあり・運営の確認により掲載継続' }));
+      }
+      return marks;
+    }
+
+    /* 評価を書く（Eizo Maps の外で依頼し、完了した人向け）
+       書けるのはログインしている人だけ。自分自身には書けない。
+       公開は運営の確認後。名前は出さない。 */
+    function mountReviewForm(c) {
+      var box = EM.$('#reviewWrite');
+      if (!box) return;
+      EM.getUser().then(function (u) {
+        EM.clear(box);
+        if (!u) {
+          box.appendChild(el('p', { class: 'small muted' }, [
+            'このクリエイターに依頼したことがある方は、',
+            el('a', { href: '/auth/?next=' + encodeURIComponent(location.pathname + location.search), text: 'ログイン' }),
+            'すると評価を書けます。'
+          ]));
+          return;
+        }
+        if (u.id === c.user_id) return;
+        return sb.from('reviews').select('id,status')
+          .eq('reviewer_id', u.id).eq('reviewee_id', c.user_id).eq('source', 'external').maybeSingle()
+          .then(function (r) {
+            if (r.data) {
+              var label = { pending: '運営が確認中です', published: '公開されています', rejected: '運営の判断で掲載していません',
+                            withdrawn: '取り下げ済みです', removed: '運営が削除しました' }[r.data.status] || '';
+              box.appendChild(el('p', { class: 'small muted', text: 'このクリエイターへのあなたの評価は' + label + '。（マイページの「評価」から確認できます）' }));
+              return;
+            }
+            box.appendChild(buildForm(u, c));
+          });
+      }).catch(function () {});
+    }
+
+    function buildForm(u, c) {
+      var wrap = el('div', { class: 'card review-form' });
+      var open = el('button', { class: 'btn', type: 'button', text: 'このクリエイターの評価を書く' });
+      var form = el('form', { class: 'stack', hidden: true, novalidate: true });
+
+      var scoreSel = el('select', { 'aria-label': '評価' });
+      [5, 4.5, 4, 3.5, 3, 2.5, 2, 1.5, 1].forEach(function (n) {
+        scoreSel.appendChild(el('option', { value: String(n), text: EM.stars(n) + '  ' + n.toFixed(1) }));
+      });
+      var comment = el('textarea', { maxlength: '2000', rows: '5', placeholder: '依頼した内容、進め方、仕上がりなど（20文字以上）' });
+      var note = el('input', { type: 'text', maxlength: '300', placeholder: '例：2026年8月 飲食店のSNS動画3本' });
+      var agree = el('input', { type: 'checkbox' });
+      var send = el('button', { class: 'btn btn--primary', type: 'submit', text: '運営に送る' });
+
+      form.appendChild(el('p', { class: 'small muted', text: 'Eizo Maps の外で依頼し、取引が完了した方向けです。送った評価は運営が確認してから公開されます。' }));
+      form.appendChild(el('label', { class: 'field' }, [el('span', { class: 'label', text: '評価' }), scoreSel]));
+      form.appendChild(el('label', { class: 'field' }, [el('span', { class: 'label', text: 'コメント（公開されます・20〜2000文字）' }), comment]));
+      form.appendChild(el('label', { class: 'field' }, [
+        el('span', { class: 'label', text: '取引の概要（公開されません・運営の確認用）' }), note,
+        el('span', { class: 'hint', text: 'いつ頃、どんな依頼をしたか。案件名を出せない場合はぼかして大丈夫です。' })
+      ]));
+      form.appendChild(el('label', { class: 'checkbox' }, [agree,
+        el('span', { text: 'このクリエイターに実際に依頼し、取引が完了しています。事実と違う内容は削除の対象になることを了承します。' })]));
+      form.appendChild(el('div', { class: 'form-actions' }, send));
+
+      open.addEventListener('click', function () { open.hidden = true; form.hidden = false; });
+      form.addEventListener('submit', function (e) {
+        e.preventDefault();
+        var cm = comment.value.trim(), nt = note.value.trim();
+        if (cm.length < 20) { EM.notice(msg, 'コメントは20文字以上で書いてください。', 'error'); return; }
+        if (nt.length < 5) { EM.notice(msg, '取引の概要を5文字以上で書いてください（公開はされません）。', 'error'); return; }
+        if (!agree.checked) { EM.notice(msg, '内容の確認にチェックを入れてください。', 'error'); return; }
+        send.setAttribute('aria-busy', 'true');
+        sb.from('reviews').insert({
+          reviewer_id: u.id, reviewee_id: c.user_id, reviewer_role: 'client',
+          score: Number(scoreSel.value), comment: cm, source: 'external', external_note: nt
+        }).then(function (r) {
+          if (r.error) throw r.error;
+          EM.notice(msg, '');
+          EM.clear(wrap);
+          wrap.appendChild(el('p', { text: '評価を送りました。運営が確認してから公開されます。ありがとうございました。' }));
+        }).catch(function (err) {
+          send.removeAttribute('aria-busy');
+          EM.notice(msg, EM.errorText(err), 'error');
+          msg.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        });
+      });
+
+      wrap.appendChild(open);
+      wrap.appendChild(form);
+      return wrap;
+    }
+
     function loadReviews(userId) {
       sb.from('public_reviews')
-        .select('id,score,comment,reviewer_role,published_at')
+        .select('id,score,comment,reviewer_role,published_at,source,objected,objection_kept')
         .eq('reviewee_id', userId)
         .order('published_at', { ascending: false })
         .limit(50)
@@ -233,6 +331,7 @@
                 ]),
                 el('span', { class: 'small muted', text: (v.reviewer_role === 'client' ? 'クライアント' : 'クリエイター') + ' / ' + EM.date(v.published_at) })
               ]),
+              reviewMarks(v),
               el('p', { class: 'small', text: v.comment })
             ]));
           });

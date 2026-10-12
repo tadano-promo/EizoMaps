@@ -20,6 +20,7 @@
 <script src="/assets/js/config.js" defer></script>
 <script src="/assets/js/app.js" defer></script>
 <script src="/assets/js/page-admin.js" defer></script>
+<script src="/assets/js/page-admin-reviews.js" defer></script>
 </head>
 <body>
 <main class="section">
@@ -33,6 +34,12 @@
 
         <!-- 概況 -->
         <div class="stat-grid" id="overview"></div>
+
+        <hr class="divider">
+        <h2>評価の確認</h2>
+        <p class="small muted">届いた評価は、ここで「公開する」まで表に出ません。異議申し立ての判断もここで行います。</p>
+        <div class="notice" id="adminReviewMsg" hidden></div>
+        <div id="adminReviews"></div>
 
         <hr class="divider">
         <h2>お知らせ</h2>
