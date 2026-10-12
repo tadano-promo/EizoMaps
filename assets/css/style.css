@@ -714,3 +714,14 @@ input[type=range]:focus-visible { outline: 2px solid var(--accent); outline-offs
 }
 
 #profile .form-actions { gap: 12px; margin-top: 28px; }
+
+/* ストックページのロック画面の注意書き（2026-10-12） */
+.lock__notice {
+  margin: 0 0 22px;
+  padding: 10px 14px;
+  border-left: 3px solid var(--accent);
+  background: var(--surface2);
+  color: #c9c9d6;
+  line-height: 1.8;
+  letter-spacing: .03em;
+}

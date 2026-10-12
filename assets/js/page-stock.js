@@ -13,6 +13,9 @@
     var links = [];
     var addKind = 'video';
 
+    // 冒頭あいさつのひな形（クリエイターが自由に書き換え・削除できる）
+    var INTRO_TEMPLATE = 'ご覧いただき誠にありがとうございます。本ページはパスワード付きのポートフォリオページです。掲載作品には守秘義務があるため、外部への共有・転載はご遠慮ください。\nまた、パスワードは定期的に変更する場合がございます。あらかじめご了承ください。';
+
     var PAGE_COLS = 'id,creator_id,slug,title,intro,password_updated_at,is_active,view_count,created_at,updated_at';
     var ITEM_COLS = 'id,kind,title,description,provider,video_id,url,thumbnail_url,width,sort_order,created_at';
 
@@ -106,7 +109,7 @@
       if (!title) { EM.notice(msg, 'タイトルを入力してください。', 'error'); return; }
       var btn = EM.$('#createBtn'); btn.setAttribute('aria-busy', 'true');
       sb.from('stock_pages').insert({
-        creator_id: creator.id, slug: slug, title: title, is_active: false
+        creator_id: creator.id, slug: slug, title: title, intro: INTRO_TEMPLATE, is_active: false
       }).select(PAGE_COLS).single().then(function (r) {
         if (r.error) throw r.error;
         EM.notice(msg, 'ページを作りました。次にパスワードを設定してください。', 'ok');
@@ -119,11 +122,19 @@
       }).then(function () { btn.removeAttribute('aria-busy'); });
     });
 
+    EM.$('#introTemplateBtn').addEventListener('click', function () {
+      var box = EM.$('#intro');
+      box.value = box.value.trim() ? box.value.trim() + '\n\n' + INTRO_TEMPLATE : INTRO_TEMPLATE;
+      EM.$('#introTemplateBtn').hidden = true;
+      EM.toast('ひな形を入れました。「保存する」で反映されます');
+    });
+
     /* ---------------- 公開の設定 ---------------- */
     function fillPageForm() {
       EM.$('#slug').value = page.slug;
       EM.$('#title').value = page.title;
       EM.$('#intro').value = page.intro || '';
+      EM.$('#introTemplateBtn').hidden = !!(page.intro && page.intro.trim());
       EM.$('#isActive').checked = !!page.is_active;
       EM.$('#publicUrl').textContent = '公開URL: ' + publicUrlFor(page.slug);
       EM.$('#openPageLink').href = publicUrlFor(page.slug);
