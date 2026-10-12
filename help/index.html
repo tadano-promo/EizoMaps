@@ -1,0 +1,217 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; base-uri 'self'; object-src 'none'; form-action 'self'; script-src 'self' https://cdn.jsdelivr.net; style-src 'self' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src 'self' data: https://img.youtube.com https://i.ytimg.com https://i.vimeocdn.com https://*.supabase.co; connect-src 'self' https://*.supabase.co wss://*.supabase.co https://vimeo.com; frame-src https://www.youtube.com https://player.vimeo.com; upgrade-insecure-requests">
+<meta name="referrer" content="strict-origin-when-cross-origin">
+<title>使い方・ヘルプ — Eizo Maps</title>
+<meta name="description" content="Eizo Maps の使い方。登録、プロフィール、作品の載せ方、パスワード付きページ、依頼、評価、困ったときの窓口まで。">
+<link rel="canonical" href="https://eizo-maps.com/help/">
+<meta property="og:site_name" content="Eizo Maps">
+<meta property="og:title" content="使い方・ヘルプ — Eizo Maps">
+<meta property="og:description" content="Eizo Maps の使い方。登録、プロフィール、作品の載せ方、パスワード付きページ、依頼、評価、困ったときの窓口まで。">
+<meta property="og:type" content="website">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bebas+Neue&amp;family=DM+Mono:wght@400;500&amp;family=Noto+Sans+JP:wght@300;400;500;700&amp;display=swap">
+<link rel="stylesheet" href="/assets/css/style.css">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.116.0/dist/umd/supabase.js" integrity="sha384-iLddHTLokph6Omwoyid4XKxHaWa6w41BnoEj0q5oOrzmYPpHIKt1wyjReA7s//pP" crossorigin="anonymous" referrerpolicy="no-referrer" defer></script>
+<script src="/assets/js/config.js" defer></script>
+<script src="/assets/js/app.js" defer></script>
+</head>
+<script src="/assets/js/page-help.js" defer></script>
+</head>
+<body>
+<main class="section">
+  <div class="wrap doc help">
+    <p class="eyebrow">Help</p>
+    <h1>使い方・ヘルプ</h1>
+    <p class="small muted">知りたいことを入れると、関係する説明だけが表示されます。</p>
+
+    <label class="field help-search">
+      <span class="label">ヘルプを探す</span>
+      <input type="search" id="helpQuery" placeholder="例：パスワード、TikTok、評価、未払い" autocomplete="off">
+    </label>
+    <p class="small muted" id="helpCount" aria-live="polite"></p>
+    <div class="empty" id="helpEmpty" hidden>見つかりませんでした。別の言葉で探すか、<a href="/contact/">お問い合わせ</a>からご連絡ください。</div>
+
+    <nav class="help-toc tags" aria-label="ヘルプの目次">
+      <a class="tag" href="#start">はじめる</a>
+      <a class="tag" href="#profile">プロフィール</a>
+      <a class="tag" href="#works">作品（ポートフォリオ）</a>
+      <a class="tag" href="#stock">ストックページ</a>
+      <a class="tag" href="#request">依頼・案件</a>
+      <a class="tag" href="#review">評価</a>
+      <a class="tag" href="#trouble">困ったとき</a>
+    </nav>
+
+    <section class="help-group" id="start">
+      <h2>はじめる</h2>
+      <details class="faq">
+        <summary>Eizo Maps って何？</summary>
+        <p>映像をつくる人（クリエイター）と、依頼する人をつなぐサイトです。作品を一か所にまとめ、取引の記録と評価を残せます。</p>
+        <p>パワハラ・セクハラ・未払い・ぼったくり・買い叩きといった、映像業界の理不尽をなくすためにつくっています。</p>
+      </details>
+      <details class="faq">
+        <summary>登録のしかた</summary>
+        <ol>
+          <li>右上のメニューから「ログイン」を開き、「新規登録」を選びます。</li>
+          <li>メールアドレスとパスワードを入れ、使い方（クリエイター／依頼する側／両方）を選びます。</li>
+          <li>届いた確認メールのリンクを押すと、登録が完了します。</li>
+        </ol>
+        <p>確認メールが見当たらないときは、迷惑メールのフォルダも見てください。送り主は info@eizo-maps.com です。</p>
+      </details>
+      <details class="faq">
+        <summary>パスワードを忘れた</summary>
+        <p>ログイン画面の「再設定メールを送る」を押すと、パスワードを決め直すためのメールが届きます。</p>
+      </details>
+      <details class="faq">
+        <summary>クリエイター／依頼する側の切り替え</summary>
+        <p>マイページのいちばん下「アカウント」で、利用種別をいつでも変えられます。両方の使い方をしたい人は「両方」を選んでください。</p>
+      </details>
+      <details class="faq">
+        <summary>お金はかかる？</summary>
+        <p>今ある機能は、登録も利用もすべて無料です。</p>
+        <p>将来、仕事がもっと楽になる機能を有料で用意する予定です。ただし、<strong>お金を払った人を検索の上に出したり、評価を良く見せたりすることは絶対にしません。</strong></p>
+      </details>
+    </section>
+
+    <section class="help-group" id="profile">
+      <h2>プロフィール</h2>
+      <details class="faq">
+        <summary>プロフィールを作る</summary>
+        <p>マイページで、表示名・肩書き・自己紹介・職種・活動エリア・キャリア年数などを入れて「保存する」を押します。顔写真やロゴは JPEG / PNG / WebP、2MB まで載せられます。</p>
+      </details>
+      <details class="faq">
+        <summary>プロフィールを公開する・隠す</summary>
+        <p>マイページの「プロフィールを公開する」にチェックを入れると、「クリエイターを探す」に表示されます。チェックを外せば、いつでも非公開に戻せます。</p>
+      </details>
+    </section>
+
+    <section class="help-group" id="works">
+      <h2>作品（ポートフォリオ）</h2>
+      <details class="faq" data-keywords="tiktok ティックトック youtube vimeo 動画 url 縦型 ショート">
+        <summary>作品を載せる（YouTube・Vimeo・TikTok）</summary>
+        <p>「ポートフォリオ管理」で、動画の URL を貼るだけで載せられます。サムネイルは自動で取得します。</p>
+        <ul>
+          <li>使えるのは <strong>YouTube・Vimeo・TikTok</strong> の URL です。縦型のショート動画も TikTok の URL で並べられます。</li>
+          <li>動画ファイルそのもののアップロードはできません（動画は各サービスに置いたまま表示します）。</li>
+        </ul>
+      </details>
+      <details class="faq">
+        <summary>公開範囲の3つの違い</summary>
+        <dl>
+          <dt>公開</dt><dd>プロフィールに表示され、誰でも見られます。</dd>
+          <dt>限定リンクのみ</dt><dd>プロフィールには出ません。共有リンクを送った相手だけが見られます。</dd>
+          <dt>パスワードページだけ</dt><dd>守秘義務のある作品向け。ストックページ（パスワード付き）にだけ並び、プロフィールにも限定リンクにも出ません。</dd>
+        </dl>
+      </details>
+      <details class="faq">
+        <summary>営業先ごとに見せる作品を選ぶ（共有リンク）</summary>
+        <p>「ポートフォリオ管理」の「営業用の共有リンク」で、見せたい作品だけを選んだページを発行できます。リンクを知っている人だけが見られます。営業先ごとに別のリンクを作れます。</p>
+      </details>
+      <details class="faq">
+        <summary>作品を消すとどうなる？</summary>
+        <p>作品を消すと、その作品を並べている共有リンクやストックページからも消えます。消す前に、どこで使っているかが表示されるので確認してください。</p>
+      </details>
+    </section>
+
+    <section class="help-group" id="stock">
+      <h2>ストックページ（パスワード付きのページ）</h2>
+      <details class="faq">
+        <summary>ストックページって何？</summary>
+        <p>パスワードを知っている人だけが開ける、あなた専用の作品ページです（1人1ページ）。守秘義務のある作品や、まだ表に出せない作品を、見せたい相手にだけ見せられます。</p>
+        <p>開いた人には「掲載作品には守秘義務があります。外部への共有・転載はご遠慮ください」と表示されます。</p>
+      </details>
+      <details class="faq">
+        <summary>ストックページの作り方</summary>
+        <ol>
+          <li>メニューの「ストックページ」を開き、ページの URL（半角英小文字・数字・ハイフン、3〜32文字）とタイトルを決めて作ります。</li>
+          <li>「パスワード」でパスワードを決めます。</li>
+          <li>「ページの中身」で作品を並べます。</li>
+          <li>URL とパスワードを、見せたい相手に伝えます。</li>
+        </ol>
+        <p>冒頭のあいさつは、ひな形が最初から入っています。自由に書き換えてください。消してしまっても「あいさつのひな形を入れる」で戻せます。</p>
+      </details>
+      <details class="faq" data-keywords="tiktok youtube vimeo 作品棚">
+        <summary>ストックページに作品を並べる</summary>
+        <ul>
+          <li><strong>作品棚から選ぶ</strong>：ポートフォリオ管理に登録した作品から選びます。押すとすぐ並びます。</li>
+          <li><strong>新しい URL を貼る</strong>：YouTube・Vimeo・TikTok の URL を貼ると並びます。貼った作品は作品棚にも「パスワードページだけ」として入るので、二度手間になりません。</li>
+          <li>資料（企画書など）は、共有リンクを貼って並べられます。</li>
+        </ul>
+      </details>
+      <details class="faq">
+        <summary>パスワードを変えたい</summary>
+        <p>ストックページの「パスワード」から、いつでも変えられます。変えると、前のパスワードでは開けなくなります。</p>
+      </details>
+    </section>
+
+    <section class="help-group" id="request">
+      <h2>依頼・案件</h2>
+      <details class="faq">
+        <summary>クリエイターに依頼する</summary>
+        <ol>
+          <li>「クリエイターを探す」で、職種やエリアから探します。</li>
+          <li>作品と評価を見て、プロフィールの「依頼する」を押します。</li>
+          <li>案件の内容を書いて送ると、案件として記録され、クリエイターに届きます。</li>
+        </ol>
+        <p>金額や条件は、そのあと案件の中のメッセージで決めてください。クリエイターによっては、SNS の DM で連絡を受け付けている場合もあります。</p>
+      </details>
+      <details class="faq">
+        <summary>案件の進み方</summary>
+        <p>案件は「依頼中 → 進行中 → 納品済み → 入金済み → 完了」の順に進みます。誰がいつ進めたかが記録に残るので、「言った・言わない」を防げます。</p>
+        <p>見られるのは、その案件の当事者だけです。</p>
+      </details>
+      <details class="faq">
+        <summary>予定と空き状況</summary>
+        <p>「スケジュール」で予定を入れておくと、プロフィールに今後60日の空き状況（埋まっている日）を表示できます。予定の中身は表に出ません。</p>
+      </details>
+    </section>
+
+    <section class="help-group" id="review">
+      <h2>評価</h2>
+      <details class="faq">
+        <summary>評価は誰が見られる？</summary>
+        <p>評価は、ログインしていない人も含めて誰でも見られます。書いた人の名前は表示されません。</p>
+      </details>
+      <details class="faq">
+        <summary>評価を書く</summary>
+        <p>書けるのは、実際に取引した人だけです。</p>
+        <ul>
+          <li><strong>Eizo Maps で依頼した場合</strong>：案件が「納品済み」になったら、案件管理の「相手を評価する」から書けます。</li>
+          <li><strong>Eizo Maps の外で依頼した場合</strong>：取引が完了していれば、クリエイターのプロフィールの「このクリエイターの評価を書く」から書けます。取引の概要（公開されません）を添えて送り、運営が確認してから公開されます。</li>
+        </ul>
+      </details>
+      <details class="faq" data-keywords="異議 削除 消したい 間違い">
+        <summary>自分への評価に納得できない（異議申し立て）</summary>
+        <p>書かれた評価を、書かれた本人が消したり直したりはできません。事実と違う・不適切だと思うときは、マイページの「あなたへの評価」から異議申し立てができます。</p>
+        <ul>
+          <li>異議申し立て中も評価は表示されたまま、「本人から異議申し立てあり」の印が付きます。</li>
+          <li>運営が「あまりにも不適切」と判断した場合は削除します。</li>
+          <li>削除しなかった場合は「運営の確認により掲載継続」の印が付いて公開され続けます。</li>
+        </ul>
+      </details>
+      <details class="faq">
+        <summary>自分が書いた評価を取り下げる</summary>
+        <p>マイページの「あなたが書いた評価」から取り下げられます。取り下げられるのは、運営が確認中の評価か、相手から異議申し立てがあった評価だけです。</p>
+      </details>
+    </section>
+
+    <section class="help-group" id="trouble">
+      <h2>困ったとき</h2>
+      <details class="faq" data-keywords="未払い ハラスメント パワハラ セクハラ 報酬 払われない トラブル 相談">
+        <summary>未払い・ハラスメントなどのトラブル</summary>
+        <p>ログインして、メニューの「問題報告」から運営に知らせてください。関係する案件を選ぶと、その案件の記録が証拠としてひも付きます。やり取りのスクリーンショットなどを置いた場所があれば、URL も添えてください。</p>
+        <p>問題報告のページには、無料で相談できる公的な窓口も載せています。あわせて使ってください。</p>
+      </details>
+      <details class="faq">
+        <summary>その他の質問・ご意見</summary>
+        <p><a href="/contact/">お問い合わせ</a>からご連絡ください。</p>
+      </details>
+    </section>
+  </div>
+</main>
+</body>
+</html>

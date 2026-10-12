@@ -761,3 +761,31 @@ select.select--sm { width: auto; min-width: 0; padding: 6px 30px 6px 10px; font-
 .admin-creator-stats { line-height: 1.8; }
 .admin-creator-bar input[type=search] { padding: 11px 13px; background: var(--surface2); color: var(--text); border: 1px solid var(--border); border-radius: var(--radius-s); font: inherit; font-size: 14px; }
 .admin-creator-bar input[type=search]:focus { border-color: var(--accent); outline: none; }
+
+/* ---------- ヘルプ ---------- */
+input[type=search] {
+  width: 100%; padding: 12px 14px; border: 1px solid var(--border); border-radius: var(--radius-s);
+  background: var(--surface2); color: var(--text); font-family: inherit; font-size: 16px; -webkit-appearance: none; appearance: none;
+}
+input[type=search]:focus { border-color: var(--accent); outline: none; background: #1c1c25; }
+input[type=search]::placeholder { color: #4a4a5c; }
+.help-search { margin: 20px 0 6px; }
+.help-toc { margin: 14px 0 6px; }
+.help-toc .tag { text-decoration: none; }
+.help-toc .tag:hover { border-color: var(--accent); color: var(--accent); }
+.help-group { scroll-margin-top: calc(var(--header-h) + 16px); }
+.faq { border: 1px solid var(--border); border-radius: var(--radius); background: var(--surface); margin: 10px 0; }
+.faq > summary {
+  cursor: pointer; list-style: none; padding: 14px 44px 14px 16px; font-weight: 500; position: relative;
+}
+.faq > summary::-webkit-details-marker { display: none; }
+.faq > summary::after {
+  content: '+'; position: absolute; right: 16px; top: 50%; transform: translateY(-50%);
+  color: var(--accent); font-size: 20px; line-height: 1;
+}
+.faq[open] > summary::after { content: '−'; }
+.faq[open] > summary { border-bottom: 1px solid var(--border); }
+.faq > :not(summary) { margin-left: 16px; margin-right: 16px; }
+.faq > :last-child { margin-bottom: 14px; }
+.faq > p:first-of-type, .faq > ol:first-of-type, .faq > ul:first-of-type, .faq > dl:first-of-type { margin-top: 12px; }
+.home-help { margin-top: 18px; }
