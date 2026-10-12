@@ -45,7 +45,7 @@
         if (gmap[x.genre_id]) tags.appendChild(el('span', { class: 'tag tag--accent', text: gmap[x.genre_id] }));
       });
 
-      var stats = el('div', { class: 'row' });
+      var stats = el('div', { class: 'row profile-stats' });
       function stat(k, v) { return el('div', { class: 'stat' }, [el('span', { class: 'v', text: v }), el('span', { class: 'k', text: k })]); }
       stats.appendChild(stat('Completed', String(completedCount)));
       if (c.years_of_experience != null) stats.appendChild(stat('Career', c.years_of_experience + 'y'));
@@ -54,9 +54,9 @@
       var site = EM.safeUrl(c.website_url);
 
       EM.clear(box);
-      box.appendChild(el('div', { class: 'row' }, [
+      box.appendChild(el('div', { class: 'row profile-head' }, [
         EM.avatar(c.avatar_url, c.display_name, true),
-        el('div', null, [
+        el('div', { class: 'profile-head__text' }, [
           el('h1', { text: c.display_name }),
           el('p', { class: 'lead', text: c.headline || '' }),
           el('p', { class: 'small muted', text: [c.area_pref, c.area_city].filter(Boolean).join(' ') })
@@ -65,7 +65,7 @@
       box.appendChild(el('div', { class: 'row', id: 'ratingRow' }));
       box.appendChild(tags);
       box.appendChild(stats);
-      if (c.bio) box.appendChild(el('p', { class: 'f-note', text: c.bio }));
+      if (c.bio) box.appendChild(el('p', { class: 'profile-bio', text: c.bio }));
       if (site) box.appendChild(el('p', null, el('a', { class: 'btn btn--sm', href: site, rel: 'noopener noreferrer nofollow', target: '_blank', text: 'ウェブサイト' })));
 
       // SNS などの外部リンク
