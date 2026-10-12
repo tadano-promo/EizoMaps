@@ -725,3 +725,17 @@ input[type=range]:focus-visible { outline: 2px solid var(--accent); outline-offs
   line-height: 1.8;
   letter-spacing: .03em;
 }
+
+/* 作品棚（2026-10-12） */
+select.select--sm { width: auto; min-width: 0; padding: 6px 30px 6px 10px; font-size: 13px; background-position: calc(100% - 15px) 50%, calc(100% - 10px) 50%; }
+.lib-picker { display: grid; gap: 8px; max-height: 320px; overflow-y: auto; padding: 2px; }
+.lib-pick {
+  display: flex; align-items: center; gap: 12px;
+  padding: 8px; border: 1px solid var(--border); border-radius: var(--radius-s);
+  background: var(--surface2); text-align: left; cursor: pointer; width: 100%;
+}
+.lib-pick:hover { border-color: var(--accent); }
+.lib-pick .thumb { width: 96px; flex: none; }
+.lib-pick__title { font-weight: 500; line-height: 1.5; }
+.lib-pick__meta { font-size: 12px; color: var(--muted); }
+.stock-shared-note { font-size: 12px; color: var(--muted); }

@@ -12,12 +12,16 @@
     var items = [];
     var links = [];
     var addKind = 'video';
+    var videoSrc = 'library';   // 'library'（作品棚から選ぶ） | 'new'（新しい URL）
+    var library = [];           // 作品棚（portfolios）
 
     // 冒頭あいさつのひな形（クリエイターが自由に書き換え・削除できる）
     var INTRO_TEMPLATE = 'ご覧いただき誠にありがとうございます。本ページはパスワード付きのポートフォリオページです。掲載作品には守秘義務があるため、外部への共有・転載はご遠慮ください。\nまた、パスワードは定期的に変更する場合がございます。あらかじめご了承ください。';
 
     var PAGE_COLS = 'id,creator_id,slug,title,intro,password_updated_at,is_active,view_count,created_at,updated_at';
-    var ITEM_COLS = 'id,kind,title,description,provider,video_id,url,thumbnail_url,width,sort_order,created_at';
+    var ITEM_COLS = 'id,kind,title,description,provider,video_id,url,thumbnail_url,width,sort_order,created_at,portfolio_id,' +
+                    'portfolios(id,title,description,provider,video_id,video_url,thumbnail_url,visibility)';
+    var VIS_LABEL = { 'public': '誰でも見られる', 'link_only': '限定リンクのみ', 'stock_only': 'パスワードページだけ' };
 
     var KINDS = [
       ['video',   '動画'],
@@ -62,7 +66,7 @@
           EM.$('#editSection').hidden = false;
           fillPageForm();
           fillContactForm();
-          return Promise.all([loadItems(), loadLinks()]);
+          return Promise.all([loadItems(), loadLinks(), loadLibrary()]);
         });
     }
 
@@ -71,9 +75,77 @@
         .eq('page_id', page.id).order('sort_order').order('created_at')
         .then(function (r) {
           if (r.error) throw r.error;
-          items = r.data || [];
+          items = (r.data || []).map(function (it) {
+            // 作品棚の作品は、作品棚の内容を表示に使う
+            var p = it.portfolios;
+            if (p) {
+              it.pf = p;
+              it.title = p.title; it.description = p.description;
+              it.provider = p.provider; it.video_id = p.video_id;
+              it.url = p.video_url; it.thumbnail_url = p.thumbnail_url;
+            }
+            return it;
+          });
           renderItems();
+          renderLibrary();
         });
+    }
+
+    function loadLibrary() {
+      return sb.from('portfolios')
+        .select('id,title,provider,video_id,video_url,thumbnail_url,visibility,sort_order,created_at')
+        .eq('creator_id', creator.id).order('sort_order').order('created_at', { ascending: false })
+        .then(function (r) {
+          if (r.error) throw r.error;
+          library = r.data || [];
+          renderLibrary();
+        });
+    }
+
+    function onPage(pid) {
+      return items.some(function (it) { return it.portfolio_id === pid; });
+    }
+
+    function renderLibrary() {
+      var box = EM.$('#libPicker');
+      if (!box) return;
+      EM.clear(box);
+      var free = library.filter(function (p) { return !onPage(p.id); });
+      if (!library.length) {
+        box.appendChild(el('p', { class: 'small muted', text: '作品棚にまだ作品がありません。「新しい URL を貼る」から追加するか、ポートフォリオ管理で登録してください。' }));
+        return;
+      }
+      if (!free.length) {
+        box.appendChild(el('p', { class: 'small muted', text: '作品棚の作品は、すべてこのページに並んでいます。' }));
+        return;
+      }
+      free.forEach(function (p) {
+        box.appendChild(el('button', {
+          class: 'lib-pick', type: 'button',
+          onclick: function () { addFromLibrary(p, this); }
+        }, [
+          el('div', { class: 'thumb' }, p.thumbnail_url ? EM.thumbImg(p.thumbnail_url, '') : null),
+          el('div', null, [
+            el('div', { class: 'lib-pick__title', text: p.title }),
+            el('div', { class: 'lib-pick__meta', text: (EM.PROVIDER_LABEL[p.provider] || p.provider) + ' ・ ' + (VIS_LABEL[p.visibility] || p.visibility) })
+          ])
+        ]));
+      });
+    }
+
+    function addFromLibrary(p, btn) {
+      if (btn) btn.setAttribute('aria-busy', 'true');
+      sb.from('stock_items').insert({
+        page_id: page.id, kind: 'video', portfolio_id: p.id, width: 'full', sort_order: items.length
+      }).then(function (r) {
+        if (r.error) throw r.error;
+        EM.toast('「' + p.title + '」を並べました');
+        EM.notice(msg, '');
+        return loadItems();
+      }).catch(function (err) {
+        if (btn) btn.removeAttribute('aria-busy');
+        EM.notice(msg, EM.errorText(err), 'error');
+      });
     }
 
     function loadLinks() {
@@ -349,7 +421,29 @@
       syncAddForm();
     })();
 
+    EM.$$('#videoSrcChips .chip').forEach(function (c) {
+      c.addEventListener('click', function () {
+        videoSrc = c.getAttribute('data-src');
+        EM.$$('#videoSrcChips .chip').forEach(function (x) {
+          x.setAttribute('aria-pressed', x === c ? 'true' : 'false');
+        });
+        syncAddForm();
+      });
+    });
+
     function syncAddForm() {
+      var isVideo = addKind === 'video';
+      var fromLib = isVideo && videoSrc === 'library';
+      EM.$('#videoSrcBox').hidden = !isVideo;
+      EM.$('#libBox').hidden = !fromLib;
+      EM.$('#newVideoNote').hidden = !(isVideo && !fromLib);
+      EM.$('#addActions').hidden = fromLib;
+      if (fromLib) {
+        EM.$('#addUrlField').hidden = true;
+        EM.$('#addTitleField').hidden = true;
+        EM.$('#addDescField').hidden = true;
+        return;
+      }
       var needUrl = (addKind === 'video' || addKind === 'doc' || addKind === 'link');
       EM.$('#addUrlField').hidden = !needUrl;
       EM.$('#addTitleField').hidden = (addKind === 'note');
@@ -369,8 +463,10 @@
         hint.textContent = '';
       }
       EM.$('#addTitleLabel').textContent = (addKind === 'heading') ? '見出しの文字' : 'タイトル';
-      EM.$('#addTitleNote').textContent = (addKind === 'heading')
-        ? '（120文字まで・必須）' : '（120文字まで・省略可）';
+      EM.$('#addTitleNote').textContent = (addKind === 'heading') ? '（120文字まで・必須）'
+        : isVideo ? '（80文字まで・必須）' : '（120文字まで・省略可）';
+      EM.$('#addTitle').maxLength = isVideo ? 80 : 120;
+      EM.$('#addDesc').maxLength = isVideo ? 1000 : 2000;
     }
 
     EM.$('#addItemBtn').addEventListener('click', function () {
@@ -382,12 +478,33 @@
       if (addKind === 'video') {
         var v = EM.parseVideoUrl(url);
         if (!v) { EM.notice(msg, '動画の URL を認識できませんでした。YouTube・Vimeo・TikTok の URL を貼ってください。', 'error'); return; }
-        row.provider = v.provider; row.video_id = v.video_id; row.url = v.video_url;
-        row.title = title || null; row.description = desc || null;
+        if (!title) { EM.notice(msg, '動画のタイトルを入力してください（作品棚にも同じ名前で登録されます）。', 'error'); return; }
         var btn = this; btn.setAttribute('aria-busy', 'true');
+        var newId = null;
         EM.fetchThumbnail(v).then(function (thumb) {
-          row.thumbnail_url = thumb || null;
-          return insertItem(row);
+          // 1) 作品棚に「パスワードページだけ」で登録
+          return sb.from('portfolios').insert({
+            creator_id: creator.id, title: title.slice(0, 80), description: desc ? desc.slice(0, 1000) : null,
+            provider: v.provider, video_id: v.video_id, video_url: v.video_url,
+            thumbnail_url: thumb || null, visibility: 'stock_only', sort_order: library.length
+          }).select('id').single();
+        }).then(function (r) {
+          if (r.error) throw r.error;
+          newId = r.data.id;
+          // 2) このページに並べる
+          return sb.from('stock_items').insert({
+            page_id: page.id, kind: 'video', portfolio_id: newId, width: 'full', sort_order: items.length
+          });
+        }).then(function (r) {
+          if (r.error) throw r.error;
+          EM.$('#addUrl').value = ''; EM.$('#addTitle').value = ''; EM.$('#addDesc').value = '';
+          EM.notice(msg, '');
+          EM.toast('追加しました（作品棚にも登録しました）');
+          return Promise.all([loadItems(), loadLibrary()]);
+        }).catch(function (err) {
+          // 並べるのに失敗したら、作品棚に入れた分も取り消す
+          if (newId) sb.from('portfolios').delete().eq('id', newId).then(function () {});
+          EM.notice(msg, EM.errorText(err), 'error');
         }).then(function () { btn.removeAttribute('aria-busy'); });
         return;
       }
@@ -451,21 +568,25 @@
         el('button', { class: 'btn btn--sm', type: 'button',
           text: it.width === 'half' ? '幅: 半分' : '幅: 全体',
           onclick: function () { toggleWidth(it); } }),
-        el('button', { class: 'btn btn--sm btn--danger', type: 'button', text: '削除',
+        el('button', { class: 'btn btn--sm btn--danger', type: 'button', text: it.pf ? 'ページから外す' : '削除',
           onclick: function () { removeItem(it); } })
       ]);
 
       var body = el('div', { class: 'stack stock-edit__body' });
+      if (it.pf) {
+        body.appendChild(el('p', { class: 'stock-shared-note',
+          text: '作品棚の作品です（見せ方：' + (VIS_LABEL[it.pf.visibility] || it.pf.visibility) + '）。タイトルと説明は作品棚と共通なので、ここで直すとポートフォリオにも反映されます。' }));
+      }
       if (it.kind !== 'note') {
         body.appendChild(el('label', { class: 'field' }, [
           el('span', { class: 'label', text: it.kind === 'heading' ? '見出しの文字' : 'タイトル' }),
-          el('input', { type: 'text', maxlength: '120', value: it.title || '', dataset: { f: 'title' } })
+          el('input', { type: 'text', maxlength: it.pf ? '80' : '120', value: it.title || '', dataset: { f: 'title' } })
         ]));
       }
       if (it.kind !== 'heading') {
         body.appendChild(el('label', { class: 'field' }, [
           el('span', { class: 'label', text: '説明' }),
-          el('textarea', { maxlength: '2000', rows: '3', dataset: { f: 'description' } }, it.description || '')
+          el('textarea', { maxlength: it.pf ? '1000' : '2000', rows: '3', dataset: { f: 'description' } }, it.description || '')
         ]));
       }
       if (it.url) {
@@ -487,8 +608,12 @@
         if (d) patch.description = d.value.trim() || null;
         if (it.kind === 'heading' && !patch.title) { EM.notice(msg, '見出しの文字は空にできません。', 'error'); return; }
         if (it.kind === 'note' && !patch.description) { EM.notice(msg, '本文は空にできません。', 'error'); return; }
+        if (it.pf && !patch.title) { EM.notice(msg, '作品のタイトルは空にできません。', 'error'); return; }
         saveBtn.setAttribute('aria-busy', 'true');
-        sb.from('stock_items').update(patch).eq('id', it.id).then(function (r) {
+        var q = it.pf
+          ? sb.from('portfolios').update(patch).eq('id', it.pf.id)   // 作品棚と共通
+          : sb.from('stock_items').update(patch).eq('id', it.id);
+        q.then(function (r) {
           if (r.error) throw r.error;
           it.title = patch.title !== undefined ? patch.title : it.title;
           it.description = patch.description !== undefined ? patch.description : it.description;
@@ -519,7 +644,10 @@
     }
 
     function removeItem(it) {
-      if (!confirm('このブロックを削除しますか？')) return;
+      var q = it.pf
+        ? 'このページから外しますか？（作品棚には残ります）'
+        : 'このブロックを削除しますか？';
+      if (!confirm(q)) return;
       sb.from('stock_items').delete().eq('id', it.id).then(function (r) {
         if (r.error) throw r.error;
         return loadItems();

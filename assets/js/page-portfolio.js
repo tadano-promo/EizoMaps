@@ -8,6 +8,18 @@
 
     var creator = null, items = [], links = [], parsed = null, pickedTags = [];
 
+    // 作品の見せ方（作品棚）
+    var VIS = [
+      ['public',     '誰でも見られる（プロフィールに表示）'],
+      ['link_only',  '限定リンクのみ'],
+      ['stock_only', 'パスワードページだけ']
+    ];
+    function visLabel(v) {
+      for (var i = 0; i < VIS.length; i++) if (VIS[i][0] === v) return VIS[i][1];
+      return v;
+    }
+    var LIMIT = 120;
+
     EM.requireUser().then(function (u) {
       if (!u) return;
       return sb.from('creators').select('id,display_name').eq('user_id', u.id).maybeSingle();
@@ -29,7 +41,7 @@
     function reload() {
       return Promise.all([
         sb.from('portfolios')
-          .select('id,title,description,provider,video_id,video_url,thumbnail_url,visibility,sort_order,created_at,portfolio_tags(tag)')
+          .select('id,title,description,provider,video_id,video_url,thumbnail_url,visibility,sort_order,created_at,portfolio_tags(tag),stock_items(id)')
           .eq('creator_id', creator.id).order('sort_order').order('created_at', { ascending: false }),
         sb.from('share_links')
           .select('id,token,title,is_active,view_count,created_at,share_link_items(portfolio_id)')
@@ -74,7 +86,7 @@
       var box = EM.$('#previewBox'), thumb = EM.$('#previewThumb');
       if (!parsed) {
         box.hidden = true;
-        if (urlInput.value.trim()) EM.notice(msg, 'YouTube または Vimeo の URL を入力してください。', 'error');
+        if (urlInput.value.trim()) EM.notice(msg, 'YouTube・Vimeo・TikTok の URL を入力してください。', 'error');
         return;
       }
       EM.notice(msg, '');
@@ -131,7 +143,7 @@
     function renderList() {
       var box = EM.$('#pfList');
       EM.clear(box);
-      EM.$('#pfCount').textContent = '（' + items.length + ' / 30件）';
+      EM.$('#pfCount').textContent = '（' + items.length + ' / ' + LIMIT + '件）';
       if (!items.length) { box.appendChild(el('div', { class: 'empty', text: 'まだ作品がありません。上のフォームから追加してください。' })); return; }
 
       items.forEach(function (p, idx) {
@@ -146,13 +158,14 @@
           thumb,
           el('div', null, [
             el('h3', { class: 'pf-title', text: p.title }),
-            el('p', { class: 'small muted', text: (p.visibility === 'public' ? '公開' : '限定リンクのみ') + ' / ' + EM.date(p.created_at) }),
+            el('p', { class: 'small muted', text: visLabel(p.visibility) + ' / ' + EM.date(p.created_at) }),
+            inStock(p) ? el('p', { class: 'small' }, el('span', { class: 'tag tag--accent', text: 'ストックページで使用中' })) : null,
             p.description ? el('p', { class: 'small', text: p.description }) : null,
             tags,
             el('div', { class: 'pf-actions' }, [
               el('button', { class: 'btn btn--sm', type: 'button', text: '↑', 'aria-label': '上へ移動', disabled: idx === 0, onclick: function () { move(idx, -1); } }),
               el('button', { class: 'btn btn--sm', type: 'button', text: '↓', 'aria-label': '下へ移動', disabled: idx === items.length - 1, onclick: function () { move(idx, 1); } }),
-              el('button', { class: 'btn btn--sm', type: 'button', text: p.visibility === 'public' ? '限定リンクのみにする' : '公開する', onclick: function () { toggleVis(p); } }),
+              visSelect(p),
               el('a', { class: 'btn btn--sm btn--ghost', href: EM.safeUrl(p.video_url) || '#', target: '_blank', rel: 'noopener noreferrer', text: '動画を開く' }),
               el('button', { class: 'btn btn--sm btn--danger', type: 'button', text: '削除', onclick: function () { remove(p); } })
             ])
@@ -171,15 +184,39 @@
       ]).then(reload).catch(function (e) { EM.notice(msg, EM.errorText(e), 'error'); });
     }
 
-    function toggleVis(p) {
-      sb.from('portfolios').update({ visibility: p.visibility === 'public' ? 'link_only' : 'public' })
-        .eq('id', p.id).then(function (r) {
-          if (r.error) EM.notice(msg, EM.errorText(r.error), 'error'); else reload();
+    function inStock(p) { return (p.stock_items || []).length > 0; }
+
+    function inShareLinks(p) {
+      return links.some(function (s) {
+        return (s.share_link_items || []).some(function (x) { return x.portfolio_id === p.id; });
+      });
+    }
+
+    function visSelect(p) {
+      var sel = el('select', { class: 'select--sm', 'aria-label': '見せ方' }, VIS.map(function (v) {
+        return el('option', { value: v[0], text: v[1] });
+      }));
+      sel.value = p.visibility;
+      sel.addEventListener('change', function () {
+        var next = sel.value;
+        if (next === 'stock_only' && inShareLinks(p) &&
+            !confirm('この作品は限定共有リンクに入っています。「パスワードページだけ」にすると、共有リンクには表示されなくなります。よろしいですか？')) {
+          sel.value = p.visibility; return;
+        }
+        sb.from('portfolios').update({ visibility: next }).eq('id', p.id).then(function (r) {
+          if (r.error) { sel.value = p.visibility; EM.notice(msg, EM.errorText(r.error), 'error'); }
+          else { EM.toast('見せ方を変えました'); reload(); }
         });
+      });
+      return sel;
     }
 
     function remove(p) {
-      if (!confirm('「' + p.title + '」を削除します。よろしいですか？')) return;
+      var where = [];
+      if (inStock(p)) where.push('ストックページ');
+      if (inShareLinks(p)) where.push('限定共有リンク');
+      var note = where.length ? '\n\nこの作品は' + where.join('と') + 'でも使われています。作品棚から削除すると、そちらからも消えます。' : '';
+      if (!confirm('「' + p.title + '」を作品棚から削除します。よろしいですか？' + note)) return;
       sb.from('portfolios').delete().eq('id', p.id).then(function (r) {
         if (r.error) EM.notice(msg, EM.errorText(r.error), 'error');
         else { EM.toast('削除しました'); reload(); }
@@ -191,7 +228,9 @@
       var box = EM.$('#sharePicker');
       EM.clear(box);
       if (!items.length) { box.appendChild(el('p', { class: 'small muted', text: '作品を登録すると選べるようになります。' })); return; }
-      items.forEach(function (p) {
+      var shareable = items.filter(function (p) { return p.visibility !== 'stock_only'; });
+      if (!shareable.length) { box.appendChild(el('p', { class: 'small muted', text: '限定リンクで共有できる作品がありません（「パスワードページだけ」の作品は選べません）。' })); return; }
+      shareable.forEach(function (p) {
         box.appendChild(el('label', { class: 'checkbox' }, [
           el('input', { type: 'checkbox', value: p.id, dataset: { pf: '1' } }),
           el('span', { text: p.title + (p.visibility === 'link_only' ? '（限定）' : '') })

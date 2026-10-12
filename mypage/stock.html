@@ -139,10 +139,21 @@
 
         <hr class="divider">
         <h2>ページの中身</h2>
-        <p class="small muted">動画は YouTube・Vimeo・TikTok の URL を貼るだけで並びます。資料は共有リンクを貼ってください。</p>
+        <p class="small muted">動画は作品棚から選ぶか、YouTube・Vimeo・TikTok の URL を貼るだけで並びます。資料は共有リンクを貼ってください。</p>
 
         <div class="card stack" id="addBox">
           <div class="chips" id="kindChips"></div>
+
+          <div id="videoSrcBox" class="stack">
+            <div class="chips" id="videoSrcChips">
+              <button class="chip" type="button" data-src="library" aria-pressed="true">作品棚から選ぶ</button>
+              <button class="chip" type="button" data-src="new" aria-pressed="false">新しい URL を貼る</button>
+            </div>
+            <div id="libBox">
+              <p class="small muted">ポートフォリオ管理（作品棚）に登録した作品から選んでください。押すとすぐページに並びます。</p>
+              <div class="lib-picker" id="libPicker"></div>
+            </div>
+          </div>
 
           <label class="field" id="addUrlField">
             <span class="label" id="addUrlLabel">URL</span>
@@ -157,7 +168,8 @@
             <span class="label">説明 <span class="muted">（2000文字まで・省略可）</span></span>
             <textarea id="addDesc" maxlength="2000" rows="3"></textarea>
           </label>
-          <div class="form-actions">
+          <p class="stock-shared-note" id="newVideoNote" hidden>新しく貼った動画は、作品棚（ポートフォリオ管理）にも「パスワードページだけ」で登録されます。あとからプロフィールに出すこともできます。</p>
+          <div class="form-actions" id="addActions">
             <button class="btn btn--primary" type="button" id="addItemBtn">追加する</button>
           </div>
         </div>

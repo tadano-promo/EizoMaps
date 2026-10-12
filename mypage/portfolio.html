@@ -27,13 +27,14 @@
   <div class="wrap">
     <p class="eyebrow">Portfolio</p>
     <h1>ポートフォリオ管理</h1>
+    <p class="lead">ここが作品棚です。1回登録した作品は、プロフィール・限定共有リンク・ストックページのどれにも使えます。</p>
     <div class="notice" id="pageMsg" hidden></div>
 
     <section class="card">
       <h2>作品を追加</h2>
       <form id="addForm" class="stack" novalidate>
         <label class="field">
-          <span class="label">動画URL <span class="muted">（YouTube / Vimeo）</span></span>
+          <span class="label">動画URL <span class="muted">（YouTube / Vimeo / TikTok）</span></span>
           <input type="url" id="videoUrl" placeholder="https://www.youtube.com/watch?v=..." required>
           <span class="hint">URL を貼ると、サムネイルを自動で取得します。動画ファイルのアップロードには対応していません。</span>
         </label>
@@ -57,7 +58,9 @@
           <select id="visibility">
             <option value="public">公開（プロフィールに表示）</option>
             <option value="link_only">限定リンクのみ（共有した相手だけ）</option>
+            <option value="stock_only">パスワードページだけ（守秘義務のある作品）</option>
           </select>
+          <span class="hint">どの作品も、ストックページ（パスワード付きのページ）に並べられます。「パスワードページだけ」にした作品は、プロフィールにも限定リンクにも出ません。</span>
         </label>
         <div class="form-actions">
           <button class="btn btn--primary" type="submit" id="addBtn">登録する</button>
