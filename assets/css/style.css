@@ -754,3 +754,10 @@ select.select--sm { width: auto; min-width: 0; padding: 6px 30px 6px 10px; font-
 .admin-review { border: 1px solid var(--border); border-radius: var(--radius-s); padding: 14px 16px; }
 .admin-review + .admin-review { margin-top: 12px; }
 .admin-review__private { white-space: pre-line; font-size: 12px; color: #c9c9d6; background: var(--surface2); padding: 8px 10px; border-left: 3px solid var(--accent); margin: 8px 0; line-height: 1.7; }
+
+/* 管理画面：クリエイター一覧（2026-10-12） */
+.admin-creator-bar { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 14px; }
+.admin-creator-bar input[type=search] { flex: 1 1 220px; }
+.admin-creator-stats { line-height: 1.8; }
+.admin-creator-bar input[type=search] { padding: 11px 13px; background: var(--surface2); color: var(--text); border: 1px solid var(--border); border-radius: var(--radius-s); font: inherit; font-size: 14px; }
+.admin-creator-bar input[type=search]:focus { border-color: var(--accent); outline: none; }

@@ -21,6 +21,7 @@
 <script src="/assets/js/app.js" defer></script>
 <script src="/assets/js/page-admin.js" defer></script>
 <script src="/assets/js/page-admin-reviews.js" defer></script>
+<script src="/assets/js/page-admin-creators.js" defer></script>
 </head>
 <body>
 <main class="section">
@@ -34,6 +35,14 @@
 
         <!-- 概況 -->
         <div class="stat-grid" id="overview"></div>
+
+        <hr class="divider">
+        <h2>クリエイター一覧 <span class="muted small" id="adminCreatorCount"></span></h2>
+        <p class="small muted">登録しているクリエイター全員です（非公開の人も含む）。この一覧は運営だけが見られます。</p>
+        <div class="notice" id="adminCreatorMsg" hidden></div>
+        <div id="adminCreatorBar"></div>
+        <div id="adminCreatorList" class="stack"></div>
+        <div id="adminCreators" hidden></div>
 
         <hr class="divider">
         <h2>評価の確認</h2>
