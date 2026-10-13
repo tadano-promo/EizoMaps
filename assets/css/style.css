@@ -806,3 +806,6 @@ input[type=search]::placeholder { color: #4a4a5c; }
 .embed--link:hover .btn { border-color: var(--accent); color: var(--accent); }
 #previewBox .thumb { max-width: 360px; }
 .thumb-pick { gap: 10px; align-items: center; flex-wrap: wrap; }
+.embed--x { aspect-ratio: auto; height: 640px; max-width: 550px; margin-inline: auto; border: 0; background: transparent; }
+.embed--x iframe { position: static; width: 100%; height: 640px; }
+.embed--ig { aspect-ratio: 9/19; max-width: 340px; }

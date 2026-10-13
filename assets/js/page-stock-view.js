@@ -174,7 +174,7 @@
       }
       var embed = EM.embedUrl(it.provider, it.video_id);
       var vertical = EM.isVertical(it.provider);
-      var frame = el('div', { class: 'embed' + (vertical ? ' embed--vertical' : '') });
+      var frame = el('div', { class: 'embed' + (it.provider === 'x' ? ' embed--x' : it.provider === 'instagram' ? ' embed--vertical embed--ig' : vertical ? ' embed--vertical' : '') });
 
       function load() {
         if (!embed) return;

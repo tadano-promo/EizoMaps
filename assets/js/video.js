@@ -124,7 +124,9 @@
     var el = EM.el;
     var embed = EM.embedUrl(p.provider, p.video_id);
     if (embed) {
-      var box = el('div', { class: 'embed' + (EM.isVertical(p.provider) ? ' embed--vertical' : '') });
+      var box = el('div', { class: 'embed' + (p.provider === 'x' ? ' embed--x'
+                                               : p.provider === 'instagram' ? ' embed--vertical embed--ig'
+                                               : EM.isVertical(p.provider) ? ' embed--vertical' : '') });
       var frame = function () {
         return el('iframe', {
           src: embed, title: p.title || '動画', loading: 'lazy',
@@ -147,6 +149,24 @@
     }
     return EM.linkCover(p.video_url || p.url, p.thumbnail_url);
   };
+
+  // X の投稿は長さがまちまちなので、X から届く「高さ」の知らせに合わせて枠を伸ばす
+  window.addEventListener('message', function (e) {
+    if (e.origin !== 'https://platform.twitter.com') return;
+    var d = e.data;
+    if (typeof d === 'string') { try { d = JSON.parse(d); } catch (err) { return; } }
+    var m = d && d['twttr.embed'];
+    if (!m || m.method !== 'twttr.private.resize' || !m.params || !m.params[0]) return;
+    var h = Number(m.params[0].height);
+    if (!(h > 50 && h < 5000)) return;
+    var frames = document.querySelectorAll('.embed--x iframe');
+    for (var i = 0; i < frames.length; i++) {
+      if (frames[i].contentWindow === e.source) {
+        frames[i].style.height = Math.ceil(h) + 'px';
+        frames[i].parentNode.style.height = Math.ceil(h) + 'px';
+      }
+    }
+  });
 
   // リンクの作品の表紙（押すと新しいタブでそのページを開く）
   EM.linkCover = function (url, thumb) {
