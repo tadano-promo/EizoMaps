@@ -393,34 +393,46 @@
       EM.notice(msg, '');
       // access_type=offline と prompt=consent を付けないと、
       // 裏で同期し続けるための許可（リフレッシュトークン）がもらえない。
-      sb.auth.linkIdentity({
+      var opts = {
         provider: 'google',
         options: {
           scopes: 'https://www.googleapis.com/auth/calendar.events https://www.googleapis.com/auth/calendar.readonly',
           redirectTo: (EM.config.SITE_ORIGIN || location.origin) + '/schedule/?gcal=back',
           queryParams: { access_type: 'offline', prompt: 'consent' }
         }
-      }).then(function (r) {
-        if (!r || !r.error) return;
-        var m = String(r.error.message || '');
-        // すでに Google でログインしている人は「追加」ではなく「取り直し」になる
-        if (/already|linked|exists/i.test(m)) {
-          return sb.auth.signInWithOAuth({
-            provider: 'google',
-            options: {
-              scopes: 'https://www.googleapis.com/auth/calendar.events https://www.googleapis.com/auth/calendar.readonly',
-              redirectTo: (EM.config.SITE_ORIGIN || location.origin) + '/schedule/?gcal=back',
-              queryParams: { access_type: 'offline', prompt: 'consent' }
-            }
-          });
-        }
-        EM.notice(msg, m + '（Supabase の Authentication 設定で「Manual linking」が有効か確認してください）', 'error');
+      };
+      sb.auth.getUser().then(function (r) {
+        var u = r.data && r.data.user;
+        var hasGoogle = !!(u && (u.identities || []).some(function (i) { return i.provider === 'google'; }));
+        // すでに Google でもログインできる人は「Google でログインし直す」形で許可をもらう。
+        // まだの人は、今のアカウントに Google を追加する形にする。
+        if (hasGoogle) return sb.auth.signInWithOAuth(opts);
+        return sb.auth.linkIdentity(opts).then(function (res) {
+          if (res && res.error) {
+            EM.notice(msg, String(res.error.message || '') + '（Supabase の Authentication 設定で「Manual linking」が有効か確認してください）', 'error');
+          }
+        });
       });
     });
+
+    // Google から戻ってきたときにエラーが付いていたら、わかる言葉で知らせる
+    function backError() {
+      var q = new URLSearchParams(location.search);
+      var h = new URLSearchParams(String(location.hash || '').replace(/^#/, ''));
+      var d = q.get('error_description') || h.get('error_description') || '';
+      if (!d) return false;
+      if (/already linked/i.test(d)) {
+        EM.notice(msg, '選んだ Google アカウントは、別の Eizo Maps のアカウントにつながっています。いまログインしている Eizo Maps のアカウントを確かめてから、もう一度お試しください。', 'error');
+      } else {
+        EM.notice(msg, 'Google との連携ができませんでした（' + d.slice(0, 120) + '）', 'error');
+      }
+      return true;
+    }
 
     // Google から戻ってきたら、許可を一度だけサーバーへ預ける
     function finishConnect() {
       if (EM.param('gcal') !== 'back') return Promise.resolve();
+      if (backError()) return Promise.resolve();
       return sb.auth.getSession().then(function (r) {
         var sess = r.data && r.data.session;
         var rt = sess && sess.provider_refresh_token;
