@@ -388,7 +388,11 @@
     var fcols = el('div', { class: 'cols' });
     fcols.appendChild(el('div', null, [
       el('a', { href: '/', class: 'logo', 'aria-label': 'Eizo Maps' }, [el('span', { text: 'Eizo' }), el('b', { text: 'Maps' })]),
-      el('p', { class: 'small f-note', text: 'クリエイターとクライアントを対等につなぐ、映像制作の信頼プラットフォーム。' })
+      el('p', { class: 'small f-note' }, [
+        // 言葉の途中で折り返さないように、2つのまとまりに分けておく
+        el('span', { text: 'クリエイターとクライアントを対等につなぐ、' }),
+        el('span', { text: '映像制作の信頼プラットフォーム。' })
+      ])
     ]));
     var fl = el('ul');
     NAV_PUBLIC.concat(NAV_FOOT).forEach(function (n) { fl.appendChild(el('li', null, el('a', { href: n[0], text: n[1] }))); });
