@@ -46,13 +46,8 @@
       var list = d.items || [];
       if (!list.length) { items.appendChild(el('div', { class: 'empty', text: '作品が登録されていません。' })); return; }
       list.forEach(function (p) {
-        var embed = EM.embedUrl(p.provider, p.video_id);
         items.appendChild(el('article', { class: 'card' }, [
-          embed ? el('div', { class: 'embed' }, el('iframe', {
-            src: embed, title: p.title, loading: 'lazy',
-            allow: 'accelerometer; clipboard-write; encrypted-media; picture-in-picture; fullscreen',
-            allowfullscreen: true, referrerpolicy: 'strict-origin-when-cross-origin'
-          })) : null,
+          EM.workMedia(p),
           el('h3', { class: 'pf-title', text: p.title }),
           p.description ? el('p', { class: 'small muted', text: p.description }) : null
         ]));

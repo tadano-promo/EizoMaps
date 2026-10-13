@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<meta http-equiv="Content-Security-Policy" content="default-src 'self'; base-uri 'self'; object-src 'none'; form-action 'self'; script-src 'self' https://cdn.jsdelivr.net; style-src 'self' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src 'self' data: https://img.youtube.com https://i.ytimg.com https://i.vimeocdn.com https://*.supabase.co; connect-src 'self' https://*.supabase.co wss://*.supabase.co https://vimeo.com; frame-src https://www.youtube.com https://player.vimeo.com https://www.tiktok.com; upgrade-insecure-requests">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; base-uri 'self'; object-src 'none'; form-action 'self'; script-src 'self' https://cdn.jsdelivr.net; style-src 'self' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src 'self' data: https://img.youtube.com https://i.ytimg.com https://i.vimeocdn.com https://*.supabase.co; connect-src 'self' https://*.supabase.co wss://*.supabase.co https://vimeo.com; frame-src https://www.youtube.com https://player.vimeo.com https://www.tiktok.com https://platform.twitter.com https://www.instagram.com https://www.facebook.com; upgrade-insecure-requests">
 <meta name="referrer" content="strict-origin-when-cross-origin">
 <title>ポートフォリオ管理 — Eizo Maps</title>
 <meta name="description" content="作品の登録と、営業用の共有リンク作成。">
@@ -34,12 +34,22 @@
       <h2>作品を追加</h2>
       <form id="addForm" class="stack" novalidate>
         <label class="field">
-          <span class="label">動画URL <span class="muted">（YouTube / Vimeo / TikTok）</span></span>
+          <span class="label">作品のURL <span class="muted">（動画を載せているページ）</span></span>
           <input type="url" id="videoUrl" placeholder="https://www.youtube.com/watch?v=..." required>
-          <span class="hint">URL を貼ると、サムネイルを自動で取得します。動画ファイルのアップロードには対応していません。</span>
+          <span class="hint">YouTube・Vimeo・TikTok・X・Instagram・Facebook は、Eizo Maps の中で再生できます（サムネイルが自動で付くのは YouTube・Vimeo）。クライアントのホームページなど、それ以外のサイトは「リンク」として載ります。動画ファイルのアップロードには対応していません。</span>
         </label>
         <div id="previewBox" hidden>
           <div class="thumb" id="previewThumb"></div>
+        </div>
+        <div class="field">
+          <span class="label">サムネイル画像 <span class="muted">（任意・JPEG / PNG / WebP、2MB まで）</span></span>
+          <input type="file" id="thumbFile" accept="image/jpeg,image/png,image/webp" hidden>
+          <div class="row thumb-pick">
+            <button class="btn btn--sm" type="button" id="thumbPickBtn">画像を選ぶ</button>
+            <span class="small muted" id="thumbPickName">選んでいません</span>
+            <button class="btn btn--sm btn--ghost" type="button" id="thumbClearBtn" hidden>やめる</button>
+          </div>
+          <span class="hint">表紙に使う画像を選べます。選ばない場合、YouTube・Vimeo は自動で付き、ほかのサイトはサイト名の印が出ます。あとからでも設定・変更できます。</span>
         </div>
         <label class="field">
           <span class="label">タイトル <span class="muted">（必須・80文字まで）</span></span>

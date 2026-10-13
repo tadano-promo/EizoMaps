@@ -164,6 +164,14 @@
 
     // 動画はクリックされてから iframe を読み込む（初期表示を軽くする）
     function videoCard(it) {
+      // 再生できないサイト（クライアントのホームページなど）はリンクのカードにする
+      if (it.provider === 'link') {
+        return el('div', { class: 'card stack' }, [
+          EM.linkCover(it.url, it.thumbnail_url),
+          it.title ? el('h3', { text: it.title }) : null,
+          it.description ? multiline(it.description, 'small muted') : null
+        ]);
+      }
       var embed = EM.embedUrl(it.provider, it.video_id);
       var vertical = EM.isVertical(it.provider);
       var frame = el('div', { class: 'embed' + (vertical ? ' embed--vertical' : '') });
@@ -199,7 +207,7 @@
         it.description ? multiline(it.description, 'small muted') : null,
         EM.safeUrl(it.url) ? el('a', {
           class: 'small muted stock-src', href: EM.safeUrl(it.url),
-          target: '_blank', rel: 'noopener noreferrer', text: '元の動画を開く'
+          target: '_blank', rel: 'noopener noreferrer', text: '元の投稿を開く'
         }) : null
       ]);
     }

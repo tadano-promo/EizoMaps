@@ -6,7 +6,7 @@
     var msg = EM.$('#pageMsg');
     if (!sb) { return; }  // 未設定の案内はヘッダー直下に共通表示される
 
-    var creator = null, items = [], links = [], parsed = null, pickedTags = [];
+    var creator = null, user = null, items = [], links = [], parsed = null, pickedTags = [];
 
     // 作品の見せ方（作品棚）
     var VIS = [
@@ -22,6 +22,7 @@
 
     EM.requireUser().then(function (u) {
       if (!u) return;
+      user = u;
       return sb.from('creators').select('id,display_name').eq('user_id', u.id).maybeSingle();
     }).then(function (r) {
       if (!r) return;
@@ -77,26 +78,57 @@
       });
     }
 
+    /* サムネイル画像の選択（ボタンの文字を日本語にするため、元の部品は隠している） */
+    var thumbFile = EM.$('#thumbFile'), pickedThumbData = null;
+    EM.$('#thumbPickBtn').addEventListener('click', function () { thumbFile.click(); });
+    EM.$('#thumbClearBtn').addEventListener('click', function () { thumbFile.value = ''; onThumbPicked(); });
+    thumbFile.addEventListener('change', onThumbPicked);
+    function onThumbPicked() {
+      var f = thumbFile.files && thumbFile.files[0];
+      pickedThumbData = null;
+      EM.$('#thumbPickName').textContent = f ? f.name : '選んでいません';
+      EM.$('#thumbClearBtn').hidden = !f;
+      if (f && checkImage(f)) { EM.notice(msg, checkImage(f), 'error'); thumbFile.value = ''; return onThumbPicked(); }
+      if (!f) { drawPreview(); return; }
+      var rd = new FileReader();
+      rd.onload = function () { pickedThumbData = String(rd.result || ''); drawPreview(); };
+      rd.readAsDataURL(f);
+    }
+
     var urlInput = EM.$('#videoUrl');
     urlInput.addEventListener('change', preview);
     urlInput.addEventListener('blur', preview);
 
     function preview() {
-      parsed = EM.parseVideoUrl(urlInput.value);
+      parsed = EM.parseVideoUrl(urlInput.value, true);
       var box = EM.$('#previewBox'), thumb = EM.$('#previewThumb');
       if (!parsed) {
         box.hidden = true;
-        if (urlInput.value.trim()) EM.notice(msg, 'YouTube・Vimeo・TikTok の URL を入力してください。', 'error');
+        if (urlInput.value.trim()) EM.notice(msg, 'https:// から始まる URL を入力してください。', 'error');
         return;
       }
       EM.notice(msg, '');
       EM.fetchThumbnail(parsed).then(function (url) {
         parsed.thumbnail_url = url;
-        EM.clear(thumb);
-        if (url) thumb.appendChild(EM.thumbImg(url, ''));
-        thumb.appendChild(el('span', { class: 'badge', text: parsed.provider }));
-        box.hidden = false;
+        drawPreview();
+        EM.notice(msg, parsed.provider === 'link'
+          ? 'このサイトはページの中で再生できないため、「リンク」として載せます。見る人が押すと、そのページが開きます。'
+          : '');
       });
+    }
+
+    // 表紙の見本：自分で選んだ画像 → 自動で取れた画像 → サイト名の印だけ、の順
+    function drawPreview() {
+      var box = EM.$('#previewBox'), thumb = EM.$('#previewThumb');
+      if (!parsed) { box.hidden = true; return; }
+      EM.clear(thumb);
+      if (pickedThumbData && /^data:image\/(png|jpeg|webp);base64,/.test(pickedThumbData)) {
+        thumb.appendChild(el('img', { src: pickedThumbData, alt: '' }));
+      } else if (parsed.thumbnail_url) {
+        thumb.appendChild(EM.thumbImg(parsed.thumbnail_url, ''));
+      }
+      thumb.appendChild(el('span', { class: 'badge', text: EM.PROVIDER_LABEL[parsed.provider] || parsed.provider }));
+      box.hidden = false;
     }
 
     EM.$('#addForm').addEventListener('submit', function (e) {
@@ -104,6 +136,8 @@
       if (!parsed) { preview(); if (!parsed) return; }
       var title = EM.$('#title').value.trim();
       if (!title) { EM.notice(msg, 'タイトルを入力してください。', 'error'); return; }
+      var tf = EM.$('#thumbFile').files && EM.$('#thumbFile').files[0];
+      if (tf && checkImage(tf)) { EM.notice(msg, checkImage(tf), 'error'); return; }
 
       var btn = EM.$('#addBtn');
       btn.setAttribute('aria-busy', 'true');
@@ -120,14 +154,19 @@
         sort_order: items.length
       }).select('id').single().then(function (r) {
         if (r.error) throw r.error;
-        if (!pickedTags.length) return null;
-        return sb.from('portfolio_tags').insert(pickedTags.map(function (t) {
-          return { portfolio_id: r.data.id, tag: t };
-        }));
+        var newId = r.data.id;
+        var file = EM.$('#thumbFile').files && EM.$('#thumbFile').files[0];
+        return (file ? uploadThumb(newId, file) : Promise.resolve()).then(function () {
+          if (!pickedTags.length) return null;
+          return sb.from('portfolio_tags').insert(pickedTags.map(function (t) {
+            return { portfolio_id: newId, tag: t };
+          }));
+        });
       }).then(function () {
         btn.removeAttribute('aria-busy');
         EM.$('#addForm').reset();
         EM.$('#previewBox').hidden = true;
+        EM.$('#thumbFile').value = ''; onThumbPicked();
         parsed = null; pickedTags = [];
         EM.$$('#tagChips .chip').forEach(function (b) { b.setAttribute('aria-pressed', 'false'); });
         EM.toast('作品を登録しました');
@@ -139,6 +178,39 @@
       });
     });
 
+    /* ---------------- サムネイル画像 ---------------- */
+    // 画像はプロフィール写真と同じ置き場所の「自分のフォルダ」に入れる（本人しか書き込めない）
+    function checkImage(f) {
+      if (['image/jpeg', 'image/png', 'image/webp'].indexOf(f.type) === -1) return 'JPEG / PNG / WebP の画像を選んでください。';
+      if (f.size > 2 * 1024 * 1024) return '2MB 以下の画像を選んでください。';
+      return null;
+    }
+    function uploadThumb(portfolioId, f) {
+      var bad = checkImage(f);
+      if (bad) return Promise.reject(new Error(bad));
+      var ext = f.type === 'image/png' ? 'png' : f.type === 'image/webp' ? 'webp' : 'jpg';
+      var path = user.id + '/works/' + portfolioId + '-' + Date.now() + '.' + ext;
+      return sb.storage.from('avatars').upload(path, f, { upsert: true, contentType: f.type }).then(function (r) {
+        if (r.error) throw r.error;
+        var url = sb.storage.from('avatars').getPublicUrl(path).data.publicUrl;
+        return sb.from('portfolios').update({ thumbnail_url: url }).eq('id', portfolioId);
+      }).then(function (r) { if (r && r.error) throw r.error; });
+    }
+    function thumbButton(p) {
+      var input = el('input', { type: 'file', accept: 'image/jpeg,image/png,image/webp', hidden: true });
+      input.addEventListener('change', function () {
+        var f = input.files && input.files[0];
+        if (!f) return;
+        EM.notice(msg, '画像をアップロードしています…');
+        uploadThumb(p.id, f).then(function () {
+          EM.notice(msg, ''); EM.toast('サムネイルを変えました'); return reload();
+        }).catch(function (err) { EM.notice(msg, EM.errorText(err), 'error'); });
+      });
+      var btn = el('button', { class: 'btn btn--sm', type: 'button', text: p.thumbnail_url ? 'サムネイルを変える' : 'サムネイルを設定',
+        onclick: function () { input.click(); } });
+      return el('span', null, [btn, input]);
+    }
+
     /* ---------------- 一覧・並び替え ---------------- */
     function renderList() {
       var box = EM.$('#pfList');
@@ -149,7 +221,7 @@
       items.forEach(function (p, idx) {
         var thumb = el('div', { class: 'thumb' }, [
           p.thumbnail_url ? EM.thumbImg(p.thumbnail_url, '') : null,
-          el('span', { class: 'badge', text: p.provider })
+          el('span', { class: 'badge', text: EM.PROVIDER_LABEL[p.provider] || p.provider })
         ]);
         var tags = el('div', { class: 'tags' });
         (p.portfolio_tags || []).forEach(function (t) { tags.appendChild(el('span', { class: 'tag', text: t.tag })); });
@@ -166,7 +238,8 @@
               el('button', { class: 'btn btn--sm', type: 'button', text: '↑', 'aria-label': '上へ移動', disabled: idx === 0, onclick: function () { move(idx, -1); } }),
               el('button', { class: 'btn btn--sm', type: 'button', text: '↓', 'aria-label': '下へ移動', disabled: idx === items.length - 1, onclick: function () { move(idx, 1); } }),
               visSelect(p),
-              el('a', { class: 'btn btn--sm btn--ghost', href: EM.safeUrl(p.video_url) || '#', target: '_blank', rel: 'noopener noreferrer', text: '動画を開く' }),
+              thumbButton(p),
+              el('a', { class: 'btn btn--sm btn--ghost', href: EM.safeUrl(p.video_url) || '#', target: '_blank', rel: 'noopener noreferrer', text: p.provider === 'link' ? 'ページを開く' : '動画を開く' }),
               el('button', { class: 'btn btn--sm btn--danger', type: 'button', text: '削除', onclick: function () { remove(p); } })
             ])
           ])

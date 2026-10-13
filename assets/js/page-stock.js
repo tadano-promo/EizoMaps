@@ -452,7 +452,7 @@
       if (addKind === 'video') {
         label.textContent = '動画の URL';
         input.placeholder = 'https://www.youtube.com/watch?v=...';
-        hint.textContent = 'YouTube・Vimeo・TikTok に対応。TikTok は「www.tiktok.com/@…/video/…」の長い方の URL を貼ってください。';
+        hint.textContent = 'YouTube・Vimeo・TikTok・X・Instagram・Facebook はページの中で再生できます。それ以外のサイト（クライアントのホームページなど）はリンクとして並びます。TikTok は「www.tiktok.com/@…/video/…」の長い方の URL を貼ってください。';
       } else if (addKind === 'doc') {
         label.textContent = '資料の共有 URL';
         input.placeholder = 'https://drive.google.com/...';
@@ -476,8 +476,8 @@
       var row = { page_id: page.id, kind: addKind, width: 'full', sort_order: items.length };
 
       if (addKind === 'video') {
-        var v = EM.parseVideoUrl(url);
-        if (!v) { EM.notice(msg, '動画の URL を認識できませんでした。YouTube・Vimeo・TikTok の URL を貼ってください。', 'error'); return; }
+        var v = EM.parseVideoUrl(url, true);
+        if (!v) { EM.notice(msg, 'URL を認識できませんでした。https:// から始まる URL を貼ってください。', 'error'); return; }
         if (!title) { EM.notice(msg, '動画のタイトルを入力してください（作品棚にも同じ名前で登録されます）。', 'error'); return; }
         var btn = this; btn.setAttribute('aria-busy', 'true');
         var newId = null;
