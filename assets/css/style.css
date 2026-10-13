@@ -789,3 +789,7 @@ input[type=search]::placeholder { color: #4a4a5c; }
 .faq > :last-child { margin-bottom: 14px; }
 .faq > p:first-of-type, .faq > ol:first-of-type, .faq > ul:first-of-type, .faq > dl:first-of-type { margin-top: 12px; }
 .home-help { margin-top: 18px; }
+.header-actions { display: flex; align-items: center; gap: 10px; }
+.header-login { white-space: nowrap; }
+.hero-login { margin-top: 14px; }
+.hero-login a { color: var(--accent); }

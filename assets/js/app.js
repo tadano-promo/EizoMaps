@@ -321,10 +321,14 @@
         el('a', { href: '/', class: 'logo', 'aria-label': 'Eizo Maps ホーム' }, [
           el('span', { text: 'Eizo' }), el('b', { text: 'Maps' })
         ]),
-        el('button', {
-          class: 'nav-toggle', type: 'button', id: 'navToggle',
-          'aria-expanded': 'false', 'aria-controls': 'navPanel', 'aria-label': 'メニューを開く'
-        }, '☰')
+        el('div', { class: 'header-actions' }, [
+          // ログインしていないときは「ログイン」、しているときは「マイページ」に切り替わる
+          el('a', { class: 'btn btn--sm header-login', id: 'headerLogin', href: '/auth/', text: 'ログイン' }),
+          el('button', {
+            class: 'nav-toggle', type: 'button', id: 'navToggle',
+            'aria-expanded': 'false', 'aria-controls': 'navPanel', 'aria-label': 'メニューを開く'
+          }, '☰')
+        ])
       ])
     ]);
 
@@ -354,6 +358,8 @@
 
     // ログイン状態に応じてメニューを差し替える
     EM.getUser().then(function (u) {
+      var hl = document.getElementById('headerLogin');
+      if (hl && u) { hl.textContent = 'マイページ'; hl.setAttribute('href', '/mypage/'); }
       var slot = document.getElementById('navUserSlot');
       EM.clear(slot);
       var ul = el('ul');

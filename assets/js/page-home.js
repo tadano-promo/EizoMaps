@@ -7,6 +7,14 @@
     var sb = EM.sb(), el = EM.el;
     if (!sb) return;
 
+    // ログイン済みなら「登録済みの方は ログイン」を「マイページへ」に変える
+    EM.getUser().then(function (u) {
+      var hero = EM.$('#heroLogin');
+      if (!hero || !u) return;
+      EM.clear(hero);
+      hero.appendChild(el('a', { href: '/mypage/', text: 'マイページへ' }));
+    });
+
     var section = EM.$('#newsSection');
     var list = EM.$('#newsList');
     var adBox = EM.$('#adSlot');
