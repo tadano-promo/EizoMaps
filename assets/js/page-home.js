@@ -55,17 +55,19 @@
       EM.clear(list);
       rows.forEach(function (n) {
         var href = EM.safeUrl(n.link_url);
-        list.appendChild(el('article', { class: 'news__item' }, [
-          el('div', { class: 'news__meta' }, [
-            el('span', { class: 'tag tag--accent', text: EM.ANNOUNCE_KIND[n.kind] || 'お知らせ' }),
-            n.pinned ? el('span', { class: 'tag', text: '重要' }) : null,
-            el('span', { class: 'small muted mono', text: EM.date(n.published_at) })
-          ]),
-          el('h3', { class: 'news__headline', text: n.title }),
+        // 1行で見せて、押すと本文が開く（目立ちすぎないように）
+        var hasMore = !!(n.body || href);
+        var row = el(hasMore ? 'summary' : 'div', { class: 'news__row' }, [
+          el('span', { class: 'news__date mono', text: EM.date(n.published_at) }),
+          el('span', { class: 'news__kind', text: (n.pinned ? '重要・' : '') + (EM.ANNOUNCE_KIND[n.kind] || 'お知らせ') }),
+          el('span', { class: 'news__headline', text: n.title })
+        ]);
+        list.appendChild(el(hasMore ? 'details' : 'div', { class: 'news__item' }, [
+          row,
           n.body ? multiline(n.body, 'small muted news__body') : null,
           href ? el('a', {
-            class: 'btn btn--sm', href: href, target: '_blank', rel: 'noopener noreferrer',
-            text: n.link_label || '詳しく見る'
+            class: 'small news__link', href: href, target: '_blank', rel: 'noopener noreferrer',
+            text: (n.link_label || '詳しく見る') + ' ↗'
           }) : null
         ]));
       });

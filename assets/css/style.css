@@ -544,20 +544,30 @@ input[type=range]:focus-visible { outline: 2px solid var(--accent); outline-offs
    トップページのお知らせ・広告枠／管理画面
    ===================================================================== */
 .news { border-bottom: 1px solid var(--border); }
+.news.section--tight { padding-block: 14px; }
 .news__layout {
   display: grid; gap: 28px;
   grid-template-columns: minmax(0, 1fr) 300px;
   align-items: start;
 }
-.news__title { font-size: clamp(18px, 2.2vw, 22px); margin-bottom: 18px; }
-.news__item {
-  border-left: 2px solid var(--border);
-  padding: 2px 0 2px 16px;
+.news__main { max-width: 720px; }
+.news__label { margin: 0 0 6px; font-size: 11px; }
+.news__list { display: flex; flex-direction: column; }
+.news__item { border-top: 1px solid var(--border); }
+.news__item:first-child { border-top: 0; }
+.news__row {
+  display: flex; align-items: baseline; gap: 10px; padding: 7px 0;
+  font-size: 13px; list-style: none; cursor: default; min-width: 0;
 }
-.news__item + .news__item { margin-top: 18px; }
-.news__meta { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin-bottom: 6px; }
-.news__headline { font-size: 16px; margin-bottom: 6px; }
-.news__body { line-height: 1.85; }
+summary.news__row { cursor: pointer; }
+summary.news__row::-webkit-details-marker { display: none; }
+summary.news__row::after { content: '+'; margin-left: auto; color: var(--muted); padding-left: 8px; }
+details[open] > summary.news__row::after { content: '−'; }
+.news__date { color: var(--muted); font-size: 12px; flex: none; }
+.news__kind { color: var(--accent); font-size: 12px; flex: none; }
+.news__headline { color: var(--text); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; min-width: 0; }
+.news__body { line-height: 1.8; margin: 0 0 8px; }
+.news__link { display: inline-block; margin-bottom: 10px; color: var(--accent); }
 
 .news__side { border: 1px solid var(--border); border-radius: var(--radius); padding: 14px; }
 .ad {
