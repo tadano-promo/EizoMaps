@@ -7,13 +7,79 @@
     var sb = EM.sb(), el = EM.el;
     if (!sb) return;
 
-    // ログイン済みなら「登録済みの方は ログイン」を「マイページへ」に変える
+    // ログイン済みなら、登録をすすめる大きな紹介の代わりに「自分用の入口」を出す
     EM.getUser().then(function (u) {
-      var hero = EM.$('#heroLogin');
-      if (!hero || !u) return;
-      EM.clear(hero);
-      hero.appendChild(el('a', { href: '/mypage/', text: 'マイページへ' }));
+      if (!u) return;
+      EM.$('#homeHero').hidden = true;
+      EM.$('#homeMe').hidden = false;
+      loadMe(u);
     });
+
+    function pad(n) { return String(n).padStart(2, '0'); }
+    function today() { var d = new Date(); return d.getFullYear() + '-' + pad(d.getMonth() + 1) + '-' + pad(d.getDate()); }
+    var WD = ['日', '月', '火', '水', '木', '金', '土'];
+    function dayLabel(ymd) {
+      var p = String(ymd).split('-');
+      var d = new Date(+p[0], +p[1] - 1, +p[2]);
+      return (d.getMonth() + 1) + '/' + d.getDate() + '（' + WD[d.getDay()] + '）';
+    }
+    var KIND = { shoot: '撮影', edit: '編集', meeting: '打合せ', delivery: '納品', hold: '仮押さえ', other: 'その他', private: '非公開' };
+
+    function emptyLine(box, text) { EM.clear(box); box.appendChild(el('p', { class: 'small muted', text: text })); }
+
+    function loadMe(u) {
+      var t = today();
+      Promise.all([
+        sb.from('creators').select('id,display_name,is_published').eq('user_id', u.id).maybeSingle(),
+        sb.from('schedule_events').select('id,kind,title,starts_on,ends_on,start_time')
+          .eq('owner_user_id', u.id).gte('ends_on', t)
+          .order('starts_on').order('start_time', { nullsFirst: true }).limit(3),
+        sb.from('projects').select('id,title,status,due_on')
+          .in('status', ['offered', 'in_progress', 'delivered'])
+          .order('due_on', { ascending: true, nullsFirst: false }).limit(3)
+      ]).then(function (r) {
+        var c = !r[0].error && r[0].data;
+        var name = (c && c.display_name) || '';
+        EM.$('#homeHello').textContent = name ? 'おかえりなさい、' + name + ' さん' : 'おかえりなさい';
+        if (c && c.is_published) {
+          var pl = EM.$('#homeMyProfile');
+          pl.href = '/creators/detail.html?id=' + encodeURIComponent(c.id);
+          pl.hidden = false;
+        }
+
+        var next = EM.$('#homeNext');
+        var evs = (!r[1].error && r[1].data) || [];
+        if (!evs.length) emptyLine(next, 'これからの予定はまだありません。');
+        else {
+          EM.clear(next);
+          evs.forEach(function (e) {
+            var when = (e.starts_on <= t ? '今日' : dayLabel(e.starts_on)) + (e.ends_on > e.starts_on ? '〜' + dayLabel(e.ends_on) : '');
+            next.appendChild(el('a', { class: 'home-me__row', href: '/schedule/' }, [
+              el('span', { class: 'home-me__when mono', text: when + (e.start_time ? ' ' + e.start_time.slice(0, 5) : '') }),
+              el('span', { class: 'home-me__tag', text: KIND[e.kind] || '予定' }),
+              el('span', { class: 'home-me__title', text: e.title })
+            ]));
+          });
+        }
+
+        var pj = EM.$('#homeProjects');
+        var ps = (!r[2].error && r[2].data) || [];
+        if (!ps.length) emptyLine(pj, '今動いている案件はありません。');
+        else {
+          EM.clear(pj);
+          ps.forEach(function (p) {
+            pj.appendChild(el('a', { class: 'home-me__row', href: '/projects/?id=' + encodeURIComponent(p.id) }, [
+              EM.statusBadge(p.status),
+              el('span', { class: 'home-me__title', text: p.title }),
+              p.due_on ? el('span', { class: 'home-me__when mono', text: '納期 ' + dayLabel(p.due_on) }) : null
+            ]));
+          });
+        }
+      }).catch(function () {
+        emptyLine(EM.$('#homeNext'), '読み込めませんでした。');
+        emptyLine(EM.$('#homeProjects'), '読み込めませんでした。');
+      });
+    }
 
     var section = EM.$('#newsSection');
     var list = EM.$('#newsList');

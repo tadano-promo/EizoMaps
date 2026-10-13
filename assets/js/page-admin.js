@@ -68,7 +68,9 @@
       var box = EM.$('#overview');
       EM.clear(box);
       [
+        ['Total', o.accounts_total, '総登録数'],
         ['Creators', o.creators, '登録クリエイター'],
+        ['Users', o.general_users, '一般ユーザー（クリエイター以外）'],
         ['Published', o.creators_published, '公開中'],
         ['Clients', o.clients, 'クライアント'],
         ['Projects', o.projects, '案件'],

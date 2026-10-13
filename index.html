@@ -36,7 +36,38 @@
     </div>
   </section>
 
-  <section class="hero">
+  <!-- ログインしている人だけに見せる「自分用の入口」。ログインしていなければ出さない -->
+  <section class="section section--tight home-me" id="homeMe" hidden>
+    <div class="wrap stack">
+      <div>
+        <p class="eyebrow">My Eizo Maps</p>
+        <h1 class="home-me__hello" id="homeHello">おかえりなさい</h1>
+      </div>
+      <div class="grid home-me__grid">
+        <div class="card stack">
+          <h3 class="home-me__h">次の予定</h3>
+          <div id="homeNext" class="home-me__list small muted">読み込み中…</div>
+          <a class="small" href="/schedule/">スケジュールを開く →</a>
+        </div>
+        <div class="card stack">
+          <h3 class="home-me__h">動いている案件</h3>
+          <div id="homeProjects" class="home-me__list small muted">読み込み中…</div>
+          <a class="small" href="/projects/">案件管理を開く →</a>
+        </div>
+      </div>
+      <nav class="home-me__links" aria-label="よく使うページ">
+        <a class="btn btn--sm" href="/mypage/">マイページ</a>
+        <a class="btn btn--sm" href="/mypage/portfolio.html">作品を追加・編集</a>
+        <a class="btn btn--sm" href="/mypage/stock.html">ストックページ</a>
+        <a class="btn btn--sm" href="/schedule/">スケジュール</a>
+        <a class="btn btn--sm" href="/projects/">案件管理</a>
+        <a class="btn btn--sm" id="homeMyProfile" href="/mypage/" hidden>自分の公開ページを見る</a>
+        <a class="btn btn--sm" href="/help/">使い方・ヘルプ</a>
+      </nav>
+    </div>
+  </section>
+
+  <section class="hero" id="homeHero">
     <div class="wrap inner">
       <p class="eyebrow">Video Production Trust Platform</p>
       <h1>クリエイターとクライアントを、<br>対等につなぐ。</h1>

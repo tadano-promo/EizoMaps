@@ -836,3 +836,20 @@ input[type=search]::placeholder { color: #4a4a5c; }
 .embed--x iframe { position: static; width: 100%; height: 640px; }
 .embed--ig { aspect-ratio: 9/19; max-width: 340px; }
 .faq h3 { font-size: 14px; margin: 14px 16px 4px; }
+
+/* トップ：ログイン中の「自分用の入口」 */
+.home-me { padding-top: 28px; }
+.home-me__hello { font-size: clamp(22px, 5vw, 32px); margin: 4px 0 0; }
+.home-me__grid { grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); }
+.home-me__h { font-size: 15px; margin: 0; }
+.home-me__list { display: grid; gap: 6px; }
+.home-me__row {
+  display: flex; align-items: center; gap: 8px; flex-wrap: wrap;
+  padding: 8px 10px; border-radius: 6px; background: var(--surface2);
+  color: var(--text); text-decoration: none; font-size: 13px;
+}
+.home-me__row:hover { filter: brightness(1.2); }
+.home-me__when { color: var(--muted); font-size: 12px; }
+.home-me__tag { font-size: 11px; color: var(--accent); }
+.home-me__title { font-weight: 500; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; min-width: 0; flex: 1; }
+.home-me__links { display: flex; flex-wrap: wrap; gap: 8px; }
