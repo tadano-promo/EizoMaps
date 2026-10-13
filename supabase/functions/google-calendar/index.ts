@@ -265,33 +265,45 @@ Deno.serve(async (req) => {
     }
 
     // (c) Google 側で埋まっている日を取り込む（中身は取らない）
+    //     Google は一度に問い合わせられる期間に上限があるので、60日ずつに分けて聞く
     if (link.sync_pull) {
-      const from = new Date();
-      const to = new Date();
-      to.setDate(to.getDate() + 186);
-      const res = await fetch('https://www.googleapis.com/calendar/v3/freeBusy', {
-        method: 'POST',
-        headers: ghead,
-        body: JSON.stringify({
-          timeMin: from.toISOString(),
-          timeMax: to.toISOString(),
-          timeZone: 'Asia/Tokyo',
-          items: [{ id: link.calendar_id ?? 'primary' }],
-        }),
-      });
-      if (res.ok) {
+      const calKey = link.calendar_id ?? 'primary';
+      const days = new Set<string>();
+      let pullOk = true;
+      const start = new Date();
+      for (let i = 0; i < 3 && pullOk; i++) {
+        const from = new Date(start.getTime() + i * 60 * 86400000);
+        const to = new Date(start.getTime() + (i + 1) * 60 * 86400000);
+        const res = await fetch('https://www.googleapis.com/calendar/v3/freeBusy', {
+          method: 'POST',
+          headers: ghead,
+          body: JSON.stringify({
+            timeMin: from.toISOString(),
+            timeMax: to.toISOString(),
+            timeZone: 'Asia/Tokyo',
+            items: [{ id: calKey }],
+          }),
+        });
+        if (!res.ok) {
+          pullOk = false;
+          let why = '';
+          try { const ej = await res.json(); why = String(ej?.error?.errors?.[0]?.reason ?? ej?.error?.message ?? ''); } catch (_) { /* 中身が読めなくても続ける */ }
+          result.errors.push(`取り込みに失敗: ${res.status}${why ? ' ' + why.slice(0, 80) : ''}`);
+          break;
+        }
         const j = await res.json();
-        const cal = j.calendars?.[link.calendar_id ?? 'primary'];
-        const days = new Set<string>();
+        const cal = j.calendars?.[calKey];
         for (const b of cal?.busy ?? []) {
           // 日本時間の日付に落とす
           const s = new Date(new Date(b.start).getTime() + 9 * 3600 * 1000);
-          const e = new Date(new Date(b.end).getTime() + 9 * 3600 * 1000);
+          const e = new Date(new Date(b.end).getTime() + 9 * 3600 * 1000 - 1);
           for (let d = new Date(s); d <= e; d.setUTCDate(d.getUTCDate() + 1)) {
             days.add(d.toISOString().slice(0, 10));
             if (days.size > 200) break;
           }
         }
+      }
+      if (pullOk) {
         await db.from('google_busy').delete().eq('user_id', user.id);
         if (days.size) {
           await db.from('google_busy').insert(
@@ -299,8 +311,6 @@ Deno.serve(async (req) => {
           );
         }
         result.busy_days = days.size;
-      } else {
-        result.errors.push(`取り込みに失敗: ${res.status}`);
       }
     }
 
