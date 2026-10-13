@@ -337,6 +337,7 @@
        Google を直接叩くのはサーバー側（Edge Function）だけ。
        この画面がやるのは「許可をもらってくる」ことと「同期して」と頼むことだけ。 */
     var gcal = null;
+    var gcalCals = null;   // Google のカレンダー一覧（名前と書き込めるかだけ）
 
     function gcalCall(body) {
       return sb.functions.invoke('google-calendar', { body: body }).then(function (r) {
@@ -387,7 +388,73 @@
       if (gcal.last_sync_error) {
         EM.notice(msg, '前回の同期で問題がありました: ' + gcal.last_sync_error, 'error');
       }
+      loadCalendars();
     }
+
+    // 書き出す先・埋まっている日に含めるカレンダーを選ぶ欄
+    function loadCalendars() {
+      var p = gcalCals ? Promise.resolve({ calendars: gcalCals }) : gcalCall({ action: 'list_calendars' });
+      return p.then(function (d) {
+        gcalCals = d.calendars || [];
+        renderCalendars();
+      }).catch(function () {
+        EM.$('#gcalWriteWrap').hidden = true;
+        EM.$('#gcalBusyWrap').hidden = true;
+      });
+    }
+
+    function isPrimary(id) {
+      return id === 'primary' || gcalCals.some(function (c) { return c.primary && c.id === id; });
+    }
+    function sameCal(a, b) { return a === b || (isPrimary(a) && isPrimary(b)); }
+
+    function renderCalendars() {
+      if (!gcalCals || !gcalCals.length) return;
+      var writeId = (gcal && gcal.calendar_id) || 'primary';
+      var busy = (gcal && gcal.busy_calendar_ids && gcal.busy_calendar_ids.length)
+        ? gcal.busy_calendar_ids : [writeId];
+
+      var sel = EM.$('#gcalWriteCal');
+      sel.textContent = '';
+      gcalCals.filter(function (c) { return c.writable; }).forEach(function (c) {
+        var o = document.createElement('option');
+        o.value = c.id;
+        o.textContent = c.name + (c.primary ? '（メイン）' : '');
+        if (sameCal(c.id, writeId)) o.selected = true;
+        sel.appendChild(o);
+      });
+
+      var list = EM.$('#gcalBusyList');
+      list.textContent = '';
+      gcalCals.forEach(function (c) {
+        var lab = document.createElement('label');
+        lab.className = 'checkbox';
+        var cb = document.createElement('input');
+        cb.type = 'checkbox';
+        cb.value = c.id;
+        cb.checked = busy.some(function (b) { return sameCal(b, c.id); });
+        var sp = document.createElement('span');
+        if (c.color) {
+          var dot = document.createElement('span');
+          dot.className = 'gcal-dot';
+          dot.style.background = c.color;
+          sp.appendChild(dot);
+        }
+        sp.appendChild(document.createTextNode(c.name + (c.primary ? '（メイン）' : '')));
+        lab.appendChild(cb); lab.appendChild(sp);
+        list.appendChild(lab);
+      });
+
+      syncSubVisibility();
+    }
+
+    function syncSubVisibility() {
+      var ready = !!(gcalCals && gcalCals.length);
+      EM.$('#gcalWriteWrap').hidden = !ready || !EM.$('#gcalPush').checked;
+      EM.$('#gcalBusyWrap').hidden = !ready || !EM.$('#gcalPull').checked;
+    }
+    EM.$('#gcalPush').addEventListener('change', syncSubVisibility);
+    EM.$('#gcalPull').addEventListener('change', syncSubVisibility);
 
     EM.$('#gcalConnectBtn').addEventListener('click', function () {
       EM.notice(msg, '');
@@ -465,18 +532,33 @@
       var b = this; b.setAttribute('aria-busy', 'true');
       EM.notice(msg, '');
       gcalCall({ action: 'sync' }).then(function (d) {
-        EM.toast('書き出し ' + ((d.pushed || 0) + (d.updated || 0)) + '件 ／ 取り込み ' + (d.busy_days || 0) + '日');
-        return loadGcal();
+        var t = '書き出し ' + ((d.pushed || 0) + (d.updated || 0)) + '件 ／ 取り込み ' + (d.busy_days || 0) + '日';
+        if (d.removed_from_eizo) t += ' ／ Google で消された予定 ' + d.removed_from_eizo + '件を削除';
+        EM.toast(t);
+        return Promise.all([loadGcal(), d.removed_from_eizo ? load() : null]);
       }).catch(function (e) { EM.notice(msg, EM.errorText(e), 'error'); })
         .then(function () { b.removeAttribute('aria-busy'); });
     });
 
     EM.$('#gcalSaveBtn').addEventListener('click', function () {
+      var busyIds = EM.$$('#gcalBusyList input:checked').map(function (cb) { return cb.value; });
+      if (EM.$('#gcalPull').checked && gcalCals && gcalCals.length && !busyIds.length) {
+        EM.notice(msg, '「埋まっている日」に含めるカレンダーを1つ以上選んでください。', 'error');
+        return;
+      }
       sb.rpc('set_calendar_sync', {
         p_push: EM.$('#gcalPush').checked,
         p_pull: EM.$('#gcalPull').checked
       }).then(function (r) {
         if (r.error) throw r.error;
+        if (!gcalCals || !gcalCals.length) return null;
+        return gcalCall({
+          action: 'set_calendars',
+          calendar_id: EM.$('#gcalWriteCal').value || 'primary',
+          busy_ids: busyIds
+        });
+      }).then(function () {
+        EM.notice(msg, '');
         EM.toast('保存しました');
         return loadGcal();
       }).catch(function (e) { EM.notice(msg, EM.errorText(e), 'error'); });
@@ -485,6 +567,7 @@
     EM.$('#gcalDisconnectBtn').addEventListener('click', function () {
       if (!confirm('Google カレンダーとの連携を解除しますか？\nGoogle 側に書き出した予定はそのまま残ります。')) return;
       gcalCall({ action: 'disconnect' }).then(function () {
+        gcalCals = null;
         EM.toast('連携を解除しました');
         return loadGcal();
       }).catch(function (e) { EM.notice(msg, EM.errorText(e), 'error'); });

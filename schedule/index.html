@@ -122,10 +122,19 @@
             <input type="checkbox" id="gcalPush">
             <span>Eizo Maps の予定を Google カレンダーに書き出す</span>
           </label>
+          <div class="field gcal-sub" id="gcalWriteWrap" hidden>
+            <label for="gcalWriteCal" class="small">書き出す先のカレンダー</label>
+            <select id="gcalWriteCal"></select>
+          </div>
           <label class="checkbox">
             <input type="checkbox" id="gcalPull">
             <span>Google カレンダーの予定を「埋まっている日」に含める（件名や場所は取り込みません）</span>
           </label>
+          <div class="gcal-sub" id="gcalBusyWrap" hidden>
+            <p class="small">「埋まっている日」に含めるカレンダー（いくつでも選べます）</p>
+            <div id="gcalBusyList" class="stack-sm"></div>
+          </div>
+          <p class="small muted">Google 側で消した予定は、次に同期したときに Eizo Maps からも消えます。</p>
         </div>
         <div class="form-actions">
           <button class="btn btn--primary" type="button" id="gcalConnectBtn" hidden>Google カレンダーと連携する</button>
