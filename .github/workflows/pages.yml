@@ -61,6 +61,17 @@ jobs:
           if [ "$fail" -ne 0 ]; then exit 1; fi
           echo 'OK: 管理者用の鍵は含まれていません'
 
+      # 更新したのに古い画面が出続けないよう、
+      # 各ページが読み込む JS / CSS の後ろに「版の印（?v=コミット番号）」を付ける。
+      # 印が変わるとブラウザは新しいファイルを取りに行く。
+      - name: Cache busting
+        run: |
+          set -euo pipefail
+          v="${GITHUB_SHA::8}"
+          find . -name '*.html' -not -path './.git/*' -print0 \
+            | xargs -0 sed -i -E "s#((src|href)=\"/assets/(js|css)/[^\"?]+\.(js|css))(\?v=[^\"]*)?\"#\1?v=${v}\"#g"
+          grep -rhoE '/assets/js/app\.js\?v=[^"]+' --include=*.html . | head -1
+
       - uses: actions/configure-pages@v5
       - uses: actions/upload-pages-artifact@v3
         with:

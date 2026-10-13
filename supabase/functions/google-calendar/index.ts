@@ -17,6 +17,11 @@
 //      GOOGLE_CLIENT_SECRET  同シークレット
 //      TOKEN_ENC_KEY         32バイトの鍵を base64 にしたもの
 //      SUPABASE_URL / SUPABASE_SERVICE_ROLE_KEY は Supabase が自動で入れる
+//
+//  ★ 自動同期
+//    データベースの予約実行（pg_cron）が15分ごとに action: 'cron' で呼ぶ。
+//    そのときは x-cron-key をデータベース内の合言葉（app_internal）と照らし合わせる。
+//    合言葉はデータベースの外に出ない。
 // =====================================================================
 
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.116.0';
@@ -159,6 +164,250 @@ function toGoogleEvent(e: Record<string, unknown>) {
   return body;
 }
 
+/* ---------------- Google 側で埋まっている日 ---------------- */
+const DAY = 86400000;
+const PULL_DAYS = 180;
+
+// 日本時間の日付（YYYY-MM-DD）
+function jstDay(ms: number) {
+  return new Date(ms + 9 * 3600 * 1000).toISOString().slice(0, 10);
+}
+
+// 開始〜終了（終了は含まない）にかかる日付をすべて足す
+function addRange(days: Set<string>, startMs: number, endMs: number) {
+  if (!(endMs > startMs)) endMs = startMs + 1;
+  let d = new Date(jstDay(startMs) + 'T00:00:00Z');
+  const last = jstDay(endMs - 1);
+  for (let i = 0; i < 400 && days.size <= 400; i++) {
+    const k = d.toISOString().slice(0, 10);
+    days.add(k);
+    if (k >= last) break;
+    d = new Date(d.getTime() + DAY);
+  }
+}
+
+// 1つのカレンダーの「埋まっている日」を集める。
+// 中身は見ない。Eizo Maps から書き出した予定と「予定なし（空き）」にしてある予定は数えない。
+async function busyOfCalendar(ghead: Record<string, string>, calId: string, days: Set<string>): Promise<string | null> {
+  const now = Date.now();
+  const timeMin = new Date(now - DAY).toISOString();
+  const timeMax = new Date(now + PULL_DAYS * DAY).toISOString();
+
+  let pageToken = '';
+  for (let page = 0; page < 5; page++) {
+    const q = new URLSearchParams({
+      timeMin, timeMax, singleEvents: 'true', maxResults: '2500',
+      fields: 'items(status,transparency,start,end,source/url),nextPageToken',
+    });
+    if (pageToken) q.set('pageToken', pageToken);
+    const res = await fetch(`https://www.googleapis.com/calendar/v3/calendars/${encodeURIComponent(calId)}/events?${q}`, { headers: ghead });
+    if (res.status === 403 || res.status === 404) {
+      // 予定の一覧は見られないカレンダー（空き時間だけ共有されている等）は、空き時間の問い合わせで代わりに調べる
+      return await freeBusyOfCalendar(ghead, calId, days);
+    }
+    if (!res.ok) return `取り込みに失敗: ${res.status}`;
+    const j = await res.json();
+    for (const ev of j.items ?? []) {
+      if (ev.status === 'cancelled' || ev.transparency === 'transparent') continue;
+      if (String(ev.source?.url ?? '').includes('eizo-maps.com')) continue;
+      if (ev.start?.date) {
+        // 終日予定。終了日は「翌日」が入っているので、そのまま「含まない終わり」として使う
+        addRange(days, Date.parse(ev.start.date + 'T00:00:00+09:00'), Date.parse((ev.end?.date ?? ev.start.date) + 'T00:00:00+09:00'));
+      } else if (ev.start?.dateTime) {
+        addRange(days, Date.parse(ev.start.dateTime), Date.parse(ev.end?.dateTime ?? ev.start.dateTime));
+      }
+    }
+    pageToken = j.nextPageToken ?? '';
+    if (!pageToken) break;
+  }
+  return null;
+}
+
+async function freeBusyOfCalendar(ghead: Record<string, string>, calId: string, days: Set<string>): Promise<string | null> {
+  const start = Date.now();
+  // Google は一度に問い合わせられる期間に上限があるので、60日ずつに分けて聞く
+  for (let i = 0; i < PULL_DAYS / 60; i++) {
+    const res = await fetch('https://www.googleapis.com/calendar/v3/freeBusy', {
+      method: 'POST',
+      headers: ghead,
+      body: JSON.stringify({
+        timeMin: new Date(start + i * 60 * DAY).toISOString(),
+        timeMax: new Date(start + (i + 1) * 60 * DAY).toISOString(),
+        timeZone: 'Asia/Tokyo',
+        items: [{ id: calId }],
+      }),
+    });
+    if (!res.ok) return `取り込みに失敗: ${res.status}`;
+    const j = await res.json();
+    const cal = j.calendars?.[calId];
+    for (const b of cal?.busy ?? []) addRange(days, Date.parse(b.start), Date.parse(b.end));
+  }
+  return null;
+}
+
+/* ---------------- 1人分の同期 ---------------- */
+type SyncResult = {
+  pushed: number; updated: number; deleted: number; removed_from_eizo: number; busy_days: number; errors: string[];
+};
+
+// deno-lint-ignore no-explicit-any
+async function syncUser(db: any, link: any, userId: string): Promise<SyncResult> {
+  const token = await accessToken(await decrypt(link.refresh_token_enc));
+  const ghead = { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' };
+  const writeCal = link.calendar_id ?? 'primary';
+  const calId = encodeURIComponent(writeCal);
+  const result: SyncResult = { pushed: 0, updated: 0, deleted: 0, removed_from_eizo: 0, busy_days: 0, errors: [] };
+  const since = new Date(Date.now() - DAY).toISOString().slice(0, 10);
+
+  // (a) Eizo Maps で消した予定を Google でも消す
+  const { data: dels } = await db.from('google_delete_queue')
+    .select('id,google_event_id,calendar_id').eq('user_id', userId).limit(200);
+  for (const d of dels ?? []) {
+    const c = encodeURIComponent(d.calendar_id ?? 'primary');
+    const res = await fetch(
+      `https://www.googleapis.com/calendar/v3/calendars/${c}/events/${encodeURIComponent(d.google_event_id)}`,
+      { method: 'DELETE', headers: ghead },
+    );
+    // 410/404 は「Google 側に既に無い」なので成功と同じ扱い
+    if (res.ok || res.status === 410 || res.status === 404) {
+      await db.from('google_delete_queue').delete().eq('id', d.id);
+      result.deleted++;
+    } else {
+      result.errors.push(`削除に失敗: ${res.status}`);
+    }
+  }
+
+  // (a2) Google 側で消された予定を、Eizo Maps からも消す
+  //      対象は「同期済みで、そのあと Eizo Maps 側で変えていない」予定だけ。
+  //      Eizo Maps 側で直したばかりの予定は、下の (b) で Google に書き戻す。
+  {
+    const { data: synced } = await db.from('schedule_events')
+      .select('id,google_event_id,google_calendar_id')
+      .eq('owner_user_id', userId)
+      .not('google_event_id', 'is', null)
+      .not('google_synced_at', 'is', null)
+      .gte('ends_on', since)
+      .limit(200);
+    for (const e of synced ?? []) {
+      const res = await fetch(
+        `https://www.googleapis.com/calendar/v3/calendars/${encodeURIComponent(e.google_calendar_id ?? writeCal)}/events/${encodeURIComponent(e.google_event_id)}?fields=status`,
+        { headers: ghead },
+      );
+      let gone = res.status === 404 || res.status === 410;
+      if (res.ok) {
+        const g = await res.json().catch(() => ({}));
+        gone = g?.status === 'cancelled';
+      } else if (!gone) {
+        result.errors.push(`確認に失敗: ${res.status}`);
+        continue;
+      }
+      if (gone) {
+        await db.from('schedule_events').delete().eq('id', e.id).eq('owner_user_id', userId);
+        // 消したときに「Google でも消す」控えが自動で作られるので、それは片づける（Google 側はもう無い）
+        await db.from('google_delete_queue').delete().eq('user_id', userId).eq('google_event_id', e.google_event_id);
+        result.removed_from_eizo++;
+      }
+    }
+  }
+
+  // (b) 未同期の予定を Google へ書き出す
+  if (link.sync_push) {
+    const { data: evs } = await db.from('schedule_events')
+      .select('id,kind,title,note,location,starts_on,ends_on,start_time,end_time,google_event_id,google_calendar_id')
+      .eq('owner_user_id', userId)
+      .is('google_synced_at', null)
+      .gte('ends_on', since)
+      .order('starts_on')
+      .limit(200);
+
+    for (const e of evs ?? []) {
+      const body = toGoogleEvent(e as Record<string, unknown>);
+      let res: Response;
+      // 書いた先のカレンダー（前に書いた予定は、そのカレンダーの中で直す）
+      let target = writeCal;
+      if (e.google_event_id) {
+        target = e.google_calendar_id ?? writeCal;
+        res = await fetch(
+          `https://www.googleapis.com/calendar/v3/calendars/${encodeURIComponent(target)}/events/${encodeURIComponent(e.google_event_id)}`,
+          { method: 'PATCH', headers: ghead, body: JSON.stringify(body) },
+        );
+        // Google 側で消されていたら、作り直す
+        if (res.status === 404 || res.status === 410) {
+          target = writeCal;
+          res = await fetch(`https://www.googleapis.com/calendar/v3/calendars/${calId}/events`,
+            { method: 'POST', headers: ghead, body: JSON.stringify(body) });
+          if (res.ok) result.pushed++;
+        } else if (res.ok) {
+          result.updated++;
+        }
+      } else {
+        res = await fetch(`https://www.googleapis.com/calendar/v3/calendars/${calId}/events`,
+          { method: 'POST', headers: ghead, body: JSON.stringify(body) });
+        if (res.ok) result.pushed++;
+      }
+      if (res.ok) {
+        const g = await res.json();
+        await db.from('schedule_events')
+          .update({ google_event_id: g.id, google_calendar_id: target, google_synced_at: new Date().toISOString() })
+          .eq('id', e.id);
+      } else {
+        result.errors.push(`書き出しに失敗: ${res.status}`);
+      }
+    }
+  }
+
+  // (c) Google 側で埋まっている日を取り込む（日付だけ。件名・場所は取らない）
+  if (link.sync_pull) {
+    const busyIds: string[] = (link.busy_calendar_ids && link.busy_calendar_ids.length)
+      ? link.busy_calendar_ids.slice(0, 20)
+      : [writeCal];
+    const days = new Set<string>();
+    let pullOk = true;
+    for (const id of busyIds) {
+      const err = await busyOfCalendar(ghead, id, days);
+      if (err) { pullOk = false; result.errors.push(err); break; }
+    }
+    if (pullOk) {
+      await db.from('google_busy').delete().eq('user_id', userId);
+      if (days.size) {
+        await db.from('google_busy').insert([...days].map((day) => ({ user_id: userId, day })));
+      }
+      result.busy_days = days.size;
+    }
+  } else {
+    await db.from('google_busy').delete().eq('user_id', userId);
+  }
+
+  await db.from('calendar_links').update({
+    last_sync_at: new Date().toISOString(),
+    last_sync_error: result.errors.length ? result.errors.slice(0, 3).join(' / ').slice(0, 500) : null,
+  }).eq('user_id', userId);
+
+  return result;
+}
+
+/* ---------------- 自動同期（15分ごと） ---------------- */
+// deno-lint-ignore no-explicit-any
+async function syncEveryone(db: any) {
+  const startedAt = Date.now();
+  const { data: links } = await db.from('calendar_links')
+    .select('*')
+    .not('refresh_token_enc', 'is', null)
+    .order('last_sync_at', { ascending: true, nullsFirst: true })
+    .limit(100);
+  for (const link of links ?? []) {
+    if (Date.now() - startedAt > 120000) break; // 残りは次の回に回す
+    try {
+      await syncUser(db, link, link.user_id);
+    } catch (err) {
+      await db.from('calendar_links').update({
+        last_sync_at: new Date().toISOString(),
+        last_sync_error: String((err as Error).message ?? '自動同期に失敗しました').slice(0, 500),
+      }).eq('user_id', link.user_id);
+    }
+  }
+}
+
 /* ---------------- 本体 ---------------- */
 Deno.serve(async (req) => {
   const origin = req.headers.get('origin');
@@ -166,6 +415,23 @@ Deno.serve(async (req) => {
   if (req.method !== 'POST') return json({ error: 'POST のみ受け付けます' }, 405, origin);
 
   try {
+    const db = createClient(SUPABASE_URL, SERVICE_KEY, { auth: { persistSession: false } });
+    const payload = await req.json().catch(() => ({}));
+    const action = String(payload.action ?? '');
+
+    /* ---- 自動同期（データベースの予約実行からだけ呼ばれる） ---- */
+    if (action === 'cron') {
+      const given = req.headers.get('x-cron-key') ?? '';
+      const { data: row } = await db.from('app_internal').select('value').eq('key', 'gcal_cron').maybeSingle();
+      if (!row?.value || given.length < 32 || given !== row.value) {
+        return json({ error: '許可されていません' }, 403, origin);
+      }
+      // 返事はすぐ返し、同期は裏で続ける
+      // deno-lint-ignore no-explicit-any
+      (globalThis as any).EdgeRuntime?.waitUntil(syncEveryone(db));
+      return json({ ok: true }, 202, origin);
+    }
+
     // 1. 呼び出し元の本人確認。ここを通らない限り何もしない。
     const auth = req.headers.get('Authorization') ?? '';
     const userClient = createClient(SUPABASE_URL, ANON_KEY, {
@@ -175,10 +441,6 @@ Deno.serve(async (req) => {
     const { data: userData, error: userErr } = await userClient.auth.getUser();
     const user = userData?.user;
     if (userErr || !user) return json({ error: 'ログインが必要です' }, 401, origin);
-
-    const db = createClient(SUPABASE_URL, SERVICE_KEY, { auth: { persistSession: false } });
-    const payload = await req.json().catch(() => ({}));
-    const action = String(payload.action ?? '');
 
     /* ---- 連携する ---- */
     if (action === 'connect') {
@@ -224,212 +486,50 @@ Deno.serve(async (req) => {
       return json({ ok: true }, 200, origin);
     }
 
-    if (!['sync', 'list_calendars', 'set_calendars'].includes(action)) {
+    /* ---- 同期する ---- */
+    if (action === 'sync') {
+      const result = await syncUser(db, link, user.id);
+      return json({ ok: true, ...result }, 200, origin);
+    }
+
+    if (action !== 'list_calendars' && action !== 'set_calendars') {
       return json({ error: '不明な操作です' }, 400, origin);
     }
 
     const token = await accessToken(await decrypt(link.refresh_token_enc));
     const ghead = { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' };
+    const cals = await listCalendars(ghead);
 
     /* ---- 自分の Google カレンダーの一覧（名前と、書き込めるかどうかだけ） ---- */
-    if (action === 'list_calendars' || action === 'set_calendars') {
-      const cals = await listCalendars(ghead);
-
-      if (action === 'list_calendars') {
-        return json({
-          ok: true,
-          calendars: cals,
-          calendar_id: link.calendar_id ?? 'primary',
-          busy_calendar_ids: link.busy_calendar_ids ?? [link.calendar_id ?? 'primary'],
-        }, 200, origin);
-      }
-
-      /* ---- 使うカレンダーを保存する ---- */
-      // 一覧に無い ID は受け付けない（他人のカレンダーを指定させない）
-      const byId = new Map(cals.map((c) => [c.id, c]));
-      const primaryId = cals.find((c) => c.primary)?.id ?? 'primary';
-      const norm = (id: string) => (id === 'primary' ? primaryId : id);
-      const writeId = norm(String(payload.calendar_id ?? 'primary'));
-      const w = byId.get(writeId);
-      if (!w) return json({ error: '書き込み先のカレンダーが見つかりません' }, 400, origin);
-      if (!w.writable) return json({ error: 'そのカレンダーには書き込みできません。別のカレンダーを選んでください' }, 400, origin);
-
-      const raw = Array.isArray(payload.busy_ids) ? payload.busy_ids : [];
-      const busy = [...new Set(raw.map((x: unknown) => norm(String(x))))].filter((id) => byId.has(id));
-      if (busy.length > 20) return json({ error: '空き判定に使えるカレンダーは20個までです' }, 400, origin);
-
-      const { error } = await db.from('calendar_links').update({
-        calendar_id: w.primary ? 'primary' : writeId,
-        busy_calendar_ids: busy.map((id) => (byId.get(id)?.primary ? 'primary' : id)),
-      }).eq('user_id', user.id);
-      if (error) throw new Error(error.message);
-      return json({ ok: true }, 200, origin);
+    if (action === 'list_calendars') {
+      return json({
+        ok: true,
+        calendars: cals,
+        calendar_id: link.calendar_id ?? 'primary',
+        busy_calendar_ids: link.busy_calendar_ids ?? [link.calendar_id ?? 'primary'],
+      }, 200, origin);
     }
 
-    /* ---- 同期する ---- */
-    const writeCal = link.calendar_id ?? 'primary';
-    const calId = encodeURIComponent(writeCal);
-    const result = { pushed: 0, updated: 0, deleted: 0, removed_from_eizo: 0, busy_days: 0, errors: [] as string[] };
+    /* ---- 使うカレンダーを保存する ---- */
+    // 一覧に無い ID は受け付けない（他人のカレンダーを指定させない）
+    const byId = new Map(cals.map((c) => [c.id, c]));
+    const primaryId = cals.find((c) => c.primary)?.id ?? 'primary';
+    const norm = (id: string) => (id === 'primary' ? primaryId : id);
+    const writeId = norm(String(payload.calendar_id ?? 'primary'));
+    const w = byId.get(writeId);
+    if (!w) return json({ error: '書き込み先のカレンダーが見つかりません' }, 400, origin);
+    if (!w.writable) return json({ error: 'そのカレンダーには書き込みできません。別のカレンダーを選んでください' }, 400, origin);
 
-    // (a) Eizo Maps で消した予定を Google でも消す
-    const { data: dels } = await db.from('google_delete_queue')
-      .select('id,google_event_id,calendar_id').eq('user_id', user.id).limit(200);
-    for (const d of dels ?? []) {
-      const c = encodeURIComponent(d.calendar_id ?? 'primary');
-      const res = await fetch(
-        `https://www.googleapis.com/calendar/v3/calendars/${c}/events/${encodeURIComponent(d.google_event_id)}`,
-        { method: 'DELETE', headers: ghead },
-      );
-      // 410/404 は「Google 側に既に無い」なので成功と同じ扱い
-      if (res.ok || res.status === 410 || res.status === 404) {
-        await db.from('google_delete_queue').delete().eq('id', d.id);
-        result.deleted++;
-      } else {
-        result.errors.push(`削除に失敗: ${res.status}`);
-      }
-    }
+    const raw = Array.isArray(payload.busy_ids) ? payload.busy_ids : [];
+    const busy = [...new Set(raw.map((x: unknown) => norm(String(x))))].filter((id) => byId.has(id));
+    if (busy.length > 20) return json({ error: '空き判定に使えるカレンダーは20個までです' }, 400, origin);
 
-    // (a2) Google 側で消された予定を、Eizo Maps からも消す
-    //      対象は「同期済みで、そのあと Eizo Maps 側で変えていない」予定だけ。
-    //      Eizo Maps 側で直したばかりの予定は、下の (b) で Google に書き戻す。
-    {
-      const since = new Date();
-      since.setDate(since.getDate() - 1);
-      const { data: synced } = await db.from('schedule_events')
-        .select('id,google_event_id,google_calendar_id')
-        .eq('owner_user_id', user.id)
-        .not('google_event_id', 'is', null)
-        .not('google_synced_at', 'is', null)
-        .gte('ends_on', since.toISOString().slice(0, 10))
-        .limit(200);
-      for (const e of synced ?? []) {
-        const res = await fetch(
-          `https://www.googleapis.com/calendar/v3/calendars/${encodeURIComponent(e.google_calendar_id ?? writeCal)}/events/${encodeURIComponent(e.google_event_id)}`,
-          { headers: ghead },
-        );
-        let gone = res.status === 404 || res.status === 410;
-        if (res.ok) {
-          const g = await res.json().catch(() => ({}));
-          gone = g?.status === 'cancelled';
-        } else if (!gone) {
-          result.errors.push(`確認に失敗: ${res.status}`);
-          continue;
-        }
-        if (gone) {
-          await db.from('schedule_events').delete().eq('id', e.id).eq('owner_user_id', user.id);
-          // 消したときに「Google でも消す」控えが自動で作られるので、それは片づける（Google 側はもう無い）
-          await db.from('google_delete_queue').delete().eq('user_id', user.id).eq('google_event_id', e.google_event_id);
-          result.removed_from_eizo++;
-        }
-      }
-    }
-
-    // (b) 未同期の予定を Google へ書き出す
-    if (link.sync_push) {
-      const since = new Date();
-      since.setDate(since.getDate() - 1);
-      const { data: evs } = await db.from('schedule_events')
-        .select('id,kind,title,note,location,starts_on,ends_on,start_time,end_time,google_event_id,google_calendar_id')
-        .eq('owner_user_id', user.id)
-        .is('google_synced_at', null)
-        .gte('ends_on', since.toISOString().slice(0, 10))
-        .order('starts_on')
-        .limit(200);
-
-      for (const e of evs ?? []) {
-        const body = toGoogleEvent(e as Record<string, unknown>);
-        let res: Response;
-        // 書いた先のカレンダー（前に書いた予定は、そのカレンダーの中で直す）
-        let target = writeCal;
-        if (e.google_event_id) {
-          target = e.google_calendar_id ?? writeCal;
-          res = await fetch(
-            `https://www.googleapis.com/calendar/v3/calendars/${encodeURIComponent(target)}/events/${encodeURIComponent(e.google_event_id)}`,
-            { method: 'PATCH', headers: ghead, body: JSON.stringify(body) },
-          );
-          // Google 側で消されていたら、作り直す
-          if (res.status === 404 || res.status === 410) {
-            target = writeCal;
-            res = await fetch(`https://www.googleapis.com/calendar/v3/calendars/${calId}/events`,
-              { method: 'POST', headers: ghead, body: JSON.stringify(body) });
-          } else if (res.ok) {
-            result.updated++;
-          }
-        } else {
-          res = await fetch(`https://www.googleapis.com/calendar/v3/calendars/${calId}/events`,
-            { method: 'POST', headers: ghead, body: JSON.stringify(body) });
-          if (res.ok) result.pushed++;
-        }
-        if (res.ok) {
-          const g = await res.json();
-          await db.from('schedule_events')
-            .update({ google_event_id: g.id, google_calendar_id: target, google_synced_at: new Date().toISOString() })
-            .eq('id', e.id);
-        } else {
-          result.errors.push(`書き出しに失敗: ${res.status}`);
-        }
-      }
-    }
-
-    // (c) Google 側で埋まっている日を取り込む（中身は取らない）
-    //     Google は一度に問い合わせられる期間に上限があるので、60日ずつに分けて聞く
-    if (link.sync_pull) {
-      const busyIds: string[] = (link.busy_calendar_ids && link.busy_calendar_ids.length)
-        ? link.busy_calendar_ids.slice(0, 20)
-        : [writeCal];
-      const days = new Set<string>();
-      let pullOk = true;
-      const start = new Date();
-      for (let i = 0; i < 3 && pullOk; i++) {
-        const from = new Date(start.getTime() + i * 60 * 86400000);
-        const to = new Date(start.getTime() + (i + 1) * 60 * 86400000);
-        const res = await fetch('https://www.googleapis.com/calendar/v3/freeBusy', {
-          method: 'POST',
-          headers: ghead,
-          body: JSON.stringify({
-            timeMin: from.toISOString(),
-            timeMax: to.toISOString(),
-            timeZone: 'Asia/Tokyo',
-            items: busyIds.map((id) => ({ id })),
-          }),
-        });
-        if (!res.ok) {
-          pullOk = false;
-          let why = '';
-          try { const ej = await res.json(); why = String(ej?.error?.errors?.[0]?.reason ?? ej?.error?.message ?? ''); } catch (_) { /* 中身が読めなくても続ける */ }
-          result.errors.push(`取り込みに失敗: ${res.status}${why ? ' ' + why.slice(0, 80) : ''}`);
-          break;
-        }
-        const j = await res.json();
-        const allBusy = Object.values(j.calendars ?? {})
-          .flatMap((c) => ((c as { busy?: { start: string; end: string }[] }).busy ?? []));
-        for (const b of allBusy) {
-          // 日本時間の日付に落とす（開始日の0時から、終了の直前の日まで）
-          const s = new Date(new Date(b.start).getTime() + 9 * 3600 * 1000);
-          s.setUTCHours(0, 0, 0, 0);
-          const e = new Date(new Date(b.end).getTime() + 9 * 3600 * 1000 - 1);
-          for (let d = new Date(s); d <= e && days.size <= 400; d.setUTCDate(d.getUTCDate() + 1)) {
-            days.add(d.toISOString().slice(0, 10));
-          }
-        }
-      }
-      if (pullOk) {
-        await db.from('google_busy').delete().eq('user_id', user.id);
-        if (days.size) {
-          await db.from('google_busy').insert(
-            [...days].map((day) => ({ user_id: user.id, day })),
-          );
-        }
-        result.busy_days = days.size;
-      }
-    }
-
-    await db.from('calendar_links').update({
-      last_sync_at: new Date().toISOString(),
-      last_sync_error: result.errors.length ? result.errors.slice(0, 3).join(' / ').slice(0, 500) : null,
+    const { error } = await db.from('calendar_links').update({
+      calendar_id: w.primary ? 'primary' : writeId,
+      busy_calendar_ids: busy.map((id) => (byId.get(id)?.primary ? 'primary' : id)),
     }).eq('user_id', user.id);
-
-    return json({ ok: true, ...result }, 200, origin);
+    if (error) throw new Error(error.message);
+    return json({ ok: true }, 200, origin);
   } catch (err) {
     return json({ error: (err as Error).message ?? '処理に失敗しました' }, 400, origin);
   }

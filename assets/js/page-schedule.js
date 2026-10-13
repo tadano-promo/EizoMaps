@@ -24,6 +24,7 @@
     function kindColor(k) { for (var i = 0; i < KINDS.length; i++) if (KINDS[i][0] === k) return KINDS[i][2]; return '#9aa0b5'; }
 
     var me = null, creator = null, projects = [], events = [];
+    var gbusy = {};   // Google 側で予定がある日（日付だけ。件名などは持たない）
     var cursor = new Date(); cursor.setDate(1);
 
     EM.requireUser().then(function (u) {
@@ -61,12 +62,17 @@
     function load() {
       var from = ymd(monthStart()), to = ymd(monthEnd());
       EM.$('#monthLabel').textContent = cursor.getFullYear() + '.' + pad(cursor.getMonth() + 1);
-      return sb.from('schedule_events').select(EV_COLS)
-        .lte('starts_on', to).gte('ends_on', from)
-        .order('starts_on')
-        .then(function (r) {
+      return Promise.all([
+        sb.from('schedule_events').select(EV_COLS)
+          .lte('starts_on', to).gte('ends_on', from)
+          .order('starts_on'),
+        sb.from('google_busy').select('day').gte('day', from).lte('day', to)
+      ]).then(function (rs) {
+          var r = rs[0];
           if (r.error) throw r.error;
           events = r.data || [];
+          gbusy = {};
+          (rs[1].data || []).forEach(function (g) { gbusy[g.day] = true; });
           render();
         }).catch(function (e) { EM.notice(msg, EM.errorText(e), 'error'); });
     }
@@ -154,6 +160,18 @@
         var list = events.filter(function (e) {
           return c.id ? e.project_id === c.id : !e.project_id;
         });
+        // 個人の予定の列に、Google 側で予定がある日の印を敷く（予定のバーの下に出る）
+        if (!c.id) {
+          for (var di = 0; di < days; di++) {
+            var dk = ymd(new Date(mStart.getFullYear(), mStart.getMonth(), di + 1));
+            if (!gbusy[dk]) continue;
+            lane.appendChild(el('div', {
+              class: 'vcal__gbusy',
+              style: { top: (di * ROW + 2) + 'px', height: (ROW - 4) + 'px' },
+              title: 'Google カレンダーに予定があります'
+            }, el('span', { text: 'Google に予定あり' })));
+          }
+        }
         var laneCount = assignLanes(list);
         list.forEach(function (e) {
           lane.appendChild(bar(e, mStart, days, laneCount));
@@ -206,6 +224,12 @@
           el('span', { class: 'small muted', text: k[1] })
         ]));
       });
+      if (gcal && gcal.connected && gcal.sync_pull) {
+        box.appendChild(el('span', { class: 'vcal-key' }, [
+          el('i', { class: 'vcal-key__dot vcal-key__dot--g' }),
+          el('span', { class: 'small muted', text: 'Google に予定あり' })
+        ]));
+      }
     }
 
     /* ---------------- 入力フォーム ---------------- */
@@ -320,6 +344,7 @@
         if (r.error) throw r.error;
         closeForm();
         EM.toast('保存しました');
+        quietSync();
         return load();
       }).catch(function (err) { EM.notice(msg, EM.errorText(err), 'error'); })
         .then(function () { btn.removeAttribute('aria-busy'); });
@@ -329,7 +354,7 @@
       var id = EM.$('#evId').value;
       if (!id || !confirm('この予定を削除しますか？')) return;
       sb.from('schedule_events').delete().eq('id', id)
-        .then(function (r) { if (r.error) throw r.error; closeForm(); return load(); })
+        .then(function (r) { if (r.error) throw r.error; closeForm(); quietSync(); return load(); })
         .catch(function (err) { EM.notice(msg, EM.errorText(err), 'error'); });
     }
 
@@ -353,6 +378,31 @@
         if (r.data && r.data.error) throw new Error(r.data.error);
         return r.data;
       });
+    }
+
+    // 予定を入れた・消したときに、裏でそっと Google と同期する（失敗しても15分ごとの自動同期で追いつく）
+    var quietTimer = null;
+    function quietSync() {
+      if (!gcal || !gcal.connected) return;
+      clearTimeout(quietTimer);
+      quietTimer = setTimeout(function () {
+        gcalCall({ action: 'sync' }).then(function (d) {
+          if (d && d.removed_from_eizo) load();
+          return loadGcal();
+        }).catch(function () { /* 次の自動同期に任せる */ });
+      }, 800);
+    }
+
+    // ページを開いたとき、前の同期から5分以上たっていれば同期しておく
+    var openedSync = false;
+    function syncOnOpen() {
+      if (openedSync || !gcal || !gcal.connected) return;
+      openedSync = true;
+      var last = gcal.last_sync_at ? Date.parse(gcal.last_sync_at) : 0;
+      if (Date.now() - last < 5 * 60 * 1000) return;
+      gcalCall({ action: 'sync' }).then(function () {
+        return loadGcal();
+      }).then(load).catch(function () { /* 画面には出さない */ });
     }
 
     function loadGcal() {
@@ -381,7 +431,7 @@
       EM.$('#gcalPush').checked = !!gcal.sync_push;
       EM.$('#gcalPull').checked = !!gcal.sync_pull;
       var parts = [(gcal.google_email || 'Google アカウント') + ' と連携中'];
-      parts.push(gcal.last_sync_at ? '最終同期: ' + EM.date(gcal.last_sync_at) : 'まだ同期していません');
+      parts.push(gcal.last_sync_at ? '最終同期: ' + syncTime(gcal.last_sync_at) : 'まだ同期していません');
       if (gcal.pending) parts.push('未同期の予定: ' + gcal.pending + '件');
       if (gcal.google_busy_days) parts.push('Google側で埋まっている日: ' + gcal.google_busy_days + '日');
       st.textContent = parts.join(' ／ ');
@@ -389,6 +439,15 @@
         EM.notice(msg, '前回の同期で問題がありました: ' + gcal.last_sync_error, 'error');
       }
       loadCalendars();
+      syncOnOpen();
+    }
+
+    function syncTime(iso) {
+      var d = new Date(iso);
+      var mins = Math.round((Date.now() - d.getTime()) / 60000);
+      if (mins < 1) return 'たった今';
+      if (mins < 60) return mins + '分前';
+      return EM.date(iso) + ' ' + pad(d.getHours()) + ':' + pad(d.getMinutes());
     }
 
     // 書き出す先・埋まっている日に含めるカレンダーを選ぶ欄
