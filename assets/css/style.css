@@ -949,3 +949,64 @@ input[type=search]::placeholder { color: #4a4a5c; }
 .handle-sugg { display: grid; gap: 6px; }
 .handle-rules { margin: 8px 0 0; padding-left: 18px; display: grid; gap: 2px; }
 .handle-sugg .chip[aria-pressed="true"] { color: #111; }
+
+/* 月の表示：日付を押すと日ごとの表示へ */
+a.vcal__day { color: inherit; text-decoration: none; }
+a.vcal__day:hover .vcal__dnum { color: var(--accent); text-decoration: underline; }
+
+/* ===== 日ごとの予定（時間割） ===== */
+.plain-link { color: inherit; text-decoration: none; }
+.day-picker { width: auto; padding: 6px 8px; font-size: 13px; }
+.day-hint { margin: 10px 0 14px; }
+.day-allday { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 12px; }
+.day-allday__item {
+  display: inline-flex; gap: 8px; align-items: center; padding: 8px 12px; border-radius: 8px; cursor: pointer;
+  border: 0; border-left: 3px solid var(--bar); background: color-mix(in srgb, var(--bar) 14%, var(--surface2)); color: var(--text); font-size: 13px;
+}
+.day-scroll { overflow-x: auto; border: 1px solid var(--border); border-radius: 10px; background: var(--surface); }
+.day-grid { display: flex; align-items: flex-start; min-width: min-content; }
+.day-col { width: 132px; flex: none; border-left: 1px solid var(--border); }
+.day-col--wide { width: 200px; }
+.day-col--axis { width: 54px; border-left: 0; position: sticky; left: 0; z-index: 3; background: var(--surface); }
+.day-col--band { width: 64px; }
+.day-col--add { width: 96px; }
+.day-head {
+  height: 34px; display: flex; align-items: center; justify-content: center; padding: 0 6px;
+  font-size: 12px; font-weight: 700; border-bottom: 1px solid var(--border); background: var(--surface2);
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+.day-head--axis { background: var(--surface); height: 108px; border-bottom: 1px solid var(--border); }
+.day-head--add { width: 100%; border: 0; border-bottom: 1px dashed var(--border); color: var(--accent); cursor: pointer; font-weight: 500; }
+.day-axis, .day-body { position: relative; }
+.day-body {
+  background-image: linear-gradient(to bottom, var(--border) 1px, transparent 1px);
+  background-size: 100% 56px; cursor: copy;
+}
+.day-body--add { background-image: none; cursor: copy; }
+.day-axis__h { position: absolute; right: 8px; transform: translateY(-50%); font-size: 11px; color: var(--muted); }
+.day-axis__h:first-child { transform: none; }
+.day-group { flex: none; border-left: 2px solid var(--bar); }
+.day-group__head { height: 74px; padding: 8px 10px; border-bottom: 1px solid var(--border); background: color-mix(in srgb, var(--bar) 10%, var(--surface)); overflow: hidden; }
+.day-group__project { margin: 0; font-size: 11px; color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.day-group__title { margin: 2px 0; font-size: 14px; font-weight: 700; display: flex; gap: 6px; align-items: center; white-space: nowrap; overflow: hidden; }
+.day-group__time { margin: 0; font-size: 11px; color: var(--muted); }
+.day-group__cols { display: flex; }
+.day-kind { font-family: var(--font-mono); font-size: 10px; color: var(--bar, var(--accent)); letter-spacing: .08em; }
+.day-band {
+  position: absolute; left: 6px; right: 6px; border-radius: 6px;
+  background: repeating-linear-gradient(180deg, color-mix(in srgb, var(--bar) 26%, transparent) 0 6px, color-mix(in srgb, var(--bar) 14%, transparent) 6px 12px);
+  border: 1px solid color-mix(in srgb, var(--bar) 60%, transparent);
+  writing-mode: vertical-rl; display: flex; align-items: center; justify-content: flex-start; padding: 6px 0;
+  font-size: 11px; color: var(--text); overflow: hidden; pointer-events: none;
+}
+.day-item {
+  position: absolute; border: 0; border-left: 3px solid var(--bar); border-radius: 5px; cursor: pointer;
+  background: color-mix(in srgb, var(--bar) 18%, var(--surface2)); color: var(--text);
+  padding: 3px 6px; text-align: left; display: flex; flex-direction: column; gap: 1px; overflow: hidden; font-size: 12px; line-height: 1.3;
+}
+.day-item:hover { filter: brightness(1.25); }
+.day-item__time { font-size: 10px; color: var(--muted); }
+.day-item__title { font-weight: 500; }
+.day-form { margin-top: 18px; }
+#dayLabel { white-space: nowrap; width: auto; min-width: max-content; }
+#dayBody .vcal-nav { flex-wrap: wrap; }

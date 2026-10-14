@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; base-uri 'self'; object-src 'none'; form-action 'self'; script-src 'self' https://cdn.jsdelivr.net; style-src 'self' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src 'self' data: https://img.youtube.com https://i.ytimg.com https://i.vimeocdn.com https://*.supabase.co; connect-src 'self' https://*.supabase.co wss://*.supabase.co https://vimeo.com; frame-src 'none'; upgrade-insecure-requests">
+<meta name="referrer" content="strict-origin-when-cross-origin">
+<title>日ごとの予定 — Eizo Maps</title>
+<meta name="description" content="1日の時間割。大枠の予定の中に、班ごとの細かい動きを入れる。">
+<meta name="robots" content="noindex, nofollow">
+<meta property="og:site_name" content="Eizo Maps">
+<meta property="og:title" content="日ごとの予定 — Eizo Maps">
+<meta property="og:description" content="1日の時間割。大枠の予定の中に、班ごとの細かい動きを入れる。">
+<meta property="og:type" content="website">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bebas+Neue&amp;family=DM+Mono:wght@400;500&amp;family=Noto+Sans+JP:wght@300;400;500;700&amp;display=swap">
+<link rel="stylesheet" href="/assets/css/style.css">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.116.0/dist/umd/supabase.js" integrity="sha384-iLddHTLokph6Omwoyid4XKxHaWa6w41BnoEj0q5oOrzmYPpHIKt1wyjReA7s//pP" crossorigin="anonymous" referrerpolicy="no-referrer" defer></script>
+<script src="/assets/js/config.js" defer></script>
+<script src="/assets/js/app.js" defer></script>
+<script src="/assets/js/page-schedule-day.js" defer></script>
+</head>
+<body>
+<main class="section">
+  <div class="wrap">
+    <p class="eyebrow"><a href="/schedule/" class="plain-link">Schedule</a> ／ Day</p>
+    <h1>日ごとの予定</h1>
+    <div class="notice" id="pageMsg" hidden></div>
+
+    <section id="dayBody" hidden>
+      <div class="vcal-bar">
+        <div class="vcal-nav">
+          <button class="btn btn--sm" type="button" id="prevDay" aria-label="前の日">←</button>
+          <span class="vcal-month num" id="dayLabel"></span>
+          <button class="btn btn--sm" type="button" id="nextDay" aria-label="次の日">→</button>
+          <button class="btn btn--sm" type="button" id="todayBtn">今日</button>
+          <input type="date" id="dayPicker" class="day-picker" aria-label="日付を選ぶ">
+        </div>
+        <div class="vcal-nav">
+          <a class="btn btn--sm" id="toMonth" href="/schedule/">月の表示へ</a>
+          <a class="btn btn--sm btn--primary" id="newBigBtn" href="/schedule/">大枠の予定を追加</a>
+        </div>
+      </div>
+
+      <p class="small muted day-hint">
+        大枠（撮影など）の中の空いているところを押すと、その時間に<strong>小枠</strong>（班ごとの細かい動き）を入れられます。
+        夜をまたぐときは 25:00 のように書けます。
+      </p>
+
+      <div class="day-allday" id="dayAllday" hidden></div>
+      <div class="day-scroll">
+        <div class="day-grid" id="dayGrid"></div>
+      </div>
+      <p class="empty" id="dayEmpty" hidden>この日の予定はまだありません。「大枠の予定を追加」から入れてください。</p>
+
+      <!-- 小枠の入力 -->
+      <div class="card stack day-form" id="itemForm" hidden>
+        <h2 id="itemFormTitle">小枠を追加</h2>
+        <p class="small muted" id="itemFormParent"></p>
+        <input type="hidden" id="itId">
+        <input type="hidden" id="itEvent">
+        <label class="field">
+          <span class="label">班・担当 <span class="muted">（列の名前。自由に書けます・40文字まで）</span></span>
+          <input type="text" id="itLane" maxlength="40" list="laneList" required placeholder="例：撮影本隊／車両部／別班">
+          <datalist id="laneList"></datalist>
+        </label>
+        <label class="field">
+          <span class="label">内容 <span class="muted">（100文字まで）</span></span>
+          <input type="text" id="itTitle" maxlength="100" required placeholder="例：弁当ピックアップ／メインキャスト迎え">
+          <span class="hint">出演者の名前や場所は、略称で書くのがおすすめです（例：メインキャストIN）。</span>
+        </label>
+        <div class="row">
+          <label class="field">
+            <span class="label">開始</span>
+            <input type="text" id="itStart" inputmode="numeric" maxlength="5" required placeholder="7:30">
+          </label>
+          <label class="field">
+            <span class="label">終了</span>
+            <input type="text" id="itEnd" inputmode="numeric" maxlength="5" required placeholder="9:00">
+          </label>
+        </div>
+        <p class="small muted">「7:30」のように書きます。翌日の深夜1時は「25:00」です（47:59 まで）。</p>
+        <label class="field">
+          <span class="label">メモ <span class="muted">（500文字まで・任意）</span></span>
+          <textarea id="itNote" maxlength="500" rows="2"></textarea>
+        </label>
+        <div class="form-actions">
+          <button class="btn btn--primary" type="button" id="itSaveBtn">保存する</button>
+          <button class="btn btn--sm" type="button" id="itCancelBtn">閉じる</button>
+          <button class="btn btn--sm btn--danger" type="button" id="itDeleteBtn" hidden>削除</button>
+        </div>
+      </div>
+    </section>
+  </div>
+</main>
+</body>
+</html>

@@ -26,6 +26,9 @@
     var me = null, creator = null, projects = [], events = [];
     var gbusy = {};   // Google 側で予定がある日（日付だけ。件名などは持たない）
     var cursor = new Date(); cursor.setDate(1);
+    var qm = String(EM.param('m') || ''), qnew = String(EM.param('new') || '');
+    if (/^\d{4}-\d{2}$/.test(qm)) cursor = new Date(+qm.slice(0, 4), +qm.slice(5, 7) - 1, 1);
+    if (/^\d{4}-\d{2}-\d{2}$/.test(qnew)) cursor = new Date(+qnew.slice(0, 4), +qnew.slice(5, 7) - 1, 1);
 
     EM.requireUser().then(function (u) {
       if (!u) return;
@@ -46,7 +49,13 @@
       }
       projects = (!r[1].error && r[1].data) || [];
       fillProjectSelect();
-      return finishConnect().then(loadGcal).then(load);
+      return finishConnect().then(loadGcal).then(load).then(function () {
+        // 日ごとの表示から「大枠の予定を追加」で来たとき
+        if (/^\d{4}-\d{2}-\d{2}$/.test(qnew)) {
+          openNew();
+          EM.$('#evStart').value = qnew; EM.$('#evEnd').value = qnew;
+        }
+      });
     }).catch(function (e) { EM.notice(msg, EM.errorText(e), 'error'); });
 
     /* ---------------- 日付まわり ---------------- */
@@ -137,7 +146,9 @@
       for (var i = 0; i < days; i++) {
         var d = new Date(mStart.getFullYear(), mStart.getMonth(), i + 1);
         var wd = d.getDay();
-        box.appendChild(el('div', {
+        box.appendChild(el('a', {
+          href: '/schedule/day.html?d=' + ymd(d),
+          title: 'この日の時間割を開く',
           class: 'vcal__day' + (wd === 0 ? ' is-sun' : wd === 6 ? ' is-sat' : '')
                  + (ymd(d) === today ? ' is-today' : ''),
           style: { gridColumn: '1', gridRow: String(i + 2) }
@@ -273,6 +284,7 @@
       EM.$('#evBusy').checked = true;
       EM.$('#evVisibility').checked = false;
       EM.$('#evDeleteBtn').hidden = true;
+      EM.$('#evDayLink').hidden = true;
       syncVisibilityRow();
       showForm();
     }
@@ -292,6 +304,8 @@
       EM.$('#evBusy').checked = !!e.busy;
       EM.$('#evVisibility').checked = e.visibility === 'project';
       EM.$('#evDeleteBtn').hidden = false;
+      EM.$('#evDayLink').href = '/schedule/day.html?d=' + e.starts_on;
+      EM.$('#evDayLink').hidden = false;
       syncVisibilityRow();
       showForm();
     }

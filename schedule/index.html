@@ -35,6 +35,7 @@
           <span class="vcal-month num" id="monthLabel"></span>
           <button class="btn btn--sm" type="button" id="nextMonth" aria-label="次の月">→</button>
           <button class="btn btn--sm" type="button" id="thisMonth">今月</button>
+          <a class="btn btn--sm" id="toDayView" href="/schedule/day.html">今日の時間割</a>
         </div>
         <div class="vcal-nav">
           <button class="btn btn--sm btn--primary" type="button" id="newEventBtn">予定を追加</button>
@@ -64,6 +65,7 @@
         <label class="field">
           <span class="label">件名 <span class="muted">（100文字まで）</span></span>
           <input type="text" id="evTitle" maxlength="100" required placeholder="例：本編撮影">
+          <span class="hint">出演者の名前や場所は、略称で書くのがおすすめです（例：メインキャストIN）。</span>
         </label>
         <div class="row">
           <label class="field">
@@ -104,6 +106,7 @@
         <div class="form-actions">
           <button class="btn btn--primary" type="button" id="evSaveBtn">保存する</button>
           <button class="btn btn--sm" type="button" id="evCancelBtn">閉じる</button>
+          <a class="btn btn--sm" id="evDayLink" href="/schedule/" hidden>この日の時間割を開く（小枠を入れる）</a>
           <button class="btn btn--sm btn--danger" type="button" id="evDeleteBtn" hidden>削除</button>
         </div>
       </div>
