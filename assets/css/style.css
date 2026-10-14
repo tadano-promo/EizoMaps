@@ -947,3 +947,5 @@ input[type=search]::placeholder { color: #4a4a5c; }
 .handle-status.is-ok { color: #4ade80; }
 .handle-status.is-ng { color: #ff8b6b; }
 .handle-sugg { display: grid; gap: 6px; }
+.handle-rules { margin: 8px 0 0; padding-left: 18px; display: grid; gap: 2px; }
+.handle-sugg .chip[aria-pressed="true"] { color: #111; }

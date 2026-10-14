@@ -39,19 +39,24 @@
         <p class="small muted" id="handleNeedProfile" hidden>下のプロフィールを一度保存すると、@ハンドルを決められます。</p>
         <div id="handleEditor" hidden>
           <label class="field">
-            <span class="label">@ハンドル <span class="muted">（半角の英小文字・数字・アンダーバー「_」、3〜20文字）</span></span>
+            <span class="label">@ハンドル <span class="muted">（3〜20文字）</span></span>
             <div class="handle-input">
               <span class="handle-input__at">@</span>
               <input type="text" id="handleInput" maxlength="21" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="例：yamada_film">
             </div>
           </label>
+          <ul class="small muted handle-rules">
+            <li>使える文字：半角の英小文字（a〜z）と数字（0〜9）</li>
+            <li>使える記号：アンダーバー「_」だけ（ハイフン「-」やドット「.」、スペースは使えません）</li>
+            <li>大文字で入れても、小文字にそろえて登録されます</li>
+          </ul>
           <p class="small handle-status" id="handleStatus" aria-live="polite"></p>
           <div class="handle-sugg" id="handleSugg" hidden>
-            <span class="small muted">空いている候補：</span>
+            <span class="small muted">空いている候補（押すと上の欄に入ります。決めるのは下のボタンです）：</span>
             <div class="chips" id="handleSuggList"></div>
           </div>
           <div class="form-actions">
-            <button class="btn btn--primary btn--sm" type="button" id="handleSaveBtn" disabled>この @ハンドルにする</button>
+            <button class="btn btn--primary btn--sm" type="button" id="handleSaveBtn" disabled>この @ハンドルで確定する</button>
           </div>
           <p class="small muted" id="handleUrlLine" hidden>あなたのページ：<a id="handleUrl" href="#" target="_blank" rel="noopener"></a></p>
           <p class="small muted">あとから変えることもできますが、変えると前のアドレスは使えなくなります。名刺やSNSに載せる前に決めておくのがおすすめです。</p>

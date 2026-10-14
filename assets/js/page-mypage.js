@@ -49,7 +49,7 @@
     /* ---------------- @ハンドル ----------------
        入力のたびにサーバーへ「使えるか」を聞き、使えないときは理由と空いている候補を出す。
        最終的な重複チェックはデータベースが行う（同時に同じ名前を取られても二重にはならない）。 */
-    var handleTimer = null, handleReq = 0, handleOk = false;
+    var handleTimer = null, handleReq = 0, handleOk = false, keepSugg = false;
     var REASON = {
       taken: 'この @ハンドルは、すでにほかの人が使っています。',
       reserved: 'この @ハンドルは使えません（運営やページの名前とまぎらわしいため）。',
@@ -95,7 +95,15 @@
       (list || []).forEach(function (h) {
         box.appendChild(el('button', {
           type: 'button', class: 'chip', text: '@' + h,
-          onclick: function () { EM.$('#handleInput').value = h; checkHandle(); }
+          'aria-pressed': 'false',
+          onclick: function () {
+            EM.$$('#handleSuggList .chip').forEach(function (c) { c.setAttribute('aria-pressed', 'false'); });
+            this.setAttribute('aria-pressed', 'true');
+            keepSugg = true;
+            EM.$('#handleInput').value = h;
+            EM.$('#handleInput').focus();
+            checkHandle();
+          }
         }));
       });
       EM.$('#handleSugg').hidden = !(list && list.length);
@@ -121,8 +129,9 @@
         if (d.ok) {
           handleOk = true;
           EM.$('#handleSaveBtn').disabled = false;
-          setHandleStatus('@' + d.handle + ' は使えます。', 'ok');
-          EM.$('#handleSugg').hidden = true;
+          setHandleStatus('@' + d.handle + ' は使えます。よければ「確定する」を押してください。', 'ok');
+          // 候補から選んだときは、ほかの候補も残しておく（押し間違えてもすぐ選び直せるように）
+          if (!keepSugg) EM.$('#handleSugg').hidden = true;
         } else {
           setHandleStatus(REASON[d.reason] || '使えません。', 'ng');
           renderSugg(d.suggestions);
@@ -131,6 +140,8 @@
     }
 
     EM.$('#handleInput').addEventListener('input', function () {
+      keepSugg = false;
+      EM.$$('#handleSuggList .chip').forEach(function (c) { c.setAttribute('aria-pressed', 'false'); });
       clearTimeout(handleTimer);
       handleTimer = setTimeout(checkHandle, 350);
     });
@@ -139,10 +150,10 @@
       if (!handleOk) return;
       var b = this; b.setAttribute('aria-busy', 'true');
       var v = EM.$('#handleInput').value.trim();
-      if (creator.handle && creator.handle !== v &&
-          !confirm('@' + creator.handle + ' から @' + v + ' に変えますか？\n前のアドレスは使えなくなります。')) {
-        b.removeAttribute('aria-busy'); return;
-      }
+      var ask = creator.handle
+        ? '@' + creator.handle + ' から @' + v + ' に変えますか？\n前のアドレスは使えなくなります。'
+        : '@' + v + ' で確定しますか？';
+      if (!confirm(ask)) { b.removeAttribute('aria-busy'); return; }
       sb.rpc('set_my_handle', { p_handle: v }).then(function (r) {
         if (r.error) throw r.error;
         var d = r.data || {};
