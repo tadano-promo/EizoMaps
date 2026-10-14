@@ -1,0 +1,181 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; base-uri 'self'; object-src 'none'; form-action 'self'; script-src 'self' https://cdn.jsdelivr.net; style-src 'self' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src 'self' data: https://*.supabase.co; connect-src 'self' https://*.supabase.co wss://*.supabase.co; frame-src 'none'; upgrade-insecure-requests">
+<meta name="referrer" content="strict-origin-when-cross-origin">
+<title>作品リールに、カギをかけて渡す — Eizo Maps</title>
+<meta name="description" content="パスワード付きの作品集ページが、URLを貼るだけでつくれます。クライアントのサイトや限定公開の動画もそのまま。自分でホームページを作る必要はありません。">
+<link rel="canonical" href="https://eizo-maps.com/features/stock/">
+<meta property="og:site_name" content="Eizo Maps">
+<meta property="og:title" content="作品リールに、カギをかけて渡す — Eizo Maps">
+<meta property="og:description" content="パスワード付きの作品集ページが、URLを貼るだけでつくれます。">
+<meta property="og:type" content="article">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bebas+Neue&amp;family=DM+Mono:wght@400;500&amp;family=Noto+Sans+JP:wght@300;400;500;700&amp;display=swap">
+<link rel="stylesheet" href="/assets/css/style.css">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.116.0/dist/umd/supabase.js" integrity="sha384-iLddHTLokph6Omwoyid4XKxHaWa6w41BnoEj0q5oOrzmYPpHIKt1wyjReA7s//pP" crossorigin="anonymous" referrerpolicy="no-referrer" defer></script>
+<script src="/assets/js/config.js" defer></script>
+<script src="/assets/js/app.js" defer></script>
+<script src="/assets/js/page-features.js" defer></script>
+</head>
+<body>
+<main class="feat">
+
+  <!-- ===== はじめの一画面 ===== -->
+  <section class="feat-hero">
+    <div class="wrap feat-hero__inner">
+      <div class="feat-hero__text">
+        <p class="eyebrow"><a href="/features/">Features</a> ／ 01 パスワード付きの作品集</p>
+        <h1>作品リールに、<br>カギをかけて渡す。<br><span class="feat-accent">URLを貼るだけで。</span></h1>
+        <p class="lead">
+          表に出せない案件も、まだ公開前の作品も。
+          Eizo Maps なら、パスワード付きの作品集ページが誰でも数分でつくれます。
+          自分でホームページを作るところから始める必要はありません。
+        </p>
+        <div class="cta">
+          <a class="btn btn--primary" href="/auth/" data-cta-out>無料で作ってみる</a>
+          <a class="btn btn--primary" href="/mypage/stock.html" data-cta-in hidden>作品集ページを作る</a>
+          <a class="btn" href="/help/#stock">使い方を見る</a>
+        </div>
+      </div>
+
+      <!-- 画面のイメージ（絵だけ。本物の作品ではありません） -->
+      <div class="feat-mock" aria-hidden="true">
+        <div class="feat-mock__lock">
+          <div class="feat-mock__avatar"></div>
+          <p class="feat-mock__name">山田 映像｜作品集 2026</p>
+          <div class="feat-mock__keyhole">
+            <svg viewBox="0 0 24 24" width="28" height="28"><path fill="currentColor" d="M12 2a5 5 0 0 0-5 5v3H6a2 2 0 0 0-2 2v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8a2 2 0 0 0-2-2h-1V7a5 5 0 0 0-5-5Zm-3 8V7a3 3 0 1 1 6 0v3H9Zm3 4a1.5 1.5 0 0 1 .8 2.8V18h-1.6v-1.2A1.5 1.5 0 0 1 12 14Z"/></svg>
+          </div>
+          <div class="feat-mock__input">••••••••</div>
+          <div class="feat-mock__btn">開く</div>
+        </div>
+        <div class="feat-mock__arrow">→</div>
+        <div class="feat-mock__grid">
+          <span></span><span></span>
+          <span></span><span></span>
+          <span></span><span></span>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===== あるある ===== -->
+  <section class="section">
+    <div class="wrap">
+      <p class="eyebrow">Why</p>
+      <h2>クリエイターなら、きっと覚えがあるはず。</h2>
+      <div class="grid grid--3 feat-pains">
+        <div class="card">
+          <p class="num">01</p>
+          <h3>作品リールは、だいたいカギ付き</h3>
+          <p class="small muted">守秘義務のある仕事、まだ発表前の仕事。そのまま公開できない作品が多いから、パスワードをかけて送るのが当たり前になっています。</p>
+        </div>
+        <div class="card">
+          <p class="num">02</p>
+          <h3>自分のサイト作りで手が止まる</h3>
+          <p class="small muted">自分のホームページにまとめようとすると、ページを作る・更新する・カギをかける…と、作品より先にサイト作りが待っています。</p>
+        </div>
+        <div class="card">
+          <p class="num">03</p>
+          <h3>作品があちこちに散らばる</h3>
+          <p class="small muted">クライアントのサイト、制作会社の限定リンク、YouTube、SNS。送るたびに「あれ、どこだっけ」と探すことになります。</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===== URLを貼るだけ ===== -->
+  <section class="section feat-band">
+    <div class="wrap feat-split">
+      <div>
+        <p class="eyebrow">How</p>
+        <h2>作品は、もうどこかにある。<br>だから<span class="feat-accent">URLを貼るだけ</span>。</h2>
+        <p class="lead">
+          クライアントが自社サイトに載せた動画。制作会社が限定公開でアップした動画。自分の SNS の投稿。
+          そのURLを共有してもらって貼れば、すぐにページに並びます。動画を自分で上げ直す必要はありません。
+        </p>
+        <p class="small muted">サムネイルは自動で取得します。取れないものは、好きな画像を設定できます。</p>
+      </div>
+      <ul class="feat-sources">
+        <li><b>YouTube</b><span>限定公開の動画もそのまま</span></li>
+        <li><b>Vimeo</b><span>ページの中で再生</span></li>
+        <li><b>TikTok</b><span>縦型のショート動画も</span></li>
+        <li><b>X / Instagram / Facebook</b><span>投稿をページの中で表示</span></li>
+        <li><b>クライアントのサイトなど</b><span>リンクとして並べられます</span></li>
+        <li><b>資料・メモ</b><span>企画書のリンクやひとことも一緒に</span></li>
+      </ul>
+    </div>
+  </section>
+
+  <!-- ===== 3ステップ ===== -->
+  <section class="section">
+    <div class="wrap">
+      <p class="eyebrow">Steps</p>
+      <h2>3ステップで、鍵付きで渡せる。</h2>
+      <ol class="feat-steps">
+        <li>
+          <span class="feat-steps__n">1</span>
+          <h3>作品のURLを貼る</h3>
+          <p class="small muted">並べたい作品のURLを貼るだけ。一度登録した作品は、プロフィールでも別のページでも使い回せます。</p>
+        </li>
+        <li>
+          <span class="feat-steps__n">2</span>
+          <h3>パスワードを決める</h3>
+          <p class="small muted">6文字以上の好きなパスワードを設定。変えたくなったら、いつでも変えられます。</p>
+        </li>
+        <li>
+          <span class="feat-steps__n">3</span>
+          <h3>URLとパスワードを渡す</h3>
+          <p class="small muted">受け取った人は、パスワードを入れるだけで見られます。相手に登録してもらう必要はありません。</p>
+        </li>
+      </ol>
+    </div>
+  </section>
+
+  <!-- ===== 安心のつくり ===== -->
+  <section class="section feat-band">
+    <div class="wrap">
+      <p class="eyebrow">Safety</p>
+      <h2>カギは、ちゃんと固く。</h2>
+      <div class="grid grid--2 feat-safe">
+        <div class="feat-safe__item">
+          <h3>パスワードは運営も読めない形で保存</h3>
+          <p class="small muted">設定したパスワードは、元の文字に戻せない形にしてから保存します。運営にも分かりません。</p>
+        </div>
+        <div class="feat-safe__item">
+          <h3>何度も間違えると、しばらく開けない</h3>
+          <p class="small muted">当てずっぽうで何度も試されないよう、間違いが続くと自動でロックがかかります。</p>
+        </div>
+        <div class="feat-safe__item">
+          <h3>開く前に見えるのは、名前とタイトルだけ</h3>
+          <p class="small muted">パスワードを入れる前の画面に出るのは、ページのタイトル・名前・アイコンだけ。作品は一切見えません。</p>
+        </div>
+        <div class="feat-safe__item">
+          <h3>作品ごとに「どこまで見せるか」を選べる</h3>
+          <p class="small muted">誰でも見られる／限定リンクだけ／パスワードページだけ、の3段階。表に出せない作品は、パスワードページの中だけに置けます。</p>
+        </div>
+      </div>
+      <p class="small muted feat-note">パスワードを入れる画面には「パスワードや内容の外部への共有・転載はご遠慮ください」という注意書きが自動で入ります。</p>
+    </div>
+  </section>
+
+  <!-- ===== しめ ===== -->
+  <section class="section feat-end">
+    <div class="wrap">
+      <h2>次の営業から、<br>URLとパスワードだけ送ろう。</h2>
+      <p class="lead">登録は無料。メールアドレスか Google アカウントで始められます。</p>
+      <div class="cta">
+        <a class="btn btn--primary" href="/auth/" data-cta-out>無料で作ってみる</a>
+        <a class="btn btn--primary" href="/mypage/stock.html" data-cta-in hidden>作品集ページを作る</a>
+        <a class="btn" href="/features/">ほかの便利な機能を見る</a>
+      </div>
+    </div>
+  </section>
+
+</main>
+</body>
+</html>

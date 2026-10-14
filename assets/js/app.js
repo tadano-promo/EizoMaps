@@ -298,6 +298,7 @@
   var NAV_PUBLIC = [
     ['/', 'ホーム'],
     ['/creators/', 'クリエイターを探す'],
+    ['/features/', '便利な機能'],
     ['/help/', '使い方・ヘルプ']
   ];
   var NAV_USER = [
