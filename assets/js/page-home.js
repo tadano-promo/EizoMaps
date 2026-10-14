@@ -88,9 +88,8 @@
     Promise.all([
       sb.from('announcements')
         .select('id,kind,title,body,link_url,link_label,pinned,published_at')
-        .order('pinned', { ascending: false })
         .order('published_at', { ascending: false })
-        .limit(5),
+        .limit(10),
       sb.from('ads')
         .select('id,slot,title,body,sponsor,image_url,link_url,sort_order')
         .eq('slot', 'home_top')
@@ -117,9 +116,16 @@
       return p;
     }
 
+    // トップに出すのは新しい2件だけ。それより前のものは「過去のお知らせ」にしまう
+    var NEWS_SHOWN = 2;
     function renderNews(rows) {
       EM.clear(list);
-      rows.forEach(function (n) {
+      var older = null;
+      if (rows.length > NEWS_SHOWN) {
+        older = el('div', { class: 'news__older-list' });
+      }
+      rows.forEach(function (n, idx) {
+        var target = (older && idx >= NEWS_SHOWN) ? older : list;
         var href = EM.safeUrl(n.link_url);
         // 1行で見せて、押すと本文が開く（目立ちすぎないように）
         var hasMore = !!(n.body || href);
@@ -128,7 +134,7 @@
           el('span', { class: 'news__kind', text: (n.pinned ? '重要・' : '') + (EM.ANNOUNCE_KIND[n.kind] || 'お知らせ') }),
           el('span', { class: 'news__headline', text: n.title })
         ]);
-        list.appendChild(el(hasMore ? 'details' : 'div', { class: 'news__item' }, [
+        target.appendChild(el(hasMore ? 'details' : 'div', { class: 'news__item' }, [
           row,
           n.body ? multiline(n.body, 'small muted news__body') : null,
           href ? el('a', {
@@ -137,6 +143,12 @@
           }) : null
         ]));
       });
+      if (older) {
+        list.appendChild(el('details', { class: 'news__older' }, [
+          el('summary', { class: 'small muted', text: '過去のお知らせ（' + (rows.length - NEWS_SHOWN) + '件）' }),
+          older
+        ]));
+      }
     }
 
     function renderAds(rows) {

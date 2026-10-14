@@ -1010,3 +1010,8 @@ a.vcal__day:hover .vcal__dnum { color: var(--accent); text-decoration: underline
 .day-form { margin-top: 18px; }
 #dayLabel { white-space: nowrap; width: auto; min-width: max-content; }
 #dayBody .vcal-nav { flex-wrap: wrap; }
+.news__older { margin-top: 4px; }
+.news__older > summary { cursor: pointer; padding: 6px 0; list-style: none; }
+.news__older > summary::-webkit-details-marker { display: none; }
+.news__older > summary::after { content: ' ＋'; }
+.news__older[open] > summary::after { content: ' －'; }
