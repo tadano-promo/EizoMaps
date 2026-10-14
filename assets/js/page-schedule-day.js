@@ -240,9 +240,12 @@
 
     function fillLaneList(eventId) {
       var dl = EM.$('#laneList'); EM.clear(dl);
+      // 班の名前は案件ごとに現場で決めるもの。決まった候補は出さず、
+      // この大枠ですでに使った名前だけを、打ち間違い防止のために出す
       var seen = [];
-      items.forEach(function (i) { if (seen.indexOf(i.lane) === -1) seen.push(i.lane); });
-      ['撮影本隊', '別班', '車両部', '制作部', '美術部', '衣装・ヘアメイク'].forEach(function (x) { if (seen.indexOf(x) === -1) seen.push(x); });
+      items.forEach(function (i) {
+        if (i.event_id === eventId && seen.indexOf(i.lane) === -1) seen.push(i.lane);
+      });
       seen.forEach(function (x) { dl.appendChild(el('option', { value: x })); });
     }
 
