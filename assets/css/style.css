@@ -931,3 +931,19 @@ input[type=search]::placeholder { color: #4a4a5c; }
 .feat-card { color: var(--text); text-decoration: none; transition: border-color var(--t); }
 .feat-card:hover { border-color: var(--accent); }
 .feat-card__more { color: var(--accent); }
+
+/* @ハンドル */
+.profile-handle { margin: -4px 0 6px; color: var(--muted); font-size: 14px; }
+.handle-box { margin-bottom: 28px; }
+.handle-box__title { font-size: 18px; margin: 0 0 4px; }
+.handle-input { display: flex; align-items: stretch; }
+.handle-input__at {
+  display: grid; place-items: center; padding: 0 12px;
+  border: 1px solid var(--border); border-right: 0; border-radius: 8px 0 0 8px;
+  background: var(--surface2); color: var(--accent); font-family: var(--font-mono); font-size: 16px;
+}
+.handle-input input { border-radius: 0 8px 8px 0; flex: 1; min-width: 0; font-family: var(--font-mono); }
+.handle-status { min-height: 1.4em; margin: 6px 0 0; }
+.handle-status.is-ok { color: #4ade80; }
+.handle-status.is-ng { color: #ff8b6b; }
+.handle-sugg { display: grid; gap: 6px; }

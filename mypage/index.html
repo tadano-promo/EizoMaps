@@ -30,6 +30,34 @@
       <h1>プロフィール</h1>
       <div class="notice" id="pageMsg" hidden></div>
 
+      <!-- @ハンドル：プロフィールのアドレスになる。ほかの人と同じものは使えない -->
+      <section class="card stack handle-box" id="handleBox">
+        <div>
+          <h2 class="handle-box__title">あなたの @ハンドル</h2>
+          <p class="small muted">プロフィールのアドレスになります。SNS のように「@」から始まる、あなただけの名前です。</p>
+        </div>
+        <p class="small muted" id="handleNeedProfile" hidden>下のプロフィールを一度保存すると、@ハンドルを決められます。</p>
+        <div id="handleEditor" hidden>
+          <label class="field">
+            <span class="label">@ハンドル <span class="muted">（半角の英小文字・数字・アンダーバー「_」、3〜20文字）</span></span>
+            <div class="handle-input">
+              <span class="handle-input__at">@</span>
+              <input type="text" id="handleInput" maxlength="21" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="例：yamada_film">
+            </div>
+          </label>
+          <p class="small handle-status" id="handleStatus" aria-live="polite"></p>
+          <div class="handle-sugg" id="handleSugg" hidden>
+            <span class="small muted">空いている候補：</span>
+            <div class="chips" id="handleSuggList"></div>
+          </div>
+          <div class="form-actions">
+            <button class="btn btn--primary btn--sm" type="button" id="handleSaveBtn" disabled>この @ハンドルにする</button>
+          </div>
+          <p class="small muted" id="handleUrlLine" hidden>あなたのページ：<a id="handleUrl" href="#" target="_blank" rel="noopener"></a></p>
+          <p class="small muted">あとから変えることもできますが、変えると前のアドレスは使えなくなります。名刺やSNSに載せる前に決めておくのがおすすめです。</p>
+        </div>
+      </section>
+
       <form id="profileForm" class="stack" novalidate>
         <div class="row">
           <div id="avatarPreview"></div>

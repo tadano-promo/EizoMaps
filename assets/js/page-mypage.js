@@ -36,14 +36,132 @@
         EM.$('#isPublished').checked = !!creator.is_published;
         selected = (creator.creator_genres || []).map(function (x) { return x.genre_id; });
         var link = EM.$('#viewPublicLink');
-        link.href = '/creators/detail.html?id=' + encodeURIComponent(creator.id);
+        link.href = creator.handle ? '/@' + creator.handle : '/creators/detail.html?id=' + encodeURIComponent(creator.id);
         link.hidden = !creator.is_published;
       } else {
         EM.notice(msg, 'プロフィールがまだありません。表示名を入れて保存すると作成されます。');
       }
       renderAvatar();
       renderGenres();
+      initHandle();
     }).catch(function (e) { EM.notice(msg, EM.errorText(e), 'error'); });
+
+    /* ---------------- @ハンドル ----------------
+       入力のたびにサーバーへ「使えるか」を聞き、使えないときは理由と空いている候補を出す。
+       最終的な重複チェックはデータベースが行う（同時に同じ名前を取られても二重にはならない）。 */
+    var handleTimer = null, handleReq = 0, handleOk = false;
+    var REASON = {
+      taken: 'この @ハンドルは、すでにほかの人が使っています。',
+      reserved: 'この @ハンドルは使えません（運営やページの名前とまぎらわしいため）。',
+      format: '使えるのは半角の英小文字・数字・アンダーバー「_」で、3〜20文字です。'
+    };
+
+    function initHandle() {
+      var has = !!(creator && creator.id);
+      EM.$('#handleNeedProfile').hidden = has;
+      EM.$('#handleEditor').hidden = !has;
+      if (!has) return;
+      EM.$('#handleInput').value = creator.handle || '';
+      showHandleUrl(creator.handle);
+      if (!creator.handle) {
+        setHandleStatus('まだ決まっていません。', '');
+        // 表示名から候補を出しておく
+        sb.rpc('handle_check', { p_handle: EM.$('#displayName').value || 'creator' }).then(function (r) {
+          if (r.data && r.data.suggestions) renderSugg(r.data.suggestions);
+          else if (r.data && r.data.ok) renderSugg([r.data.handle]);
+        });
+      } else {
+        setHandleStatus('今の @ハンドルです。', 'ok');
+      }
+    }
+
+    function showHandleUrl(h) {
+      var line = EM.$('#handleUrlLine'), a = EM.$('#handleUrl');
+      if (!h) { line.hidden = true; return; }
+      var url = (EM.config.SITE_ORIGIN || location.origin) + '/@' + h;
+      a.href = '/@' + h; a.textContent = url.replace(/^https?:\/\//, '');
+      line.hidden = false;
+    }
+
+    function setHandleStatus(text, kind) {
+      var st = EM.$('#handleStatus');
+      st.textContent = text;
+      st.className = 'small handle-status' + (kind ? ' is-' + kind : '');
+    }
+
+    function renderSugg(list) {
+      var box = EM.$('#handleSuggList');
+      EM.clear(box);
+      (list || []).forEach(function (h) {
+        box.appendChild(el('button', {
+          type: 'button', class: 'chip', text: '@' + h,
+          onclick: function () { EM.$('#handleInput').value = h; checkHandle(); }
+        }));
+      });
+      EM.$('#handleSugg').hidden = !(list && list.length);
+    }
+
+    function checkHandle() {
+      var v = EM.$('#handleInput').value.trim().replace(/^@/, '').toLowerCase();
+      EM.$('#handleInput').value = v;
+      handleOk = false;
+      EM.$('#handleSaveBtn').disabled = true;
+      if (!v) { setHandleStatus('', ''); EM.$('#handleSugg').hidden = true; return; }
+      setHandleStatus('確認しています…', '');
+      var my = ++handleReq;
+      sb.rpc('handle_check', { p_handle: v }).then(function (r) {
+        if (my !== handleReq) return;            // 古い問い合わせの答えは捨てる
+        if (r.error) { setHandleStatus(EM.errorText(r.error), 'ng'); return; }
+        var d = r.data || {};
+        if (d.ok && d.reason === 'mine') {
+          setHandleStatus('今の @ハンドルです。', 'ok');
+          EM.$('#handleSugg').hidden = true;
+          return;
+        }
+        if (d.ok) {
+          handleOk = true;
+          EM.$('#handleSaveBtn').disabled = false;
+          setHandleStatus('@' + d.handle + ' は使えます。', 'ok');
+          EM.$('#handleSugg').hidden = true;
+        } else {
+          setHandleStatus(REASON[d.reason] || '使えません。', 'ng');
+          renderSugg(d.suggestions);
+        }
+      });
+    }
+
+    EM.$('#handleInput').addEventListener('input', function () {
+      clearTimeout(handleTimer);
+      handleTimer = setTimeout(checkHandle, 350);
+    });
+
+    EM.$('#handleSaveBtn').addEventListener('click', function () {
+      if (!handleOk) return;
+      var b = this; b.setAttribute('aria-busy', 'true');
+      var v = EM.$('#handleInput').value.trim();
+      if (creator.handle && creator.handle !== v &&
+          !confirm('@' + creator.handle + ' から @' + v + ' に変えますか？\n前のアドレスは使えなくなります。')) {
+        b.removeAttribute('aria-busy'); return;
+      }
+      sb.rpc('set_my_handle', { p_handle: v }).then(function (r) {
+        if (r.error) throw r.error;
+        var d = r.data || {};
+        if (!d.ok) {
+          setHandleStatus(REASON[d.reason] || '使えません。', 'ng');
+          renderSugg(d.suggestions);
+          return;
+        }
+        creator.handle = d.handle;
+        EM.toast('@' + d.handle + ' に決まりました');
+        setHandleStatus('今の @ハンドルです。', 'ok');
+        EM.$('#handleSugg').hidden = true;
+        EM.$('#handleSaveBtn').disabled = true;
+        showHandleUrl(d.handle);
+        var link = EM.$('#viewPublicLink');
+        link.href = '/@' + d.handle;
+      }).catch(function (e) { setHandleStatus(EM.errorText(e), 'ng'); })
+        .then(function () { b.removeAttribute('aria-busy'); });
+    });
 
     function renderAvatar() {
       var box = EM.$('#avatarPreview');
@@ -126,12 +244,13 @@
       p.then(function (r) {
         if (r.error) throw r.error;
         creator = Object.assign({}, r.data);
+        if (EM.$('#handleEditor').hidden) initHandle();
         return syncGenres(creator.id);
       }).then(function () {
         btn.removeAttribute('aria-busy');
         EM.notice(msg, '保存しました。', 'ok');
         var link = EM.$('#viewPublicLink');
-        link.href = '/creators/detail.html?id=' + encodeURIComponent(creator.id);
+        link.href = creator.handle ? '/@' + creator.handle : '/creators/detail.html?id=' + encodeURIComponent(creator.id);
         link.hidden = !creator.is_published;
       }).catch(function (err) {
         btn.removeAttribute('aria-busy');

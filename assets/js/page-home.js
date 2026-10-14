@@ -30,7 +30,7 @@
     function loadMe(u) {
       var t = today();
       Promise.all([
-        sb.from('creators').select('id,display_name,is_published').eq('user_id', u.id).maybeSingle(),
+        sb.from('creators').select('id,handle,display_name,is_published').eq('user_id', u.id).maybeSingle(),
         sb.from('schedule_events').select('id,kind,title,starts_on,ends_on,start_time')
           .eq('owner_user_id', u.id).gte('ends_on', t)
           .order('starts_on').order('start_time', { nullsFirst: true }).limit(3),
@@ -43,7 +43,7 @@
         EM.$('#homeHello').textContent = name ? 'おかえりなさい、' + name + ' さん' : 'おかえりなさい';
         if (c && c.is_published) {
           var pl = EM.$('#homeMyProfile');
-          pl.href = '/creators/detail.html?id=' + encodeURIComponent(c.id);
+          pl.href = c.handle ? '/@' + c.handle : '/creators/detail.html?id=' + encodeURIComponent(c.id);
           pl.hidden = false;
         }
 

@@ -5,16 +5,28 @@
     var sb = EM.sb(), el = EM.el;
     var msg = EM.$('#pageMsg'), box = EM.$('#profile');
     var id = EM.param('id');
+    var handle = String(EM.param('h') || '').replace(/^@/, '').toLowerCase();
 
     if (!sb) { return; }  // 未設定の案内はヘッダー直下に共通表示される
-    if (!/^[0-9a-f-]{36}$/i.test(String(id || ''))) {
-      EM.notice(msg, 'クリエイターが指定されていません。', 'error');
-      return;
-    }
 
+    // eizo-maps.com/@ハンドル から来たときは、ハンドルからクリエイターを探す
+    var resolve = Promise.resolve(id);
+    if (!id && /^[a-z0-9_]{3,20}$/.test(handle)) {
+      resolve = sb.rpc('creator_id_by_handle', { p_handle: handle }).then(function (r) { return r.data || null; });
+    }
+    resolve.then(function (found) {
+      id = found;
+      if (!/^[0-9a-f-]{36}$/i.test(String(id || ''))) {
+        EM.notice(msg, handle ? '@' + handle + ' のクリエイターは見つかりませんでした（非公開の可能性があります）。' : 'クリエイターが指定されていません。', 'error');
+        return;
+      }
+      loadAll();
+    });
+
+    function loadAll() {
     Promise.all([
       sb.from('creators')
-        .select('id,user_id,display_name,headline,bio,area_pref,area_city,years_of_experience,response_time_hours,avatar_url,website_url,contact_pref,contact_dm_url,creator_genres(genre_id)')
+        .select('id,user_id,handle,display_name,headline,bio,area_pref,area_city,years_of_experience,response_time_hours,avatar_url,website_url,contact_pref,contact_dm_url,creator_genres(genre_id)')
         .eq('id', id).maybeSingle(),
       sb.from('genres').select('id,name_ja'),
       sb.from('portfolios')
@@ -38,7 +50,10 @@
       mountReviewForm(c);
       mountFollow(c);
       mountAvailability(c);
+      // ハンドルが決まっている人は、アドレスバーも @ハンドル の形にそろえる
+      if (c.handle && history.replaceState) history.replaceState(null, '', '/@' + c.handle);
     }).catch(function (e) { EM.notice(msg, EM.errorText(e), 'error'); });
+    }
 
     function renderProfile(c, gmap, completedCount, links) {
       var tags = el('div', { class: 'tags' });
@@ -59,6 +74,7 @@
         EM.avatar(c.avatar_url, c.display_name, true),
         el('div', { class: 'profile-head__text' }, [
           el('h1', { text: c.display_name }),
+          c.handle ? el('p', { class: 'profile-handle mono', text: '@' + c.handle }) : null,
           el('p', { class: 'lead', text: c.headline || '' }),
           el('p', { class: 'small muted', text: [c.area_pref, c.area_city].filter(Boolean).join(' ') })
         ])
