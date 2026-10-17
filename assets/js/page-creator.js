@@ -168,32 +168,76 @@
     function mountAvailability(c) {
       var from = new Date();
       var to = new Date(); to.setDate(to.getDate() + 59);
+      var WD = ['日', '月', '火', '水', '木', '金', '土'];
       function ymd(d) {
         return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0')
              + '-' + String(d.getDate()).padStart(2, '0');
       }
-      sb.rpc('creator_busy_days', { p_creator_id: c.id, p_from: ymd(from), p_to: ymd(to) })
-        .then(function (r) {
-          if (r.error || !r.data || !r.data.length) return;
-          var busy = {};
-          r.data.forEach(function (x) {
-            busy[typeof x === 'string' ? x : (x && x.creator_busy_days)] = true;
-          });
-          var strip = el('div', { class: 'avail' });
-          for (var i = 0; i < 60; i++) {
-            var d = new Date(); d.setDate(d.getDate() + i);
+      function hm(m) { return Math.floor(m / 60) + ':' + String(m % 60).padStart(2, '0'); }
+      // 重なっている時間はまとめて、「6:00〜12:00、14:00〜18:00」のようにする
+      function merge(list) {
+        list.sort(function (a, b) { return a[0] - b[0]; });
+        var out = [];
+        list.forEach(function (r) {
+          var last = out[out.length - 1];
+          if (last && r[0] <= last[1]) last[1] = Math.max(last[1], r[1]);
+          else out.push([r[0], r[1]]);
+        });
+        return out;
+      }
+      Promise.all([
+        sb.rpc('creator_busy_days', { p_creator_id: c.id, p_from: ymd(from), p_to: ymd(to) }),
+        sb.rpc('creator_busy_times', { p_creator_id: c.id, p_from: ymd(from), p_to: ymd(to) })
+      ]).then(function (res) {
+        var r = res[0];
+        if (r.error || !r.data || !r.data.length) return;
+        var busy = {};
+        r.data.forEach(function (x) {
+          busy[typeof x === 'string' ? x : (x && x.creator_busy_days)] = true;
+        });
+        // 日ごとの「埋まっている時間」（件名などは来ない。時間だけ）
+        var times = {};
+        ((res[1] && !res[1].error && res[1].data) || []).forEach(function (t) {
+          (times[t.day] = times[t.day] || []).push([t.start_min, t.end_min]);
+        });
+        Object.keys(times).forEach(function (k) { times[k] = merge(times[k]); });
+
+        var detail = el('p', { class: 'small avail-detail', 'aria-live': 'polite' });
+        function show(key, d) {
+          var label = (d.getMonth() + 1) + '/' + d.getDate() + '（' + WD[d.getDay()] + '）';
+          var t = times[key];
+          if (!busy[key]) { detail.textContent = label + '：空いています'; return; }
+          if (!t || !t.length) { detail.textContent = label + '：予定あり'; return; }
+          var allDay = t.length === 1 && t[0][0] === 0 && t[0][1] >= 1440;
+          detail.textContent = label + '：予定あり　' + (allDay ? '終日' : t.map(function (x) { return hm(x[0]) + '〜' + hm(x[1]); }).join('、'));
+        }
+
+        var strip = el('div', { class: 'avail' });
+        for (var i = 0; i < 60; i++) {
+          (function (d) {
             var key = ymd(d);
-            strip.appendChild(el('i', {
+            strip.appendChild(el('button', {
+              type: 'button',
               class: 'avail__day' + (busy[key] ? ' is-busy' : ''),
-              title: key + (busy[key] ? '：埋まっています' : '：空いています')
+              title: key + (busy[key] ? '：予定あり' : '：空いています'),
+              'aria-label': key + (busy[key] ? ' 予定あり' : ' 空いています'),
+              onclick: function () {
+                EM.$$('.avail__day.is-picked', strip).forEach(function (b) { b.classList.remove('is-picked'); });
+                this.classList.add('is-picked');
+                show(key, d);
+              }
             }));
-          }
-          box.appendChild(el('div', { class: 'avail-box' }, [
-            el('p', { class: 'small muted', text: '今後60日の空き状況（色つきが埋まっている日）' }),
-            strip
-          ]));
-        }).catch(function () { /* 補助情報なので失敗しても出さない */ });
+          })(new Date(from.getFullYear(), from.getMonth(), from.getDate() + i));
+        }
+        detail.textContent = '色つきの日を押すと、埋まっている時間が見られます。';
+        box.appendChild(el('div', { class: 'avail-box' }, [
+          el('p', { class: 'small muted', text: '今後60日の空き状況（色つきが予定のある日）' }),
+          strip,
+          detail
+        ]));
+      }).catch(function () { /* 補助情報なので失敗しても出さない */ });
     }
+
 
     function renderPortfolio(items) {
       var sec = EM.$('#portfolioSection'), grid = EM.$('#portfolioGrid');

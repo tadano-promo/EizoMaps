@@ -173,9 +173,25 @@ function jstDay(ms: number) {
   return new Date(ms + 9 * 3600 * 1000).toISOString().slice(0, 10);
 }
 
-// 開始〜終了（終了は含まない）にかかる日付をすべて足す
-function addRange(days: Set<string>, startMs: number, endMs: number) {
+type Range = { day: string; s: number; e: number };
+
+// 開始〜終了（終了は含まない）にかかる日付をすべて足す。
+// ranges を渡したときは、日ごとの「何分から何分まで」も記録する（中身は記録しない）
+function addRange(days: Set<string>, startMs: number, endMs: number, ranges?: Range[]) {
   if (!(endMs > startMs)) endMs = startMs + 1;
+  if (ranges && ranges.length < 3000) {
+    let cur = startMs;
+    for (let i = 0; i < 400 && cur < endMs; i++) {
+      const day = jstDay(cur);
+      const dayStart = Date.parse(day + 'T00:00:00+09:00');
+      const dayEnd = dayStart + DAY;
+      const segEnd = Math.min(endMs, dayEnd);
+      const s0 = Math.max(0, Math.round((cur - dayStart) / 60000));
+      const e0 = Math.min(1440, Math.round((segEnd - dayStart) / 60000));
+      if (e0 > s0) ranges.push({ day, s: s0, e: e0 });
+      cur = dayEnd;
+    }
+  }
   let d = new Date(jstDay(startMs) + 'T00:00:00Z');
   const last = jstDay(endMs - 1);
   for (let i = 0; i < 400 && days.size <= 400; i++) {
@@ -188,7 +204,7 @@ function addRange(days: Set<string>, startMs: number, endMs: number) {
 
 // 1つのカレンダーの「埋まっている日」を集める。
 // 中身は見ない。Eizo Maps から書き出した予定と「予定なし（空き）」にしてある予定は数えない。
-async function busyOfCalendar(ghead: Record<string, string>, calId: string, days: Set<string>): Promise<string | null> {
+async function busyOfCalendar(ghead: Record<string, string>, calId: string, days: Set<string>, ranges: Range[]): Promise<string | null> {
   const now = Date.now();
   const timeMin = new Date(now - DAY).toISOString();
   const timeMax = new Date(now + PULL_DAYS * DAY).toISOString();
@@ -203,7 +219,7 @@ async function busyOfCalendar(ghead: Record<string, string>, calId: string, days
     const res = await fetch(`https://www.googleapis.com/calendar/v3/calendars/${encodeURIComponent(calId)}/events?${q}`, { headers: ghead });
     if (res.status === 403 || res.status === 404) {
       // 予定の一覧は見られないカレンダー（空き時間だけ共有されている等）は、空き時間の問い合わせで代わりに調べる
-      return await freeBusyOfCalendar(ghead, calId, days);
+      return await freeBusyOfCalendar(ghead, calId, days, ranges);
     }
     if (!res.ok) return `取り込みに失敗: ${res.status}`;
     const j = await res.json();
@@ -212,9 +228,9 @@ async function busyOfCalendar(ghead: Record<string, string>, calId: string, days
       if (String(ev.source?.url ?? '').includes('eizo-maps.com')) continue;
       if (ev.start?.date) {
         // 終日予定。終了日は「翌日」が入っているので、そのまま「含まない終わり」として使う
-        addRange(days, Date.parse(ev.start.date + 'T00:00:00+09:00'), Date.parse((ev.end?.date ?? ev.start.date) + 'T00:00:00+09:00'));
+        addRange(days, Date.parse(ev.start.date + 'T00:00:00+09:00'), Date.parse((ev.end?.date ?? ev.start.date) + 'T00:00:00+09:00'), ranges);
       } else if (ev.start?.dateTime) {
-        addRange(days, Date.parse(ev.start.dateTime), Date.parse(ev.end?.dateTime ?? ev.start.dateTime));
+        addRange(days, Date.parse(ev.start.dateTime), Date.parse(ev.end?.dateTime ?? ev.start.dateTime), ranges);
       }
     }
     pageToken = j.nextPageToken ?? '';
@@ -223,7 +239,7 @@ async function busyOfCalendar(ghead: Record<string, string>, calId: string, days
   return null;
 }
 
-async function freeBusyOfCalendar(ghead: Record<string, string>, calId: string, days: Set<string>): Promise<string | null> {
+async function freeBusyOfCalendar(ghead: Record<string, string>, calId: string, days: Set<string>, ranges: Range[]): Promise<string | null> {
   const start = Date.now();
   // Google は一度に問い合わせられる期間に上限があるので、60日ずつに分けて聞く
   for (let i = 0; i < PULL_DAYS / 60; i++) {
@@ -240,7 +256,7 @@ async function freeBusyOfCalendar(ghead: Record<string, string>, calId: string, 
     if (!res.ok) return `取り込みに失敗: ${res.status}`;
     const j = await res.json();
     const cal = j.calendars?.[calId];
-    for (const b of cal?.busy ?? []) addRange(days, Date.parse(b.start), Date.parse(b.end));
+    for (const b of cal?.busy ?? []) addRange(days, Date.parse(b.start), Date.parse(b.end), ranges);
   }
   return null;
 }
@@ -362,9 +378,10 @@ async function syncUser(db: any, link: any, userId: string): Promise<SyncResult>
       ? link.busy_calendar_ids.slice(0, 20)
       : [writeCal];
     const days = new Set<string>();
+    const ranges: Range[] = [];
     let pullOk = true;
     for (const id of busyIds) {
-      const err = await busyOfCalendar(ghead, id, days);
+      const err = await busyOfCalendar(ghead, id, days, ranges);
       if (err) { pullOk = false; result.errors.push(err); break; }
     }
     if (pullOk) {
@@ -373,9 +390,17 @@ async function syncUser(db: any, link: any, userId: string): Promise<SyncResult>
         await db.from('google_busy').insert([...days].map((day) => ({ user_id: userId, day })));
       }
       result.busy_days = days.size;
+      // 時間の幅（ほかの人に「予定あり」の時間だけを見せるため）
+      await db.from('google_busy_ranges').delete().eq('user_id', userId);
+      if (ranges.length) {
+        await db.from('google_busy_ranges').insert(
+          ranges.slice(0, 3000).map((r) => ({ user_id: userId, day: r.day, start_min: r.s, end_min: r.e })),
+        );
+      }
     }
   } else {
     await db.from('google_busy').delete().eq('user_id', userId);
+    await db.from('google_busy_ranges').delete().eq('user_id', userId);
   }
 
   await db.from('calendar_links').update({
@@ -481,6 +506,7 @@ Deno.serve(async (req) => {
         });
       } catch (_) { /* Google 側で既に失効していても、こちらの削除は続ける */ }
       await db.from('google_busy').delete().eq('user_id', user.id);
+      await db.from('google_busy_ranges').delete().eq('user_id', user.id);
       await db.from('google_delete_queue').delete().eq('user_id', user.id);
       await db.from('calendar_links').delete().eq('user_id', user.id);
       return json({ ok: true }, 200, origin);
