@@ -131,7 +131,7 @@
           </div>
           <label class="checkbox">
             <input type="checkbox" id="gcalPull">
-            <span>Google カレンダーの予定を「埋まっている日」に含める（件名や場所は取り込みません）</span>
+            <span>Google カレンダーの予定を「埋まっている日」に含める（予定がある日時だけを取り込みます。件名や場所は取り込みません）</span>
           </label>
           <div class="gcal-sub" id="gcalBusyWrap" hidden>
             <p class="small">「埋まっている日」に含めるカレンダー（いくつでも選べます）</p>
@@ -151,7 +151,7 @@
       <h2>空き状況の公開</h2>
       <p class="small muted">
         公開すると、クリエイター検索で「この期間に空いている人」として見つけてもらえます。
-        相手に伝わるのは<strong>埋まっているかどうかだけ</strong>で、件名・場所・メモは一切渡りません。
+        ログインしていない人には<strong>予定がある日だけ</strong>、ログインしている人には<strong>予定がある時間</strong>（例：10:00〜12:00）も見えます。件名・場所・メモ・班の名前は一切渡りません。
       </p>
       <label class="checkbox">
         <input type="checkbox" id="shareAvailability">
