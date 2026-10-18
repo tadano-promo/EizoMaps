@@ -9,7 +9,7 @@
     if (!sb) return;
 
     var ROW = 34;                 // 1日ぶんの高さ(px)。CSS の grid-auto-rows と合わせる
-    var EV_COLS = 'id,owner_user_id,project_id,kind,title,note,location,starts_on,ends_on,start_time,end_time,busy,visibility,color';
+    var EV_COLS = 'id,owner_user_id,project_id,sched_project_id,kind,title,note,location,starts_on,ends_on,start_time,end_time,busy,visibility,color';
 
     var KINDS = [
       ['shoot',    '撮影',    '#e8ff47'],
@@ -23,7 +23,7 @@
     function kindLabel(k) { for (var i = 0; i < KINDS.length; i++) if (KINDS[i][0] === k) return KINDS[i][1]; return k; }
     function kindColor(k) { for (var i = 0; i < KINDS.length; i++) if (KINDS[i][0] === k) return KINDS[i][2]; return '#9aa0b5'; }
 
-    var me = null, creator = null, projects = [], events = [];
+    var me = null, creator = null, projects = [], sprojects = [], events = [];
     var gbusy = {};   // Google 側で予定がある日（日付だけ。件名などは持たない）
     var cursor = new Date(); cursor.setDate(1);
     var qm = String(EM.param('m') || ''), qnew = String(EM.param('new') || '');
@@ -37,7 +37,8 @@
       initForm();
       return Promise.all([
         sb.from('creators').select('id,share_availability').eq('user_id', u.id).maybeSingle(),
-        sb.from('projects').select('id,title,status,creator_id,client_id').order('created_at', { ascending: false }).limit(60)
+        sb.from('projects').select('id,title,status,creator_id,client_id').order('created_at', { ascending: false }).limit(60),
+        sb.from('schedule_projects').select('id,name').order('created_at', { ascending: false }).limit(300)
       ]);
     }).then(function (r) {
       if (!r) return;
@@ -48,6 +49,7 @@
         EM.$('#shareAvailability').disabled = true;
       }
       projects = (!r[1].error && r[1].data) || [];
+      sprojects = (!r[2].error && r[2].data) || [];
       fillProjectSelect();
       return finishConnect().then(loadGcal).then(load).then(function () {
         // 日ごとの表示から「大枠の予定を追加」で来たとき
@@ -97,14 +99,19 @@
     });
 
     /* ---------------- 描画 ---------------- */
-    // 表示する列を決める。今月に予定がある案件＋動いている案件、最後に「個人」。
+    // 表示する列を決める。今月に予定がある「自分で作った案件」＋今月に予定がある・動いている依頼の案件、最後に「個人」。
     function columns() {
-      var used = {};
-      events.forEach(function (e) { if (e.project_id) used[e.project_id] = true; });
+      var used = {}, usedSp = {};
+      events.forEach(function (e) {
+        if (e.project_id) used[e.project_id] = true;
+        if (e.sched_project_id) usedSp[e.sched_project_id] = true;
+      });
       var live = { draft: 1, offered: 1, in_progress: 1, delivered: 1 };
-      var cols = projects.filter(function (p) { return used[p.id] || live[p.status]; })
-        .slice(0, 8)
-        .map(function (p) { return { id: p.id, label: p.title }; });
+      var cols = sprojects.filter(function (p) { return usedSp[p.id]; })
+        .map(function (p) { return { sp: p.id, label: p.name }; })
+        .concat(projects.filter(function (p) { return used[p.id] || live[p.status]; })
+          .map(function (p) { return { id: p.id, label: p.title }; }))
+        .slice(0, 8);
       cols.push({ id: null, label: '個人の予定' });
       return cols;
     }
@@ -169,10 +176,12 @@
           }
         });
         var list = events.filter(function (e) {
-          return c.id ? e.project_id === c.id : !e.project_id;
+          if (c.sp) return e.sched_project_id === c.sp;
+          if (c.id) return e.project_id === c.id && !e.sched_project_id;
+          return !e.project_id && !e.sched_project_id;
         });
         // 個人の予定の列に、Google 側で予定がある日の印を敷く（予定のバーの下に出る）
-        if (!c.id) {
+        if (!c.id && !c.sp) {
           for (var di = 0; di < days; di++) {
             var dk = ymd(new Date(mStart.getFullYear(), mStart.getMonth(), di + 1));
             if (!gbusy[dk]) continue;
@@ -255,23 +264,36 @@
       EM.$('#saveShareBtn').addEventListener('click', saveShare);
     }
 
+    // 案件の選び方：自分で作った案件（sp:）／依頼の案件（rq:）／新しく作る（new）
     function fillProjectSelect() {
       var sel = EM.$('#evProject');
       EM.clear(sel);
       sel.appendChild(el('option', { value: '', text: '案件なし（個人の予定）' }));
-      projects.forEach(function (p) { sel.appendChild(el('option', { value: p.id, text: p.title })); });
+      if (sprojects.length) {
+        sel.appendChild(el('optgroup', { label: '自分で作った案件' },
+          sprojects.map(function (p) { return el('option', { value: 'sp:' + p.id, text: p.name }); })));
+      }
+      if (projects.length) {
+        sel.appendChild(el('optgroup', { label: 'Eizo Maps の依頼の案件' },
+          projects.map(function (p) { return el('option', { value: 'rq:' + p.id, text: p.title }); })));
+      }
+      sel.appendChild(el('option', { value: 'new', text: '＋ 新しい案件を作る' }));
     }
 
     function syncVisibilityRow() {
-      var hasProject = !!EM.$('#evProject').value;
-      EM.$('#evVisibilityRow').hidden = !hasProject;
-      if (!hasProject) EM.$('#evVisibility').checked = false;
+      var v = EM.$('#evProject').value;
+      var isRq = v.indexOf('rq:') === 0;
+      EM.$('#evVisibilityRow').hidden = !isRq;
+      if (!isRq) EM.$('#evVisibility').checked = false;
+      EM.$('#evNewProjectRow').hidden = v !== 'new';
+      if (v === 'new') setTimeout(function () { EM.$('#evNewProject').focus(); }, 50);
     }
 
     function openNew() {
       EM.$('#eventFormTitle').textContent = '予定を追加';
       EM.$('#evId').value = '';
       EM.$('#evProject').value = '';
+      EM.$('#evNewProject').value = '';
       EM.$('#evKind').value = 'shoot';
       EM.$('#evTitle').value = '';
       var d = ymd(new Date(cursor.getFullYear(), cursor.getMonth(), 1));
@@ -292,7 +314,8 @@
     function openEdit(e) {
       EM.$('#eventFormTitle').textContent = '予定を編集';
       EM.$('#evId').value = e.id;
-      EM.$('#evProject').value = e.project_id || '';
+      EM.$('#evProject').value = e.sched_project_id ? 'sp:' + e.sched_project_id : (e.project_id ? 'rq:' + e.project_id : '');
+      EM.$('#evNewProject').value = '';
       EM.$('#evKind').value = e.kind;
       EM.$('#evTitle').value = e.title;
       EM.$('#evStart').value = e.starts_on;
@@ -335,9 +358,14 @@
       var st = EM.$('#evStartTime').value, et = EM.$('#evEndTime').value;
       if (!st && et) { EM.notice(msg, '終了時刻だけの指定はできません。開始時刻も入れてください。', 'error'); return; }
 
-      var pid = EM.$('#evProject').value || null;
+      var pv = EM.$('#evProject').value;
+      var newName = EM.$('#evNewProject').value.trim();
+      if (pv === 'new' && !newName) { EM.notice(msg, '新しい案件の名前を入れてください（例：◯◯CM）。', 'error'); return; }
+      var pid = pv.indexOf('rq:') === 0 ? pv.slice(3) : null;
+      var spid = pv.indexOf('sp:') === 0 ? pv.slice(3) : null;
       var row = {
         project_id: pid,
+        sched_project_id: spid,
         kind: EM.$('#evKind').value,
         title: title,
         note: EM.$('#evNote').value.trim() || null,
@@ -352,10 +380,20 @@
 
       var id = EM.$('#evId').value;
       var btn = EM.$('#evSaveBtn'); btn.setAttribute('aria-busy', 'true');
-      var q = id ? sb.from('schedule_events').update(row).eq('id', id)
-                 : sb.from('schedule_events').insert(row);
-      q.then(function (r) {
+      // 「新しい案件を作る」を選んだときは、先に案件を作ってから予定を保存する
+      var pre = pv === 'new'
+        ? sb.from('schedule_projects').insert({ name: newName }).select('id,name').single().then(function (r) {
+            if (r.error) throw r.error;
+            sprojects.unshift(r.data);
+            row.sched_project_id = r.data.id;
+          })
+        : Promise.resolve();
+      pre.then(function () {
+        return id ? sb.from('schedule_events').update(row).eq('id', id)
+                  : sb.from('schedule_events').insert(row);
+      }).then(function (r) {
         if (r.error) throw r.error;
+        if (pv === 'new') fillProjectSelect();
         closeForm();
         EM.toast('保存しました');
         quietSync();

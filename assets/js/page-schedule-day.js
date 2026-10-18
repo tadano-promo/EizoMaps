@@ -11,7 +11,7 @@
     if (!sb) return;
 
     var HOUR = 56;                       // 1時間の高さ(px)
-    var EV_COLS = 'id,owner_user_id,project_id,kind,title,location,starts_on,ends_on,start_time,end_time,busy,visibility';
+    var EV_COLS = 'id,owner_user_id,project_id,sched_project_id,kind,title,location,starts_on,ends_on,start_time,end_time,busy,visibility';
     var KIND = {
       shoot: ['撮影', '#e8ff47'], edit: ['編集', '#7ad1ff'], meeting: ['打合せ', '#b79cff'],
       delivery: ['納品', '#4ade80'], hold: ['仮押さえ', '#ff9d5c'], other: ['その他', '#9aa0b5'], private: ['非公開', '#5a6072']
@@ -60,8 +60,12 @@
       day = /^\d{4}-\d{2}-\d{2}$/.test(String(EM.param('d') || '')) ? EM.param('d') : ymd(new Date());
       EM.$('#dayBody').hidden = false;
       initForm();
-      return sb.from('projects').select('id,title').limit(200).then(function (r) {
-        (r.data || []).forEach(function (p) { projects[p.id] = p.title; });
+      return Promise.all([
+        sb.from('projects').select('id,title').limit(200),
+        sb.from('schedule_projects').select('id,name').limit(500)
+      ]).then(function (r) {
+        (r[0].data || []).forEach(function (p) { projects[p.id] = p.title; });
+        (r[1].data || []).forEach(function (p) { projects['sp:' + p.id] = p.name; });
         return load();
       });
     }).catch(function (e) { EM.notice(msg, EM.errorText(e), 'error'); });
@@ -159,7 +163,7 @@
         var group = el('section', { class: 'day-group', style: { '--bar': color } });
 
         // いちばん上：案件名（あれば）と大枠の名前・時間
-        var pj = e.project_id && projects[e.project_id];
+        var pj = pjName(e);
         group.appendChild(el('header', { class: 'day-group__head' }, [
           pj ? el('p', { class: 'day-group__project', text: pj }) : null,
           el('p', { class: 'day-group__title' }, [
@@ -198,6 +202,10 @@
         group.appendChild(cols);
         grid.appendChild(group);
       });
+    }
+
+    function pjName(e) {
+      return (e.sched_project_id && projects['sp:' + e.sched_project_id]) || (e.project_id && projects[e.project_id]) || null;
     }
 
     function snap(m) { return Math.max(0, Math.min(47 * 60, Math.round(m / 15) * 15)); }
@@ -250,7 +258,7 @@
     }
 
     function parentLine(e) {
-      var pj = e.project_id && projects[e.project_id];
+      var pj = pjName(e);
       return (pj ? pj + ' ／ ' : '') + e.title + '（' + fmtMin(e._s) + '〜' + fmtMin(e._t) + '）の中';
     }
 

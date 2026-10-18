@@ -1019,3 +1019,26 @@ a.vcal__day:hover .vcal__dnum { color: var(--accent); text-decoration: underline
 .avail__day.is-picked { outline: 2px solid var(--text); outline-offset: 1px; }
 .avail-detail { margin: 10px 0 0; color: var(--muted); }
 .avail__day { width: 20px; height: 20px; }
+
+/* ---------- 案件と共有リンク（スケジュール3回目） ---------- */
+.share-row { display: flex; flex-wrap: wrap; gap: 10px 16px; justify-content: space-between; align-items: flex-start;
+  padding: 12px 14px; border: 1px solid var(--border); border-radius: 10px; background: var(--surface2); }
+.share-row__main { flex: 1 1 260px; min-width: 0; }
+.share-row__main p { margin: 0 0 4px; }
+.share-row__title { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+.share-row__st.is-on { border-color: #4ade80; color: #4ade80; }
+.share-row__st.is-off { border-color: var(--accent2); color: var(--accent2); }
+.share-form { border-color: var(--accent); }
+.share-form h3 { margin: 0; }
+.share-form__lanes { padding-left: 26px; gap: 6px; }
+.share-day__date { margin: 0; font-size: 18px; }
+.share-ev { border-left: 4px solid var(--bar, var(--accent)); padding: 4px 0 4px 12px; }
+.share-ev p { margin: 0 0 4px; }
+.share-ev__head { display: flex; flex-wrap: wrap; gap: 6px 10px; align-items: baseline; }
+.share-ev__time { color: var(--accent); }
+.share-ev__note { white-space: pre-wrap; }
+.share-lane { margin: 10px 0 0; padding: 8px 10px; border-radius: 8px; background: var(--surface2); }
+.share-lane__name { margin: 0 0 4px; font-weight: 700; font-size: 13px; }
+.share-lane__list { list-style: none; margin: 0; padding: 0; display: grid; gap: 4px; }
+.share-lane__list li { display: flex; flex-wrap: wrap; gap: 4px 10px; font-size: 14px; }
+.share-lane__time { min-width: 92px; color: var(--muted); }

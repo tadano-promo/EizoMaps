@@ -36,6 +36,7 @@
           <button class="btn btn--sm" type="button" id="nextMonth" aria-label="次の月">→</button>
           <button class="btn btn--sm" type="button" id="thisMonth">今月</button>
           <a class="btn btn--sm" id="toDayView" href="/schedule/day.html">今日の時間割</a>
+          <a class="btn btn--sm" href="/schedule/projects.html">案件と共有リンク</a>
         </div>
         <div class="vcal-nav">
           <button class="btn btn--sm btn--primary" type="button" id="newEventBtn">予定を追加</button>
@@ -62,6 +63,11 @@
             <select id="evKind"></select>
           </label>
         </div>
+        <label class="field" id="evNewProjectRow" hidden>
+          <span class="label">新しい案件の名前 <span class="muted">（60文字まで）</span></span>
+          <input type="text" id="evNewProject" maxlength="60" placeholder="例：◯◯CM">
+          <span class="hint">作った案件は「案件と共有リンク」から、チームやクライアントさんに見せられます。</span>
+        </label>
         <label class="field">
           <span class="label">件名 <span class="muted">（100文字まで）</span></span>
           <input type="text" id="evTitle" maxlength="100" required placeholder="例：本編撮影">
