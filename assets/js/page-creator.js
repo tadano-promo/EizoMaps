@@ -185,10 +185,15 @@
         });
         return out;
       }
-      Promise.all([
-        sb.rpc('creator_busy_days', { p_creator_id: c.id, p_from: ymd(from), p_to: ymd(to) }),
-        sb.rpc('creator_busy_times', { p_creator_id: c.id, p_from: ymd(from), p_to: ymd(to) })
-      ]).then(function (res) {
+      var loggedIn = false;
+      // 時間まで見られるのはログインしている人だけ（ログアウトの人は日付だけ）
+      EM.getUser().then(function (u) {
+        loggedIn = !!u;
+        return Promise.all([
+          sb.rpc('creator_busy_days', { p_creator_id: c.id, p_from: ymd(from), p_to: ymd(to) }),
+          loggedIn ? sb.rpc('creator_busy_times', { p_creator_id: c.id, p_from: ymd(from), p_to: ymd(to) }) : null
+        ]);
+      }).then(function (res) {
         var r = res[0];
         if (r.error || !r.data || !r.data.length) return;
         var busy = {};
@@ -207,6 +212,7 @@
           var label = (d.getMonth() + 1) + '/' + d.getDate() + '（' + WD[d.getDay()] + '）';
           var t = times[key];
           if (!busy[key]) { detail.textContent = label + '：空いています'; return; }
+          if (!loggedIn) { detail.textContent = label + '：予定あり（ログインすると、予定のある時間が見られます）'; return; }
           if (!t || !t.length) { detail.textContent = label + '：予定あり'; return; }
           var allDay = t.length === 1 && t[0][0] === 0 && t[0][1] >= 1440;
           detail.textContent = label + '：予定あり　' + (allDay ? '終日' : t.map(function (x) { return hm(x[0]) + '〜' + hm(x[1]); }).join('、'));
@@ -229,7 +235,7 @@
             }));
           })(new Date(from.getFullYear(), from.getMonth(), from.getDate() + i));
         }
-        detail.textContent = '色つきの日を押すと、埋まっている時間が見られます。';
+        detail.textContent = loggedIn ? '色つきの日を押すと、予定のある時間が見られます。' : 'ログインすると、色つきの日を押して予定のある時間が見られます。';
         box.appendChild(el('div', { class: 'avail-box' }, [
           el('p', { class: 'small muted', text: '今後60日の空き状況（色つきが予定のある日）' }),
           strip,
