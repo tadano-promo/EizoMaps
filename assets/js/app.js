@@ -401,6 +401,8 @@
     ['/mypage/portfolio.html', 'ポートフォリオ管理'],
     ['/mypage/stock.html', 'ストックページ'],
     ['/schedule/', 'スケジュール'],
+    ['/schedule/gantt.html', 'ガントチャート'],
+    ['/templates/', '定型文のひな形'],
     ['/projects/', '案件管理'],
     ['/report/', '問題報告']
   ];
@@ -411,6 +413,187 @@
     ['/contact/', 'お問い合わせ']
   ];
 
+  /* ---------- 予定の種別と色（どの画面でも同じ色を使う） ----------
+     色は「意味ごと」に決めて使い回す：撮影＝黄、編集＝青、打合せ＝紫、納品＝緑、仮押さえ＝橙 */
+  EM.KINDS = [
+    ['shoot',    '撮影',    '#e8ff47'],
+    ['edit',     '編集',    '#7ad1ff'],
+    ['meeting',  '打合せ',  '#b79cff'],
+    ['delivery', '納品',    '#4ade80'],
+    ['hold',     '仮押さえ', '#ff9d5c'],
+    ['other',    'その他',  '#9aa0b5'],
+    ['private',  '非公開',  '#5a6072']
+  ];
+  EM.kindLabel = function (k) { for (var i = 0; i < EM.KINDS.length; i++) if (EM.KINDS[i][0] === k) return EM.KINDS[i][1]; return '予定'; };
+  EM.kindColor = function (k) { for (var i = 0; i < EM.KINDS.length; i++) if (EM.KINDS[i][0] === k) return EM.KINDS[i][2]; return '#9aa0b5'; };
+
+  /* ---------- 日付の小道具（YYYY-MM-DD の文字で扱う） ---------- */
+  function pad2(n) { return String(n).padStart(2, '0'); }
+  EM.ymd = function (d) { return d.getFullYear() + '-' + pad2(d.getMonth() + 1) + '-' + pad2(d.getDate()); };
+  EM.parseYmd = function (s) { var p = String(s).slice(0, 10).split('-'); return new Date(+p[0], +p[1] - 1, +p[2]); };
+  EM.addDays = function (s, n) { var d = EM.parseYmd(s); d.setDate(d.getDate() + n); return EM.ymd(d); };
+  EM.today = function () { return EM.ymd(new Date()); };
+  EM.dayDiff = function (a, b) { return Math.round((EM.parseYmd(b) - EM.parseYmd(a)) / 86400000); };
+  EM.WD = ['日', '月', '火', '水', '木', '金', '土'];
+  EM.md = function (s) { var d = EM.parseYmd(s); return (d.getMonth() + 1) + '/' + d.getDate(); };
+  EM.mdw = function (s) { var d = EM.parseYmd(s); return (d.getMonth() + 1) + '/' + d.getDate() + '（' + EM.WD[d.getDay()] + '）'; };
+  EM.weekStart = function (s) { var d = EM.parseYmd(s); var w = (d.getDay() + 6) % 7; d.setDate(d.getDate() - w); return EM.ymd(d); }; // 月曜はじまり
+
+  /* ---------- アイコン（線だけのシンプルな絵。部品の見出しに必ず付ける） ---------- */
+  var ICONS = {
+    plus:     [['path', 'M12 5v14M5 12h14']],
+    search:   [['circle', 11, 11, 7], ['path', 'M20 20l-3.6-3.6']],
+    calendar: [['rect', 3, 5, 18, 16, 2], ['path', 'M3 10h18M8 3v4M16 3v4']],
+    week:     [['rect', 3, 5, 18, 14, 2], ['path', 'M3 10h18M6 14h7M9 17h9']],
+    gantt:    [['path', 'M4 4v16h16'], ['path', 'M7 8h7M10 12h8M8 16h5']],
+    flag:     [['path', 'M5 21V4h11l-2 4 2 4H5']],
+    check:    [['rect', 3, 3, 18, 18, 3], ['path', 'M8 12l3 3 5-6']],
+    sun:      [['circle', 12, 12, 4], ['path', 'M12 2v2M12 20v2M2 12h2M20 12h2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4']],
+    cloud:    [['path', 'M7 18h10a4 4 0 0 0 .5-8A6 6 0 0 0 6 9.5 4.3 4.3 0 0 0 7 18z']],
+    rain:     [['path', 'M7 15h10a4 4 0 0 0 .5-8A6 6 0 0 0 6 6.5 4.3 4.3 0 0 0 7 15z'], ['path', 'M8 18l-1 3M12 18l-1 3M16 18l-1 3']],
+    snow:     [['path', 'M7 14h10a4 4 0 0 0 .5-8A6 6 0 0 0 6 5.5 4.3 4.3 0 0 0 7 14z'], ['path', 'M8 18h.01M12 20h.01M16 18h.01']],
+    doc:      [['path', 'M6 3h9l4 4v14H6z'], ['path', 'M14 3v5h5M9 13h7M9 17h5']],
+    film:     [['rect', 3, 5, 18, 14, 2], ['path', 'M7 5v14M17 5v14M3 9h4M3 15h4M17 9h4M17 15h4']],
+    folder:   [['path', 'M3 6h6l2 2h10v11H3z']],
+    clock:    [['circle', 12, 12, 9], ['path', 'M12 7v5l3 2']],
+    copy:     [['rect', 8, 8, 13, 13, 2], ['path', 'M16 8V4H3v13h5']],
+    edit:     [['path', 'M4 20h4L19 9l-4-4L4 16z']],
+    up:       [['path', 'M6 15l6-6 6 6']],
+    down:     [['path', 'M6 9l6 6 6-6']],
+    eye:      [['path', 'M2 12s4-7 10-7 10 7 10 7-4 7-10 7S2 12 2 12z'], ['circle', 12, 12, 3]],
+    eyeoff:   [['path', 'M3 3l18 18M10.6 6.1A9.8 9.8 0 0 1 12 6c6 0 10 6 10 6a17 17 0 0 1-3.1 3.6M6.3 7.3A17 17 0 0 0 2 12s4 7 10 7a9.6 9.6 0 0 0 4.1-.9']],
+    home:     [['path', 'M4 11l8-7 8 7v9H4z'], ['path', 'M10 20v-5h4v5']],
+    image:    [['rect', 3, 4, 18, 16, 2], ['path', 'M3 16l5-5 4 4 3-3 6 6']]
+  };
+  var SVGNS = 'http://www.w3.org/2000/svg';
+  EM.icon = function (name, cls) {
+    var svg = document.createElementNS(SVGNS, 'svg');
+    svg.setAttribute('viewBox', '0 0 24 24');
+    svg.setAttribute('aria-hidden', 'true');
+    svg.setAttribute('class', 'ico' + (cls ? ' ' + cls : ''));
+    (ICONS[name] || []).forEach(function (s) {
+      var n = document.createElementNS(SVGNS, s[0]);
+      if (s[0] === 'path') n.setAttribute('d', s[1]);
+      else if (s[0] === 'circle') { n.setAttribute('cx', s[1]); n.setAttribute('cy', s[2]); n.setAttribute('r', s[3]); }
+      else if (s[0] === 'rect') { n.setAttribute('x', s[1]); n.setAttribute('y', s[2]); n.setAttribute('width', s[3]); n.setAttribute('height', s[4]); n.setAttribute('rx', s[5] || 0); }
+      svg.appendChild(n);
+    });
+    return svg;
+  };
+  // 部品の見出しは必ず「アイコン＋見出し」の同じ形にする
+  EM.widgetHead = function (icon, title, extra) {
+    return el('div', { class: 'wg__head' }, [
+      el('h2', { class: 'wg__title' }, [EM.icon(icon), el('span', { text: title })]),
+      extra || null
+    ]);
+  };
+
+  /* ---------- 全体の検索（ヘッダーの虫めがね・「/」キー・Ctrl+K） ----------
+     自分の予定・案件・作品・ひな形・やることを、タイトルやメモの言葉で探す。
+     読める範囲はデータベースの決まり（本人だけ）で絞られている。 */
+  var searchDlg = null;
+  function cleanQuery(q) { return String(q || '').replace(/[,()*\\%_"'.:]/g, ' ').replace(/\s+/g, ' ').trim().slice(0, 40); }
+  EM.openSearch = function () {
+    var sb = EM.sb();
+    if (!sb) return;
+    if (searchDlg) { searchDlg.showModal(); searchDlg.querySelector('input').select(); return; }
+    var input = el('input', { type: 'search', class: 'qs__input', placeholder: '予定・案件・作品・ひな形・やることを探す', 'aria-label': '探す', maxlength: '40', autocomplete: 'off' });
+    var out = el('div', { class: 'qs__out', 'aria-live': 'polite' });
+    var close = el('button', { type: 'button', class: 'qs__close', 'aria-label': '閉じる', text: '✕' });
+    searchDlg = el('dialog', { class: 'qs', 'aria-label': '探す' }, [
+      el('div', { class: 'qs__bar' }, [EM.icon('search'), input, close]), out,
+      el('p', { class: 'qs__hint small muted', text: 'どの画面でも「/」キーで開けます。' })
+    ]);
+    document.body.appendChild(searchDlg);
+    close.addEventListener('click', function () { searchDlg.close(); });
+    // 入力欄の「Esc」は文字を消すだけのことがあるので、Esc で必ず閉じるようにする
+    searchDlg.addEventListener('keydown', function (e) { if (e.key === 'Escape') { e.preventDefault(); searchDlg.close(); } });
+    searchDlg.addEventListener('click', function (e) { if (e.target === searchDlg) searchDlg.close(); });
+    var timer = null, seq = 0, me = null, creatorId = null;
+    EM.getUser().then(function (u) {
+      me = u;
+      if (u) sb.from('creators').select('id').eq('user_id', u.id).maybeSingle().then(function (r) { creatorId = r.data && r.data.id; });
+    });
+    function group(title, icon, rows) {
+      if (!rows.length) return null;
+      return el('div', { class: 'qs__group' }, [
+        el('p', { class: 'qs__gtitle' }, [EM.icon(icon), el('span', { text: title + '（' + rows.length + '）' })]),
+        el('ul', { class: 'qs__list' }, rows.map(function (r) {
+          return el('li', null, el('a', { href: r.href, class: 'qs__item' }, [
+            el('span', { class: 'qs__name', text: r.name }),
+            r.sub ? el('span', { class: 'qs__sub small muted', text: r.sub }) : null
+          ]));
+        }))
+      ]);
+    }
+    function run() {
+      var q = cleanQuery(input.value);
+      var my = ++seq;
+      EM.clear(out);
+      if (!q) return;
+      if (!me) { out.appendChild(el('p', { class: 'small muted', text: 'ログインすると探せます。' })); return; }
+      out.appendChild(el('p', { class: 'small muted', text: '探しています…' }));
+      var like = '*' + q + '*';
+      Promise.all([
+        sb.from('schedule_events').select('id,title,kind,starts_on,ends_on,location').eq('owner_user_id', me.id)
+          .or('title.ilike.' + like + ',note.ilike.' + like + ',location.ilike.' + like).order('starts_on', { ascending: false }).limit(8),
+        sb.from('schedule_projects').select('id,name').ilike('name', like).limit(6),
+        sb.from('projects').select('id,title,status').ilike('title', like).limit(6),
+        creatorId ? sb.from('portfolios').select('id,title').eq('creator_id', creatorId).ilike('title', like).limit(6) : Promise.resolve({ data: [] }),
+        sb.from('message_templates').select('id,name,category').or('name.ilike.' + like + ',body.ilike.' + like).limit(6),
+        sb.from('user_home').select('todos').maybeSingle()
+      ]).then(function (r) {
+        if (my !== seq) return;
+        EM.clear(out);
+        var d = function (i) { return (r[i] && !r[i].error && r[i].data) || []; };
+        var low = q.toLowerCase();
+        var todos = ((r[5] && r[5].data && r[5].data.todos) || []).filter(function (t) { return String(t.t || '').toLowerCase().indexOf(low) !== -1; }).slice(0, 6);
+        var groups = [
+          group('予定', 'calendar', d(0).map(function (e) { return { name: e.title, sub: EM.kindLabel(e.kind) + '・' + EM.mdw(e.starts_on) + (e.ends_on > e.starts_on ? '〜' + EM.md(e.ends_on) : '') + (e.location ? '・' + e.location : ''), href: '/schedule/day.html?d=' + e.starts_on }; })),
+          group('自分で作った案件', 'folder', d(1).map(function (p) { return { name: p.name, href: '/schedule/projects.html' }; })),
+          group('依頼の案件', 'film', d(2).map(function (p) { return { name: p.title, sub: (EM.STATUS_LABEL[p.status] || ''), href: '/projects/?id=' + encodeURIComponent(p.id) }; })),
+          group('作品', 'image', d(3).map(function (p) { return { name: p.title, href: '/mypage/portfolio.html' }; })),
+          group('定型文のひな形', 'doc', d(4).map(function (t) { return { name: t.name, sub: t.category, href: '/templates/?id=' + encodeURIComponent(t.id) }; })),
+          group('やること', 'check', todos.map(function (t) { return { name: t.t, sub: t.d ? '済み' : '', href: '/#todo' }; }))
+        ].filter(Boolean);
+        if (!groups.length) out.appendChild(el('p', { class: 'small muted', text: '「' + q + '」に合うものは見つかりませんでした。' }));
+        groups.forEach(function (g) { out.appendChild(g); });
+      }).catch(function () { if (my === seq) { EM.clear(out); out.appendChild(el('p', { class: 'small muted', text: '探せませんでした。少し時間をおいてお試しください。' })); } });
+    }
+    input.addEventListener('input', function () { clearTimeout(timer); timer = setTimeout(run, 300); });
+    searchDlg.showModal();
+    input.focus();
+  };
+
+  /* ---------- クイック追加（ヘッダーの「＋ 追加」） ---------- */
+  EM.QUICK_ADD = [
+    ['calendar', '予定を追加', function () { return '/schedule/?new=' + EM.today(); }],
+    ['folder',   '案件を作る', function () { return '/schedule/projects.html?new=1'; }],
+    ['check',    'やることを追加', function () { return '/?todo=new#todo'; }],
+    ['doc',      '定型文のひな形を作る', function () { return '/templates/?new=1'; }],
+    ['image',    '作品を追加', function () { return '/mypage/portfolio.html'; }]
+  ];
+  function mountTools(slot) {
+    var menu = el('div', { class: 'qa__menu', role: 'menu', hidden: true }, EM.QUICK_ADD.map(function (q) {
+      return el('a', { class: 'qa__item', role: 'menuitem', href: q[2]() }, [EM.icon(q[0]), el('span', { text: q[1] })]);
+    }));
+    var addBtn = el('button', { type: 'button', class: 'btn btn--sm btn--primary qa__btn', 'aria-haspopup': 'menu', 'aria-expanded': 'false' },
+      [EM.icon('plus'), el('span', { class: 'qa__label', text: '追加' })]);
+    var searchBtn = el('button', { type: 'button', class: 'icon-btn', 'aria-label': '探す（/ キー）', title: '探す（/ キー）' }, EM.icon('search'));
+    var wrap = el('div', { class: 'qa' }, [addBtn, menu]);
+    slot.appendChild(searchBtn);
+    slot.appendChild(wrap);
+    function setOpen(open) { menu.hidden = !open; addBtn.setAttribute('aria-expanded', open ? 'true' : 'false'); }
+    addBtn.addEventListener('click', function (e) { e.stopPropagation(); setOpen(menu.hidden); });
+    document.addEventListener('click', function (e) { if (!wrap.contains(e.target)) setOpen(false); });
+    document.addEventListener('keydown', function (e) { if (e.key === 'Escape') setOpen(false); });
+    searchBtn.addEventListener('click', EM.openSearch);
+    document.addEventListener('keydown', function (e) {
+      var t = e.target, typing = t && (t.isContentEditable || /^(INPUT|TEXTAREA|SELECT)$/.test(t.tagName));
+      if ((e.key === '/' && !typing) || ((e.ctrlKey || e.metaKey) && (e.key === 'k' || e.key === 'K'))) { e.preventDefault(); EM.openSearch(); }
+    });
+  }
+
   EM.mountChrome = function () {
     var header = el('header', { class: 'site-header' }, [
       el('div', { class: 'wrap' }, [
@@ -418,6 +601,7 @@
           el('span', { text: 'Eizo' }), el('b', { text: 'Maps' })
         ]),
         el('div', { class: 'header-actions' }, [
+          el('div', { class: 'header-tools', id: 'headerTools' }),
           // ログインしていないときは「ログイン」、しているときは「マイページ」に切り替わる
           el('a', { class: 'btn btn--sm header-login', id: 'headerLogin', href: '/auth/', text: 'ログイン' }),
           el('button', {
@@ -456,6 +640,7 @@
     EM.getUser().then(function (u) {
       var hl = document.getElementById('headerLogin');
       if (hl && u) { hl.textContent = 'マイページ'; hl.setAttribute('href', '/mypage/'); }
+      if (u) mountTools(document.getElementById('headerTools'));
       var slot = document.getElementById('navUserSlot');
       EM.clear(slot);
       var ul = el('ul');

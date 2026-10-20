@@ -22,6 +22,8 @@
       EM.$('#projBody').hidden = false;
       EM.$('#newProjBtn').addEventListener('click', createProject);
       EM.$('#newProjName').addEventListener('keydown', function (e) { if (e.key === 'Enter') createProject(); });
+      // ヘッダーの「＋ 追加 → 案件を作る」から来たときは、名前の欄にすぐ書けるようにする
+      if (EM.param('new') === '1') setTimeout(function () { var n = EM.$('#newProjName'); n.scrollIntoView({ block: 'center' }); n.focus(); }, 150);
       return load();
     }).catch(function (e) { EM.notice(msg, EM.errorText(e), 'error'); });
 
