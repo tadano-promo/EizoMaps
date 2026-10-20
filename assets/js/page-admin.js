@@ -13,8 +13,8 @@
     var propFilter = 'stocked';
     var adImageUrl = null;
 
-    var ANN_COLS = 'id,kind,title,body,link_url,link_label,visibility,is_published,pinned,published_at,created_at';
-    var AD_COLS  = 'id,slot,title,body,sponsor,image_url,link_url,starts_at,ends_at,is_active,sort_order,created_at';
+    var ANN_COLS = 'id,kind,title,body,link_url,link_label,visibility,is_published,pinned,published_at,created_at,updated_at';
+    var AD_COLS  = 'id,slot,title,body,sponsor,image_url,link_url,starts_at,ends_at,is_active,sort_order,created_at,updated_at';
     var ART_COLS = 'id,slug,title,excerpt,category,visibility,status,source,author_user_id,published_at,updated_at';
 
     var STATUS_LABEL = { draft: '下書き', review: '確認待ち', published: '公開中' };
@@ -216,7 +216,7 @@
             ])
           ]),
           n.body ? multiline(n.body, 'small muted') : null,
-          el('p', { class: 'small muted mono', text: n.published_at ? EM.date(n.published_at) + ' 公開' : '未公開' })
+          el('p', { class: 'small muted mono', text: (n.published_at ? EM.date(n.published_at) + ' 公開' : '未公開') + (n.updated_at ? ' ／ 最終保存 ' + EM.datetime(n.updated_at) : '') })
         ]));
       });
     }
@@ -353,7 +353,7 @@
                 onclick: function () { adDelete(a); } })
             ])
           ]),
-          el('p', { class: 'small muted mono', text: period }),
+          el('p', { class: 'small muted mono', text: period + (a.updated_at ? ' ／ 最終保存 ' + EM.datetime(a.updated_at) : '') }),
           el('p', { class: 'small muted mono', text: a.link_url })
         ]));
       });
