@@ -62,7 +62,10 @@
       var has = !!(creator && creator.id);
       EM.$('#handleNeedProfile').hidden = has;
       EM.$('#handleEditor').hidden = !has;
+      EM.$('#handleSummary').hidden = true;
       if (!has) return;
+      // 決まっているときは、すっきりした表示だけにする
+      if (creator.handle) { showHandleSummary(); return; }
       EM.$('#handleInput').value = creator.handle || '';
       showHandleUrl(creator.handle);
       if (!creator.handle) {
@@ -76,6 +79,38 @@
         setHandleStatus('今の @ハンドルです。', 'ok');
       }
     }
+
+    function showHandleSummary() {
+      var h = creator.handle;
+      var url = (EM.config.SITE_ORIGIN || location.origin) + '/@' + h;
+      EM.$('#handleSumVal').textContent = h;
+      var a = EM.$('#handleSumUrl');
+      a.href = '/@' + h; a.textContent = url.replace(/^https?:\/\//, '');
+      EM.$('#handleSummary').hidden = false;
+      EM.$('#handleEditor').hidden = true;
+      EM.$('#handleIntro').hidden = true;
+    }
+    function openHandleEditor() {
+      EM.$('#handleSummary').hidden = true;
+      EM.$('#handleEditor').hidden = false;
+      EM.$('#handleIntro').hidden = false;
+      EM.$('#handleCancelBtn').hidden = !creator.handle;
+      EM.$('#handleInput').value = creator.handle || '';
+      showHandleUrl(creator.handle);
+      setHandleStatus(creator.handle ? '今の @ハンドルです。変えるときは新しいものを入れてください。' : 'まだ決まっていません。', creator.handle ? 'ok' : '');
+      EM.$('#handleSugg').hidden = true;
+      EM.$('#handleSaveBtn').disabled = true;
+      handleOk = false;
+      setTimeout(function () { EM.$('#handleInput').focus(); EM.$('#handleInput').select(); }, 50);
+    }
+    EM.$('#handleChangeBtn').addEventListener('click', openHandleEditor);
+    EM.$('#handleCancelBtn').addEventListener('click', function () { if (creator && creator.handle) showHandleSummary(); });
+    EM.$('#handleCopyBtn').addEventListener('click', function () {
+      var url = (EM.config.SITE_ORIGIN || location.origin) + '/@' + creator.handle;
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(url).then(function () { EM.toast('URL をコピーしました'); }, function () { EM.toast(url); });
+      } else { EM.toast(url); }
+    });
 
     function showHandleUrl(h) {
       var line = EM.$('#handleUrlLine'), a = EM.$('#handleUrl');
@@ -170,6 +205,7 @@
         EM.$('#handleSugg').hidden = true;
         EM.$('#handleSaveBtn').disabled = true;
         showHandleUrl(d.handle);
+        showHandleSummary();
         var link = EM.$('#viewPublicLink');
         link.href = '/@' + d.handle;
       }).catch(function (e) { setHandleStatus(EM.errorText(e), 'ng'); })

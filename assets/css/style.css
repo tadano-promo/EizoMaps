@@ -935,7 +935,7 @@ input[type=search]::placeholder { color: #4a4a5c; }
 /* @ハンドル */
 .profile-handle { margin: -4px 0 6px; color: var(--muted); font-size: 14px; }
 .handle-box { margin-bottom: 28px; }
-.handle-box__title { font-size: 18px; margin: 0 0 4px; }
+.handle-box .handle-box__title { font-size: 18px; margin: 0 0 4px; }  /* .doc h2 の上の余白を打ち消す */
 .handle-input { display: flex; align-items: stretch; }
 .handle-input__at {
   display: grid; place-items: center; padding: 0 12px;
@@ -1391,3 +1391,19 @@ a.gantt__dia--link:hover { filter: brightness(1.25); }
 }
 input[type=date], input[type=time] { color-scheme: dark; }
 .tpl__main > .row { margin-bottom: 18px; }
+
+/* ---------- 設定したあとの「すっきり表示」（@ハンドル・パスワード・URL・Google 連携など） ---------- */
+.setsum {
+  display: flex; align-items: center; justify-content: space-between; gap: 12px 16px; flex-wrap: wrap;
+  padding: 14px 16px; border-radius: var(--radius-s);
+  background: var(--surface2); border: 1px solid var(--border);
+}
+.setsum__main { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.setsum__value { margin: 0; font-size: 20px; font-weight: 700; color: var(--text); overflow-wrap: anywhere; line-height: 1.3; }
+.setsum__value.mono { color: var(--accent); letter-spacing: .01em; }
+.setsum__value--url { font-size: 15px; font-weight: 500; margin: 2px 0 8px; }
+.setsum__sub { color: var(--muted); overflow-wrap: anywhere; }
+a.setsum__sub:hover { color: var(--accent); }
+.setsum__ok { color: #4ade80; }
+.setsum__actions { display: flex; gap: 8px; flex-wrap: wrap; }
+.handle-box .setsum { margin-top: 2px; }

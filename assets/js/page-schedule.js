@@ -472,13 +472,27 @@
       });
     }
 
+    var gcalOpen = EM.param('gcal') === 'back';   // つないだ直後は、カレンダーを選べるように開いておく
+    function setGcalOpen(open) {
+      gcalOpen = open;
+      var connected = !!(gcal && gcal.connected);
+      EM.$('#gcalOptions').hidden = !(connected && open);
+      EM.$('#gcalDisconnectBtn').hidden = !(connected && open);
+      var t = EM.$('#gcalOptToggle');
+      t.setAttribute('aria-expanded', open ? 'true' : 'false');
+      t.textContent = open ? '同期の設定を閉じる' : '同期の設定を開く';
+    }
+    EM.$('#gcalOptToggle').addEventListener('click', function () { setGcalOpen(!gcalOpen); });
+
     function renderGcal() {
       var st = EM.$('#gcalState');
       var connected = !!(gcal && gcal.connected);
       EM.$('#gcalConnectBtn').hidden = connected;
       EM.$('#gcalSyncBtn').hidden = !connected;
-      EM.$('#gcalDisconnectBtn').hidden = !connected;
-      EM.$('#gcalOptions').hidden = !connected;
+      // 連携したあとは、状態の1行と「今すぐ同期」だけをすっきり見せる。細かい設定と解除は「同期の設定を開く」の中
+      EM.$('#gcalIntro').hidden = connected;
+      EM.$('#gcalOptToggle').hidden = !connected;
+      setGcalOpen(connected && gcalOpen);
 
       if (!connected) {
         st.textContent = '連携していません。連携すると、この画面の予定が Google カレンダーにも入ります。';

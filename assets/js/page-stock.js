@@ -223,13 +223,22 @@
       EM.$('#intro').value = page.intro || '';
       EM.$('#introTemplateBtn').hidden = !!(page.intro && page.intro.trim());
       EM.$('#isActive').checked = !!page.is_active;
-      EM.$('#publicUrl').textContent = '公開URL: ' + publicUrlFor(page.slug);
+      EM.$('#publicUrl').textContent = publicUrlFor(page.slug).replace(/^https?:\/\//, '');
       EM.$('#openPageLink').href = publicUrlFor(page.slug);
+      EM.$('#slugEdit').hidden = true;
+      EM.$('#slugEditBtn').hidden = false;
       EM.$('#viewCount').textContent = '開かれた回数: ' + (page.view_count || 0) + ' 回';
-      EM.$('#pwState').textContent = page.password_updated_at
-        ? 'パスワード設定済み（最終変更: ' + EM.datetime(page.password_updated_at) + '）。変えるときだけ下に入れてください。'
+      // パスワード：設定済みなら「設定済み」だけを見せ、入力欄は「変える」を押したときだけ開く
+      var hasPw = !!page.password_updated_at;
+      EM.$('#pwSummary').hidden = !hasPw;
+      EM.$('#pwForm').hidden = hasPw;
+      EM.$('#pwCancelBtn').hidden = true;
+      EM.$('#pwSumWhen').textContent = hasPw ? '最終変更 ' + EM.datetime(page.password_updated_at) : '';
+      EM.$('#pwState').textContent = hasPw ? ''
         : 'パスワードがまだ設定されていません。自動で作った案を入れてあります。そのままでも、書き換えても大丈夫です。保存すると設定されます。';
-      EM.$('#newPassword').placeholder = page.password_updated_at ? '変えるときだけ入れてください' : '6文字以上';
+      EM.$('#pwState').hidden = hasPw;
+      EM.$('#pwLabel').firstChild.textContent = hasPw ? '新しいパスワード ' : 'パスワード ';
+      EM.$('#newPassword').placeholder = '6文字以上';
     }
 
     /* ---------------- まとめて保存（画面下のバー） ---------------- */
@@ -326,7 +335,27 @@
 
     EM.$('#slug').addEventListener('input', function (e) {
       e.target.value = normalizeSlug(e.target.value);
-      EM.$('#publicUrl').textContent = '公開URL: ' + publicUrlFor(e.target.value);
+      EM.$('#publicUrl').textContent = publicUrlFor(e.target.value).replace(/^https?:\/\//, '');
+    });
+    EM.$('#slugEditBtn').addEventListener('click', function () {
+      EM.$('#slugEdit').hidden = false;
+      this.hidden = true;
+      EM.$('#slug').focus();
+    });
+    EM.$('#pwChangeBtn').addEventListener('click', function () {
+      EM.$('#pwSummary').hidden = true;
+      EM.$('#pwForm').hidden = false;
+      EM.$('#pwCancelBtn').hidden = false;
+      EM.$('#newPassword').value = EM.randomPassword();
+      if (bar) bar.markDirty();
+      EM.$('#newPassword').focus();
+      EM.$('#newPassword').select();
+    });
+    EM.$('#pwCancelBtn').addEventListener('click', function () {
+      EM.$('#newPassword').value = '';
+      EM.$('#pwSummary').hidden = false;
+      EM.$('#pwForm').hidden = true;
+      this.hidden = true;
     });
 
     // Enter キーで送信されたときも、画面下のバーで保存する

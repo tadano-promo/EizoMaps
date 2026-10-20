@@ -34,7 +34,18 @@
       <section class="card stack handle-box" id="handleBox">
         <div>
           <h2 class="handle-box__title">あなたの @ハンドル</h2>
-          <p class="small muted">プロフィールのアドレスになります。SNS のように「@」から始まる、あなただけの名前です。</p>
+          <p class="small muted" id="handleIntro">プロフィールのアドレスになります。SNS のように「@」から始まる、あなただけの名前です。</p>
+        </div>
+        <!-- 決めたあとは、これだけをすっきり見せる（変えるときだけ下の入力欄を開く） -->
+        <div class="setsum" id="handleSummary" hidden>
+          <div class="setsum__main">
+            <p class="setsum__value mono">@<span id="handleSumVal"></span></p>
+            <a class="setsum__sub small mono" id="handleSumUrl" href="#" target="_blank" rel="noopener"></a>
+          </div>
+          <div class="setsum__actions">
+            <button class="btn btn--sm" type="button" id="handleCopyBtn">URL をコピー</button>
+            <button class="btn btn--sm" type="button" id="handleChangeBtn">変更する</button>
+          </div>
         </div>
         <p class="small muted" id="handleNeedProfile" hidden>下のプロフィールを一度保存すると、@ハンドルを決められます。</p>
         <div id="handleEditor" hidden>
@@ -57,6 +68,7 @@
           </div>
           <div class="form-actions">
             <button class="btn btn--primary btn--sm" type="button" id="handleSaveBtn" disabled>この @ハンドルで確定する</button>
+            <button class="btn btn--sm" type="button" id="handleCancelBtn" hidden>やめる</button>
           </div>
           <p class="small muted" id="handleUrlLine" hidden>あなたのページ：<a id="handleUrl" href="#" target="_blank" rel="noopener"></a></p>
           <p class="small muted">あとから変えることもできますが、変えると前のアドレスは使えなくなります。名刺やSNSに載せる前に決めておくのがおすすめです。</p>
