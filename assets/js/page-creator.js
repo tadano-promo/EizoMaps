@@ -26,7 +26,7 @@
     function loadAll() {
     Promise.all([
       sb.from('creators')
-        .select('id,user_id,handle,display_name,headline,bio,area_pref,area_city,years_of_experience,response_time_hours,avatar_url,website_url,contact_pref,contact_dm_url,creator_genres(genre_id)')
+        .select('id,user_id,handle,display_name,headline,bio,area_pref,area_city,years_of_experience,response_time_hours,avatar_url,website_url,contact_pref,contact_dm_url,updated_at,creator_genres(genre_id)')
         .eq('id', id).maybeSingle(),
       sb.from('genres').select('id,name_ja'),
       sb.from('portfolios')
@@ -76,7 +76,8 @@
           el('h1', { text: c.display_name }),
           c.handle ? el('p', { class: 'profile-handle mono', text: '@' + c.handle }) : null,
           el('p', { class: 'lead', text: c.headline || '' }),
-          el('p', { class: 'small muted', text: [c.area_pref, c.area_city].filter(Boolean).join(' ') })
+          el('p', { class: 'small muted', text: [c.area_pref, c.area_city].filter(Boolean).join(' ') }),
+          c.updated_at ? el('p', { class: 'small muted', text: 'プロフィール更新 ' + EM.date(c.updated_at) }) : null
         ])
       ]));
       box.appendChild(el('div', { class: 'row', id: 'ratingRow' }));

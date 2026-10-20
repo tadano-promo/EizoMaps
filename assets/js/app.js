@@ -163,6 +163,101 @@
     var d = new Date(iso);
     return isNaN(d) ? '' : d.getFullYear() + '.' + String(d.getMonth() + 1).padStart(2, '0') + '.' + String(d.getDate()).padStart(2, '0');
   };
+  // 日付＋時刻（例：2026.10.20 13:05）。「いつ保存したか」の表示に使う
+  EM.datetime = function (iso) {
+    if (!iso) return '';
+    var d = new Date(iso);
+    if (isNaN(d)) return '';
+    return EM.date(iso) + ' ' + String(d.getHours()).padStart(2, '0') + ':' + String(d.getMinutes()).padStart(2, '0');
+  };
+
+  /* ---------- 画面下にずっと出る「保存」バー ----------
+     1つのページの中の入力をまとめて1回で保存する。
+     ・入力が変わると「保存していない変更があります」になり、ボタンが押せるようになる
+     ・保存できたら「最終保存 2026.10.20 13:05」を出す
+     ・保存していない変更があるままページを離れようとすると、ブラウザが確認を出す
+     使い方：var bar = EM.saveBar({ watch: [要素...], onSave: function () { return Promise; }, savedAt: iso });
+       onSave は保存できたら「保存した時刻（ISO）」か何もない値で解決する Promise を返す */
+  EM.saveBar = function (opts) {
+    opts = opts || {};
+    var dirty = false, busy = false, savedAt = opts.savedAt || null;
+    var state = el('span', { class: 'savebar__state' });
+    var time = el('span', { class: 'savebar__time mono' });
+    var btn = el('button', { type: 'button', class: 'btn btn--primary savebar__btn', text: opts.label || '保存する' });
+    var bar = el('div', { class: 'savebar', role: 'region', 'aria-label': '保存' }, [
+      el('div', { class: 'savebar__inner' }, el('div', { class: 'savebar__row' }, [
+        el('div', { class: 'savebar__info', 'aria-live': 'polite' }, [state, time]),
+        btn
+      ]))
+    ]);
+    document.body.appendChild(bar);
+    document.body.classList.add('has-savebar');
+
+    function paint() {
+      bar.classList.toggle('is-dirty', dirty);
+      state.textContent = busy ? '保存しています…' : dirty ? '保存していない変更があります' : '変更はすべて保存されています';
+      time.textContent = savedAt ? '最終保存 ' + EM.datetime(savedAt) : '';
+      btn.disabled = busy || !dirty;
+      if (busy) btn.setAttribute('aria-busy', 'true'); else btn.removeAttribute('aria-busy');
+    }
+    function markDirty() { if (!busy) { dirty = true; paint(); } }
+
+    (opts.watch || []).forEach(function (node) {
+      if (!node) return;
+      node.addEventListener('input', markDirty);
+      node.addEventListener('change', markDirty);
+    });
+    window.addEventListener('beforeunload', function (e) {
+      if (dirty) { e.preventDefault(); e.returnValue = ''; }
+    });
+
+    function save() {
+      if (busy || !dirty || typeof opts.onSave !== 'function') return Promise.resolve();
+      busy = true; paint();
+      var p;
+      try { p = Promise.resolve(opts.onSave()); } catch (err) { p = Promise.reject(err); }
+      return p.then(function (at) {
+        if (at === false) { busy = false; paint(); return; }   // 入力の不備などで保存しなかった
+        dirty = false;
+        savedAt = (typeof at === 'string' && at) ? at : new Date().toISOString();
+        busy = false; paint();
+        EM.toast('保存しました');
+      }, function (err) {
+        busy = false; paint();
+        throw err;
+      });
+    }
+    btn.addEventListener('click', function () { save().catch(function () {}); });
+    // Ctrl+S / ⌘+S でも保存
+    document.addEventListener('keydown', function (e) {
+      if ((e.ctrlKey || e.metaKey) && (e.key === 's' || e.key === 'S')) {
+        if (dirty) { e.preventDefault(); save().catch(function () {}); }
+      }
+    });
+    paint();
+
+    return {
+      markDirty: markDirty,
+      save: save,
+      isDirty: function () { return dirty; },
+      setSavedAt: function (iso) { savedAt = iso || savedAt; paint(); },
+      reset: function (iso) { dirty = false; if (iso) savedAt = iso; paint(); }
+    };
+  };
+
+  // 推測されにくい読みやすいパスワード（例：k7m3-x9pa-q2rt）。0/O・1/l/I など見間違えやすい文字は使わない
+  EM.randomPassword = function () {
+    var abc = 'abcdefghjkmnpqrstuvwxyz23456789';
+    var buf = new Uint32Array(12);
+    (window.crypto || window.msCrypto).getRandomValues(buf);
+    var s = '';
+    for (var i = 0; i < 12; i++) {
+      s += abc[buf[i] % abc.length];
+      if (i === 3 || i === 7) s += '-';
+    }
+    return s;
+  };
+
   EM.avatar = function (url, name, big) {
     var safe = EM.safeUrl(url);
     if (safe) return el('img', { class: 'avatar' + (big ? ' avatar--lg' : ''), src: safe, alt: '', loading: 'lazy', referrerpolicy: 'no-referrer' });

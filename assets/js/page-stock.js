@@ -14,6 +14,9 @@
     var addKind = 'video';
     var videoSrc = 'library';   // 'library'（作品棚から選ぶ） | 'new'（新しい URL）
     var library = [];           // 作品棚（portfolios）
+    var bar = null;             // 画面下の「保存」バー（ページの中の入力を1回でまとめて保存する）
+    var contactDirty = false;   // 依頼の受け取り方を変えたか
+    var dirtyItems = {};        // 中身を直したブロック（id → ブロック）
 
     // 冒頭あいさつのひな形（クリエイターが自由に書き換え・削除できる）
     var INTRO_TEMPLATE = 'ご覧いただき誠にありがとうございます。本ページはパスワード付きのポートフォリオページです。掲載作品には守秘義務があるため、外部への共有・転載はご遠慮ください。\nまた、パスワードは定期的に変更する場合がございます。あらかじめご了承ください。';
@@ -66,6 +69,7 @@
           EM.$('#editSection').hidden = false;
           fillPageForm();
           fillContactForm();
+          mountSaveBar();
           return Promise.all([loadItems(), loadLinks(), loadLibrary()]);
         });
     }
@@ -75,6 +79,8 @@
         .eq('page_id', page.id).order('sort_order').order('created_at')
         .then(function (r) {
           if (r.error) throw r.error;
+          var prev = {};
+          items.forEach(function (o) { prev[o.id] = o; });
           items = (r.data || []).map(function (it) {
             // 作品棚の作品は、作品棚の内容を表示に使う
             var p = it.portfolios;
@@ -84,8 +90,16 @@
               it.provider = p.provider; it.video_id = p.video_id;
               it.url = p.video_url; it.thumbnail_url = p.thumbnail_url;
             }
+            // 読み込み直しても、書きかけ（まだ保存していない内容）は引き継ぐ
+            var o = prev[it.id];
+            if (o && (o._dt !== undefined || o._dd !== undefined)) {
+              it._dt = o._dt; it._dd = o._dd;
+              if (dirtyItems[it.id]) dirtyItems[it.id] = it;
+            }
             return it;
           });
+          // 外したブロックは、保存する対象からも外す
+          Object.keys(dirtyItems).forEach(function (id) { if (!prev[id] || !items.some(function (x) { return x.id === id; })) delete dirtyItems[id]; });
           renderItems();
           renderLibrary();
         });
@@ -198,6 +212,7 @@
       var box = EM.$('#intro');
       box.value = box.value.trim() ? box.value.trim() + '\n\n' + INTRO_TEMPLATE : INTRO_TEMPLATE;
       EM.$('#introTemplateBtn').hidden = true;
+      if (bar) bar.markDirty();
       EM.toast('ひな形を入れました。「保存する」で反映されます');
     });
 
@@ -212,8 +227,101 @@
       EM.$('#openPageLink').href = publicUrlFor(page.slug);
       EM.$('#viewCount').textContent = '開かれた回数: ' + (page.view_count || 0) + ' 回';
       EM.$('#pwState').textContent = page.password_updated_at
-        ? 'パスワード設定済み（最終更新: ' + EM.date(page.password_updated_at) + '）'
-        : 'パスワードがまだ設定されていません。設定するまでページは公開できません。';
+        ? 'パスワード設定済み（最終変更: ' + EM.datetime(page.password_updated_at) + '）。変えるときだけ下に入れてください。'
+        : 'パスワードがまだ設定されていません。自動で作った案を入れてあります。そのままでも、書き換えても大丈夫です。保存すると設定されます。';
+      EM.$('#newPassword').placeholder = page.password_updated_at ? '変えるときだけ入れてください' : '6文字以上';
+    }
+
+    /* ---------------- まとめて保存（画面下のバー） ---------------- */
+    function mountSaveBar() {
+      if (bar) { bar.reset(page.updated_at); return; }
+      bar = EM.saveBar({
+        watch: [EM.$('#pageForm'), EM.$('#pwForm'), EM.$('#contactForm'), EM.$('#itemList')],
+        savedAt: page.updated_at,
+        onSave: saveAll
+      });
+      EM.$('#contactForm').addEventListener('input', function () { contactDirty = true; });
+      EM.$('#contactForm').addEventListener('change', function () { contactDirty = true; });
+      // パスワードがまだ無いページには、最初からランダムな案を入れておく
+      if (!page.password_updated_at && !EM.$('#newPassword').value) {
+        EM.$('#newPassword').value = EM.randomPassword();
+        bar.markDirty();
+      }
+    }
+
+    function saveAll() {
+      var slug = normalizeSlug(EM.$('#slug').value);
+      var title = EM.$('#title').value.trim();
+      var active = EM.$('#isActive').checked;
+      var pw = EM.$('#newPassword').value;
+      if (!validSlug(slug)) { EM.notice(msg, 'URL は半角英小文字・数字・ハイフンで3〜32文字にしてください。', 'error'); return false; }
+      if (!title) { EM.notice(msg, 'タイトルを入力してください。', 'error'); return false; }
+      if (pw && pw.length < 6) { EM.notice(msg, 'パスワードは6文字以上にしてください。', 'error'); return false; }
+      if (active && !page.password_updated_at && !pw) {
+        EM.notice(msg, 'パスワードを入れてから公開してください。', 'error');
+        return false;
+      }
+      var pref = EM.$('#contactPref').value;
+      var dm = EM.$('#contactDmUrl').value.trim();
+      if (contactDirty && pref !== 'form') {
+        if (!dm) { EM.notice(msg, 'DM の宛先 URL を入力してください。', 'error'); return false; }
+        if (!EM.safeUrl(dm)) { EM.notice(msg, 'DM の宛先は https:// から始まる URL にしてください。', 'error'); return false; }
+      }
+      // 直したブロックの中身を確かめる
+      var patches = [];
+      for (var id in dirtyItems) {
+        var it = dirtyItems[id], card = EM.$('[data-item="' + id + '"]');
+        if (!card) continue;
+        var patch = {};
+        var t = card.querySelector('[data-f="title"]'), d = card.querySelector('[data-f="description"]');
+        if (t) patch.title = t.value.trim() || null;
+        if (d) patch.description = d.value.trim() || null;
+        if (it.kind === 'heading' && !patch.title) { EM.notice(msg, '見出しの文字は空にできません。', 'error'); return false; }
+        if (it.kind === 'note' && !patch.description) { EM.notice(msg, '本文は空にできません。', 'error'); return false; }
+        if (it.pf && !patch.title) { EM.notice(msg, '作品のタイトルは空にできません。', 'error'); return false; }
+        patches.push({ it: it, patch: patch });
+      }
+
+      var chain = pw
+        ? sb.rpc('set_stock_password', { p_password: pw }).then(function (r) { if (r.error) throw r.error; })
+        : Promise.resolve();
+      return chain.then(function () {
+        return sb.from('stock_pages').update({
+          slug: slug, title: title, intro: EM.$('#intro').value.trim() || null, is_active: active
+        }).eq('id', page.id).select(PAGE_COLS).single();
+      }).then(function (r) {
+        if (r.error) throw r.error;
+        page = r.data;
+        if (!contactDirty) return null;
+        return sb.from('creators').update({
+          contact_pref: pref, contact_dm_url: pref === 'form' ? null : dm
+        }).eq('id', creator.id).select('id,display_name,contact_pref,contact_dm_url').single()
+          .then(function (rc) { if (rc.error) throw rc.error; creator = rc.data; });
+      }).then(function () {
+        return Promise.all(patches.map(function (x) {
+          var q = x.it.pf
+            ? sb.from('portfolios').update(x.patch).eq('id', x.it.pf.id)   // 作品棚と共通
+            : sb.from('stock_items').update(x.patch).eq('id', x.it.id);
+          return q.then(function (r) {
+            if (r.error) throw r.error;
+            if (x.patch.title !== undefined) x.it.title = x.patch.title;
+            if (x.patch.description !== undefined) x.it.description = x.patch.description;
+            delete x.it._dt; delete x.it._dd;
+          });
+        }));
+      }).then(function () {
+        EM.$('#newPassword').value = '';
+        contactDirty = false;
+        dirtyItems = {};
+        fillPageForm();
+        EM.notice(msg, '');
+        return page.updated_at;
+      }).catch(function (err) {
+        var m = String(err.message || '');
+        EM.notice(msg, m.indexOf('duplicate key') !== -1
+          ? 'この URL はすでに使われています。別の文字列にしてください。' : EM.errorText(err), 'error');
+        throw err;
+      });
     }
 
     EM.$('#slug').addEventListener('input', function (e) {
@@ -221,32 +329,10 @@
       EM.$('#publicUrl').textContent = '公開URL: ' + publicUrlFor(e.target.value);
     });
 
+    // Enter キーで送信されたときも、画面下のバーで保存する
     EM.$('#pageForm').addEventListener('submit', function (e) {
       e.preventDefault();
-      var slug = normalizeSlug(EM.$('#slug').value);
-      var title = EM.$('#title').value.trim();
-      var active = EM.$('#isActive').checked;
-      if (!validSlug(slug)) { EM.notice(msg, 'URL は半角英小文字・数字・ハイフンで3〜32文字にしてください。', 'error'); return; }
-      if (!title) { EM.notice(msg, 'タイトルを入力してください。', 'error'); return; }
-      if (active && !page.password_updated_at) {
-        EM.notice(msg, 'パスワードを設定してから公開してください。', 'error');
-        EM.$('#isActive').checked = false;
-        return;
-      }
-      var btn = EM.$('#savePageBtn'); btn.setAttribute('aria-busy', 'true');
-      sb.from('stock_pages').update({
-        slug: slug, title: title, intro: EM.$('#intro').value.trim() || null, is_active: active
-      }).eq('id', page.id).select(PAGE_COLS).single().then(function (r) {
-        if (r.error) throw r.error;
-        page = r.data;
-        fillPageForm();
-        EM.toast('保存しました');
-        EM.notice(msg, '');
-      }).catch(function (err) {
-        var m = String(err.message || '');
-        EM.notice(msg, m.indexOf('duplicate key') !== -1
-          ? 'この URL はすでに使われています。' : EM.errorText(err), 'error');
-      }).then(function () { btn.removeAttribute('aria-busy'); });
+      if (bar) bar.save().catch(function () {});
     });
 
     EM.$('#copyUrlBtn').addEventListener('click', function () {
@@ -257,27 +343,20 @@
       } else { EM.toast(url); }
     });
 
-    /* ---------------- パスワード ---------------- */
-    EM.$('#showPwBtn').addEventListener('click', function () {
-      var f = EM.$('#newPassword');
-      var shown = f.type === 'text';
-      f.type = shown ? 'password' : 'text';
-      this.textContent = shown ? '入力内容を表示' : '入力内容を隠す';
+    /* ---------------- パスワード ----------------
+       ランダムに作ることも、自分で決めることもできる。保存は画面下のバーで、ほかの項目とまとめて行う。 */
+    EM.$('#genPwBtn').addEventListener('click', function () {
+      EM.$('#newPassword').value = EM.randomPassword();
+      if (bar) bar.markDirty();
+      EM.toast('パスワードを作りました。保存すると設定されます');
     });
-
-    EM.$('#pwForm').addEventListener('submit', function (e) {
-      e.preventDefault();
-      var pw = EM.$('#newPassword').value;
-      if (!pw || pw.length < 6) { EM.notice(msg, 'パスワードは6文字以上にしてください。', 'error'); return; }
-      var btn = EM.$('#savePwBtn'); btn.setAttribute('aria-busy', 'true');
-      sb.rpc('set_stock_password', { p_password: pw }).then(function (r) {
-        if (r.error) throw r.error;
-        EM.$('#newPassword').value = '';
-        EM.toast('パスワードを設定しました');
-        EM.notice(msg, '');
-        return loadPage();
-      }).catch(function (err) { EM.notice(msg, EM.errorText(err), 'error'); })
-        .then(function () { btn.removeAttribute('aria-busy'); });
+    EM.$('#copyPwBtn').addEventListener('click', function () {
+      var v = EM.$('#newPassword').value;
+      if (!v) { EM.toast('コピーするパスワードがありません。「ランダムに作る」か、入力してください'); return; }
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(v).then(function () { EM.toast('パスワードをコピーしました'); },
+          function () { EM.toast(v); });
+      } else { EM.toast(v); }
     });
 
     /* ---------------- 依頼の受け取り方 ---------------- */
@@ -299,21 +378,7 @@
 
     EM.$('#contactForm').addEventListener('submit', function (e) {
       e.preventDefault();
-      var pref = EM.$('#contactPref').value;
-      var dm = EM.$('#contactDmUrl').value.trim();
-      if (pref !== 'form') {
-        if (!dm) { EM.notice(msg, 'DM の宛先 URL を入力してください。', 'error'); return; }
-        if (!EM.safeUrl(dm)) { EM.notice(msg, 'DM の宛先は https:// から始まる URL にしてください。', 'error'); return; }
-      }
-      sb.from('creators').update({
-        contact_pref: pref, contact_dm_url: pref === 'form' ? null : dm
-      }).eq('id', creator.id).select('id,display_name,contact_pref,contact_dm_url').single()
-        .then(function (r) {
-          if (r.error) throw r.error;
-          creator = r.data;
-          EM.toast('保存しました');
-          EM.notice(msg, '');
-        }).catch(function (err) { EM.notice(msg, EM.errorText(err), 'error'); });
+      if (bar) bar.save().catch(function () {});
     });
 
     /* ---------------- SNS・外部リンク ---------------- */
@@ -580,47 +645,30 @@
       if (it.kind !== 'note') {
         body.appendChild(el('label', { class: 'field' }, [
           el('span', { class: 'label', text: it.kind === 'heading' ? '見出しの文字' : 'タイトル' }),
-          el('input', { type: 'text', maxlength: it.pf ? '80' : '120', value: it.title || '', dataset: { f: 'title' } })
+          el('input', { type: 'text', maxlength: it.pf ? '80' : '120', value: (it._dt !== undefined ? it._dt : it.title) || '', dataset: { f: 'title' } })
         ]));
       }
       if (it.kind !== 'heading') {
         body.appendChild(el('label', { class: 'field' }, [
           el('span', { class: 'label', text: '説明' }),
-          el('textarea', { maxlength: it.pf ? '1000' : '2000', rows: '3', dataset: { f: 'description' } }, it.description || '')
+          el('textarea', { maxlength: it.pf ? '1000' : '2000', rows: '3', dataset: { f: 'description' } }, (it._dd !== undefined ? it._dd : it.description) || '')
         ]));
       }
       if (it.url) {
         body.appendChild(el('p', { class: 'small muted mono stock-edit__url', text: it.url }));
       }
-      var saveBtn = el('button', { class: 'btn btn--sm btn--primary', type: 'button', text: 'この内容を保存' });
-      body.appendChild(el('div', { class: 'form-actions' }, saveBtn));
-
-      var card = el('div', { class: 'card stock-edit' }, [
+      var card = el('div', { class: 'card stock-edit', dataset: { item: it.id } }, [
         el('div', { class: 'row-item' }, [head, ops]),
         body
       ]);
 
-      saveBtn.addEventListener('click', function () {
-        var patch = {};
-        var t = body.querySelector('[data-f="title"]');
-        var d = body.querySelector('[data-f="description"]');
-        if (t) patch.title = t.value.trim() || null;
-        if (d) patch.description = d.value.trim() || null;
-        if (it.kind === 'heading' && !patch.title) { EM.notice(msg, '見出しの文字は空にできません。', 'error'); return; }
-        if (it.kind === 'note' && !patch.description) { EM.notice(msg, '本文は空にできません。', 'error'); return; }
-        if (it.pf && !patch.title) { EM.notice(msg, '作品のタイトルは空にできません。', 'error'); return; }
-        saveBtn.setAttribute('aria-busy', 'true');
-        var q = it.pf
-          ? sb.from('portfolios').update(patch).eq('id', it.pf.id)   // 作品棚と共通
-          : sb.from('stock_items').update(patch).eq('id', it.id);
-        q.then(function (r) {
-          if (r.error) throw r.error;
-          it.title = patch.title !== undefined ? patch.title : it.title;
-          it.description = patch.description !== undefined ? patch.description : it.description;
-          EM.toast('保存しました');
-          EM.notice(msg, '');
-        }).catch(function (err) { EM.notice(msg, EM.errorText(err), 'error'); })
-          .then(function () { saveBtn.removeAttribute('aria-busy'); });
+      // 直したら「保存していない変更」として覚えておき、画面下のバーでまとめて保存する
+      // 並べ替えで画面を描き直しても、書きかけの内容が消えないように控えておく
+      body.addEventListener('input', function () {
+        dirtyItems[it.id] = it;
+        var t = body.querySelector('[data-f="title"]'), d = body.querySelector('[data-f="description"]');
+        if (t) it._dt = t.value;
+        if (d) it._dd = d.value;
       });
 
       return card;

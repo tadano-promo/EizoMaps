@@ -64,7 +64,8 @@
       EM.$('#contentBox').hidden = false;
       EM.$('#shProject').textContent = d.project || '共有されたスケジュール';
       EM.$('#shMeta').textContent = [d.label ? d.label + 'のリンク' : null, d.owner ? '作成：' + d.owner : null,
-        d.expires_on ? (function (x) { var p = x.split('-'); return +p[1] + '/' + +p[2] + 'まで見られます'; })(d.expires_on) : null]
+        d.expires_on ? (function (x) { var p = x.split('-'); return +p[1] + '/' + +p[2] + 'まで見られます'; })(d.expires_on) : null,
+        d.updated_at ? '最終更新 ' + EM.datetime(d.updated_at) : null]
         .filter(Boolean).join(' ／ ');
 
       var box = EM.$('#shDays');

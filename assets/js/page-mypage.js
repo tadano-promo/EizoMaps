@@ -7,6 +7,7 @@
     if (!sb) { return; }  // 未設定の案内はヘッダー直下に共通表示される
 
     var user = null, creator = null, genres = [], selected = [];
+    var bar = null, profileDirty = false, accountDirty = false;
 
     EM.PREFS.forEach(function (p) { EM.$('#areaPref').appendChild(el('option', { value: p, text: p })); });
 
@@ -44,6 +45,7 @@
       renderAvatar();
       renderGenres();
       initHandle();
+      mountSaveBar();
     }).catch(function (e) { EM.notice(msg, EM.errorText(e), 'error'); });
 
     /* ---------------- @ハンドル ----------------
@@ -195,6 +197,8 @@
               selected.push(g.id);
             }
             b.setAttribute('aria-pressed', selected.indexOf(g.id) !== -1 ? 'true' : 'false');
+            profileDirty = true;
+            if (bar) bar.markDirty();
           }
         });
         box.appendChild(b);
@@ -215,59 +219,82 @@
           if (r.error) throw r.error;
           var pub = sb.storage.from('avatars').getPublicUrl(path);
           var url = pub.data.publicUrl + '?v=' + Date.now();
-          if (!creator) { creator = { avatar_url: url }; EM.notice(msg, '画像を読み込みました。「保存する」を押すと反映されます。', 'ok'); }
-          else { creator.avatar_url = url; EM.notice(msg, '画像を読み込みました。「保存する」を押すと反映されます。', 'ok'); }
+          if (!creator) { creator = { avatar_url: url }; } else { creator.avatar_url = url; }
+          EM.notice(msg, '画像を読み込みました。画面下の「保存する」を押すと反映されます。', 'ok');
+          profileDirty = true;
+          if (bar) bar.markDirty();
           renderAvatar();
         })
         .catch(function (err) { EM.notice(msg, EM.errorText(err), 'error'); });
     });
 
-    /* ---- 保存 ---- */
+    /* ---- 保存（画面下のバーで、プロフィールと利用種別をまとめて1回で） ---- */
+    function mountSaveBar() {
+      if (bar) return;
+      bar = EM.saveBar({
+        watch: [EM.$('#profileForm'), EM.$('#accountType')],
+        savedAt: creator && creator.updated_at,
+        onSave: saveAll
+      });
+      EM.$('#profileForm').addEventListener('input', function () { profileDirty = true; });
+      EM.$('#profileForm').addEventListener('change', function () { profileDirty = true; });
+      EM.$('#accountType').addEventListener('change', function () { accountDirty = true; });
+    }
+
+    // Enter キーで送信されたときも、画面下のバーで保存する
     EM.$('#profileForm').addEventListener('submit', function (e) {
       e.preventDefault();
-      var name = EM.$('#displayName').value.trim();
-      if (!name) { EM.notice(msg, '表示名を入力してください。', 'error'); return; }
+      if (bar) bar.save().catch(function () {});
+    });
 
-      var site = EM.$('#websiteUrl').value.trim();
-      if (site && !EM.safeUrl(site)) { EM.notice(msg, 'ウェブサイトは https:// から始まる URL を入力してください。', 'error'); return; }
-
-      var payload = {
-        display_name: name,
-        headline: EM.$('#headline').value.trim() || null,
-        bio: EM.$('#bio').value.trim() || null,
-        area_pref: EM.$('#areaPref').value || null,
-        area_city: EM.$('#areaCity').value.trim() || null,
-        years_of_experience: EM.$('#years').value === '' ? null : Number(EM.$('#years').value),
-        response_time_hours: EM.$('#responseHours').value === '' ? null : Number(EM.$('#responseHours').value),
-        website_url: site || null,
-        avatar_url: (creator && creator.avatar_url) || null,
-        is_published: EM.$('#isPublished').checked
-      };
-
-      var btn = EM.$('#saveBtn');
-      btn.setAttribute('aria-busy', 'true');
-      EM.notice(msg, '保存しています…');
-
-      var p = (creator && creator.id)
+    function saveAll() {
+      var payload = null;
+      if (profileDirty) {
+        var name = EM.$('#displayName').value.trim();
+        if (!name) { EM.notice(msg, '表示名を入力してください。', 'error'); return false; }
+        var site = EM.$('#websiteUrl').value.trim();
+        if (site && !EM.safeUrl(site)) { EM.notice(msg, 'ウェブサイトは https:// から始まる URL を入力してください。', 'error'); return false; }
+        payload = {
+          display_name: name,
+          headline: EM.$('#headline').value.trim() || null,
+          bio: EM.$('#bio').value.trim() || null,
+          area_pref: EM.$('#areaPref').value || null,
+          area_city: EM.$('#areaCity').value.trim() || null,
+          years_of_experience: EM.$('#years').value === '' ? null : Number(EM.$('#years').value),
+          response_time_hours: EM.$('#responseHours').value === '' ? null : Number(EM.$('#responseHours').value),
+          website_url: site || null,
+          avatar_url: (creator && creator.avatar_url) || null,
+          is_published: EM.$('#isPublished').checked
+        };
+      }
+      var savedAt = null;
+      var p1 = !payload ? Promise.resolve() : ((creator && creator.id)
         ? sb.from('creators').update(payload).eq('id', creator.id).select('*').single()
-        : sb.from('creators').insert(Object.assign({ user_id: user.id }, payload)).select('*').single();
-
-      p.then(function (r) {
+        : sb.from('creators').insert(Object.assign({ user_id: user.id }, payload)).select('*').single()
+      ).then(function (r) {
         if (r.error) throw r.error;
         creator = Object.assign({}, r.data);
+        savedAt = creator.updated_at;
         if (EM.$('#handleEditor').hidden) initHandle();
         return syncGenres(creator.id);
       }).then(function () {
-        btn.removeAttribute('aria-busy');
-        EM.notice(msg, '保存しました。', 'ok');
         var link = EM.$('#viewPublicLink');
         link.href = creator.handle ? '/@' + creator.handle : '/creators/detail.html?id=' + encodeURIComponent(creator.id);
         link.hidden = !creator.is_published;
-      }).catch(function (err) {
-        btn.removeAttribute('aria-busy');
-        EM.notice(msg, EM.errorText(err), 'error');
       });
-    });
+      return p1.then(function () {
+        if (!accountDirty) return null;
+        return sb.from('users').update({ account_type: EM.$('#accountType').value, onboarded: true })
+          .eq('id', user.id).then(function (r) { if (r.error) throw r.error; });
+      }).then(function () {
+        profileDirty = false; accountDirty = false;
+        EM.notice(msg, '');
+        return savedAt || new Date().toISOString();
+      }).catch(function (err) {
+        EM.notice(msg, EM.errorText(err), 'error');
+        throw err;
+      });
+    }
 
     function syncGenres(creatorId) {
       return sb.from('creator_genres').delete().eq('creator_id', creatorId).then(function () {
@@ -277,14 +304,6 @@
         }));
       });
     }
-
-    EM.$('#saveAccountBtn').addEventListener('click', function () {
-      sb.from('users').update({ account_type: EM.$('#accountType').value, onboarded: true })
-        .eq('id', user.id).then(function (r) {
-          if (r.error) EM.notice(msg, EM.errorText(r.error), 'error');
-          else EM.toast('利用種別を保存しました');
-        });
-    });
 
     EM.$('#logoutBtn').addEventListener('click', function () { EM.signOut(); });
   });

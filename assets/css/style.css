@@ -1042,3 +1042,28 @@ a.vcal__day:hover .vcal__dnum { color: var(--accent); text-decoration: underline
 .share-lane__list { list-style: none; margin: 0; padding: 0; display: grid; gap: 4px; }
 .share-lane__list li { display: flex; flex-wrap: wrap; gap: 4px 10px; font-size: 14px; }
 .share-lane__time { min-width: 92px; color: var(--muted); }
+
+/* ---------- 画面下にずっと出る「保存」バー ---------- */
+.savebar {
+  position: fixed; left: 0; right: 0; bottom: 0; z-index: 120;
+  background: rgba(10,10,15,.94);
+  border-top: 1px solid var(--border);
+  backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px);
+  padding: 10px 0 calc(10px + env(safe-area-inset-bottom));
+}
+/* 本文と同じ幅・同じ左端にそろえる（.wrap と .doc に合わせる） */
+.savebar__inner { width: 100%; max-width: var(--maxw); margin-inline: auto; padding-inline: 20px; }
+.savebar__row { max-width: 760px; display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+.savebar__info { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.savebar__state { font-size: 13px; color: var(--muted); }
+.savebar.is-dirty .savebar__state { color: var(--accent); }
+.savebar__time { font-size: 11px; color: var(--muted); }
+.savebar__btn { min-width: 128px; }
+.savebar__btn:disabled { opacity: .45; cursor: default; }
+body.has-savebar main { padding-bottom: 96px; }
+body.has-savebar .toast { bottom: 96px; }
+.autosave-state { font-size: 12px; color: var(--muted); margin: 6px 0 0; }
+.autosave-state.is-busy { color: var(--accent); }
+.pw-row { display: flex; gap: 8px; align-items: stretch; }
+.pw-row input { flex: 1; min-width: 0; letter-spacing: .04em; }
+.page-links { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 4px; }

@@ -261,7 +261,12 @@
       EM.$('#evCancelBtn').addEventListener('click', closeForm);
       EM.$('#evSaveBtn').addEventListener('click', save);
       EM.$('#evDeleteBtn').addEventListener('click', remove);
-      EM.$('#saveShareBtn').addEventListener('click', saveShare);
+      EM.$('#shareAvailability').addEventListener('change', saveShare);
+      // Google 連携の設定は、変えたら少し待って自動で保存する（チェックをまとめて変えても1回で済むように）
+      EM.$('#gcalOptions').addEventListener('change', function () {
+        clearTimeout(gcalSaveTimer);
+        gcalSaveTimer = setTimeout(saveGcal, 700);
+      });
     }
 
     // 案件の選び方：自分で作った案件（sp:）／依頼の案件（rq:）／新しく作る（new）
@@ -472,7 +477,6 @@
       var connected = !!(gcal && gcal.connected);
       EM.$('#gcalConnectBtn').hidden = connected;
       EM.$('#gcalSyncBtn').hidden = !connected;
-      EM.$('#gcalSaveBtn').hidden = !connected;
       EM.$('#gcalDisconnectBtn').hidden = !connected;
       EM.$('#gcalOptions').hidden = !connected;
 
@@ -651,12 +655,23 @@
         .then(function () { b.removeAttribute('aria-busy'); });
     });
 
-    EM.$('#gcalSaveBtn').addEventListener('click', function () {
+    // 自動保存の状態を出す（例：保存しました（2026.10.20 13:05））
+    function autosaveState(node, state, err) {
+      node.classList.toggle('is-busy', state === 'busy');
+      node.textContent = state === 'busy' ? '保存しています…'
+        : state === 'error' ? '保存できませんでした：' + err
+        : '保存しました（' + EM.datetime(new Date().toISOString()) + '）';
+    }
+
+    var gcalSaveTimer = null;
+    function saveGcal() {
+      var st = EM.$('#gcalSaved');
       var busyIds = EM.$$('#gcalBusyList input:checked').map(function (cb) { return cb.value; });
       if (EM.$('#gcalPull').checked && gcalCals && gcalCals.length && !busyIds.length) {
-        EM.notice(msg, '「埋まっている日」に含めるカレンダーを1つ以上選んでください。', 'error');
+        autosaveState(st, 'error', '「埋まっている日」に含めるカレンダーを1つ以上選んでください。');
         return;
       }
+      autosaveState(st, 'busy');
       sb.rpc('set_calendar_sync', {
         p_push: EM.$('#gcalPush').checked,
         p_pull: EM.$('#gcalPull').checked
@@ -669,11 +684,10 @@
           busy_ids: busyIds
         });
       }).then(function () {
-        EM.notice(msg, '');
-        EM.toast('保存しました');
+        autosaveState(st, 'ok');
         return loadGcal();
-      }).catch(function (e) { EM.notice(msg, EM.errorText(e), 'error'); });
-    });
+      }).catch(function (e) { autosaveState(st, 'error', EM.errorText(e)); });
+    }
 
     EM.$('#gcalDisconnectBtn').addEventListener('click', function () {
       if (!confirm('Google カレンダーとの連携を解除しますか？\nGoogle 側に書き出した予定はそのまま残ります。')) return;
@@ -685,11 +699,13 @@
     });
 
     function saveShare() {
-      if (!creator) { EM.notice(msg, 'クリエイタープロフィールを作成すると公開できます。', 'error'); return; }
+      var st = EM.$('#shareSaved');
+      if (!creator) { autosaveState(st, 'error', 'クリエイタープロフィールを作成すると公開できます。'); return; }
+      autosaveState(st, 'busy');
       sb.from('creators').update({ share_availability: EM.$('#shareAvailability').checked })
         .eq('id', creator.id)
-        .then(function (r) { if (r.error) throw r.error; EM.toast('保存しました'); EM.notice(msg, ''); })
-        .catch(function (err) { EM.notice(msg, EM.errorText(err), 'error'); });
+        .then(function (r) { if (r.error) throw r.error; autosaveState(st, 'ok'); })
+        .catch(function (err) { autosaveState(st, 'error', EM.errorText(err)); });
     }
   });
 })(window.EM);

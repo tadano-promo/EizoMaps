@@ -67,6 +67,13 @@
       }).then(function () { btn.removeAttribute('aria-busy'); });
     });
 
+    // ページの設定を保存した日時と、中身を足した日時のうち新しいほう
+    function lastUpdated(page, items) {
+      var t = page.updated_at || null;
+      (items || []).forEach(function (it) { if (it.created_at && (!t || it.created_at > t)) t = it.created_at; });
+      return t;
+    }
+
     /* ---------------- 表示 ---------------- */
     function render(data) {
       lock.hidden = true;
@@ -82,7 +89,8 @@
           el('div', null, [
             el('p', { class: 'eyebrow', text: 'Portfolio stock' }),
             el('h1', { text: page.title || '' }),
-            el('p', { class: 'small muted', text: [c.display_name, c.headline, c.area_pref].filter(Boolean).join(' ／ ') })
+            el('p', { class: 'small muted', text: [c.display_name, c.headline, c.area_pref].filter(Boolean).join(' ／ ') }),
+            lastUpdated(page, data.items) ? el('p', { class: 'small muted', text: '最終更新 ' + EM.date(lastUpdated(page, data.items)) }) : null
           ])
         ]),
         el('button', {
