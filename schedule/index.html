@@ -128,6 +128,14 @@
       <div class="card stack" id="gcalBox">
         <p class="small muted" id="gcalState">確認中…</p>
         <div id="gcalOptions" hidden>
+          <div class="gcal-accounts">
+            <p class="small">つないでいる Google アカウント</p>
+            <div id="gcalAccounts" class="stack"></div>
+            <div class="form-actions">
+              <button class="btn btn--sm" type="button" id="gcalAddBtn">＋ 別の Google アカウントを追加</button>
+            </div>
+            <p class="small muted" id="gcalAddNote"></p>
+          </div>
           <label class="checkbox">
             <input type="checkbox" id="gcalPush">
             <span>Eizo Maps の予定を Google カレンダーに書き出す</span>
@@ -141,7 +149,7 @@
             <span>Google カレンダーの予定を「埋まっている日」に含める（予定がある日時だけを取り込みます。件名や場所は取り込みません）</span>
           </label>
           <div class="gcal-sub" id="gcalBusyWrap" hidden>
-            <p class="small">「埋まっている日」に含めるカレンダー（いくつでも選べます）</p>
+            <p class="small">「埋まっている日」に含めるカレンダー（アカウントをまたいで、いくつでも選べます）</p>
             <div id="gcalBusyList" class="stack"></div>
           </div>
           <p class="small muted">15分ごとに自動で同期します。Google 側で消した予定は Eizo Maps からも消えます。急ぐときは「今すぐ同期する」を押してください。</p>
