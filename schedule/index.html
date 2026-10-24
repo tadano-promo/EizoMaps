@@ -127,32 +127,28 @@
       </p>
       <div class="card stack" id="gcalBox">
         <p class="small muted" id="gcalState">確認中…</p>
-        <div id="gcalOptions" hidden>
-          <div class="gcal-accounts">
-            <p class="small">つないでいる Google アカウント</p>
-            <div id="gcalAccounts" class="stack"></div>
-            <div class="form-actions">
-              <button class="btn btn--sm" type="button" id="gcalAddBtn">＋ 別の Google アカウントを追加</button>
+        <div id="gcalOptions" class="gcal-options" hidden>
+          <div class="gcal-switches">
+            <label class="checkbox">
+              <input type="checkbox" id="gcalPush">
+              <span>Eizo Maps の予定を Google に書き出す</span>
+            </label>
+            <div class="field gcal-sub" id="gcalWriteWrap" hidden>
+              <label for="gcalWriteCal" class="small">書き出す先</label>
+              <select id="gcalWriteCal"></select>
             </div>
-            <p class="small muted" id="gcalAddNote"></p>
+            <label class="checkbox">
+              <input type="checkbox" id="gcalPull">
+              <span>Google の予定を「埋まっている日」に含める</span>
+            </label>
           </div>
-          <label class="checkbox">
-            <input type="checkbox" id="gcalPush">
-            <span>Eizo Maps の予定を Google カレンダーに書き出す</span>
-          </label>
-          <div class="field gcal-sub" id="gcalWriteWrap" hidden>
-            <label for="gcalWriteCal" class="small">書き出す先のカレンダー</label>
-            <select id="gcalWriteCal"></select>
+          <div id="gcalBusyWrap" class="gcal-accounts-area">
+            <p class="small muted" id="gcalBusyHint">タップしたカレンダーの予定を「埋まっている日」に含めます（件名・場所は取り込みません）。</p>
+            <div id="gcalBusyList" class="gcal-cards"></div>
+            <button class="gcal-add" type="button" id="gcalAddBtn">＋ Google アカウントを追加</button>
+            <p class="small muted" id="gcalAddNote" hidden></p>
           </div>
-          <label class="checkbox">
-            <input type="checkbox" id="gcalPull">
-            <span>Google カレンダーの予定を「埋まっている日」に含める（予定がある日時だけを取り込みます。件名や場所は取り込みません）</span>
-          </label>
-          <div class="gcal-sub" id="gcalBusyWrap" hidden>
-            <p class="small">「埋まっている日」に含めるカレンダー（アカウントをまたいで、いくつでも選べます）</p>
-            <div id="gcalBusyList" class="stack"></div>
-          </div>
-          <p class="small muted">15分ごとに自動で同期します。Google 側で消した予定は Eizo Maps からも消えます。急ぐときは「今すぐ同期する」を押してください。</p>
+          <p class="small muted">15分ごとに自動で同期します。Google 側で消した予定は Eizo Maps からも消えます。</p>
           <p class="autosave-state" id="gcalSaved" aria-live="polite">設定は変えるとすぐ自動で保存されます。</p>
         </div>
         <div class="form-actions">

@@ -502,11 +502,11 @@
       }
       EM.$('#gcalPush').checked = !!gcal.sync_push;
       EM.$('#gcalPull').checked = !!gcal.sync_pull;
-      var emails = [gcal.google_email || 'Google アカウント'].concat((gcal.accounts || []).map(function (a) { return a.google_email || '追加したアカウント'; }));
-      var parts = [emails.join('、') + ' と連携中'];
+      var nAcct = 1 + (gcal.accounts || []).length;
+      var parts = [nAcct > 1 ? 'Google アカウント ' + nAcct + 'つと連携中' : (gcal.google_email || 'Google アカウント') + ' と連携中'];
       parts.push(gcal.last_sync_at ? '最終同期: ' + syncTime(gcal.last_sync_at) : 'まだ同期していません');
       if (gcal.pending) parts.push('未同期の予定: ' + gcal.pending + '件');
-      if (gcal.google_busy_days) parts.push('Google側で埋まっている日: ' + gcal.google_busy_days + '日');
+      if (gcal.google_busy_days) parts.push('埋まっている日: ' + gcal.google_busy_days + '日');
       st.textContent = parts.join(' ／ ');
       if (gcal.last_sync_error) {
         EM.notice(msg, '前回の同期で問題がありました: ' + gcal.last_sync_error, 'error');
@@ -524,45 +524,13 @@
       return EM.date(iso) + ' ' + pad(d.getHours()) + ':' + pad(d.getMinutes());
     }
 
-    // つないでいる Google アカウントの一覧（1つ目＋追加したもの）。追加したものは1つずつ外せる
+    // 「＋ Google アカウントを追加」は全部で6つになるまで出す
     function renderAccounts() {
-      var box = EM.$('#gcalAccounts');
-      box.textContent = '';
-      var rows = [{ id: null, google_email: gcal.google_email, main: true }].concat(gcal.accounts || []);
-      rows.forEach(function (a) {
-        var row = document.createElement('div');
-        row.className = 'gcal-acct';
-        var name = document.createElement('span');
-        name.className = 'gcal-acct__name';
-        name.textContent = a.google_email || 'Google アカウント';
-        row.appendChild(name);
-        if (a.main) {
-          var tag = document.createElement('span');
-          tag.className = 'gcal-acct__tag';
-          tag.textContent = '1つ目';
-          row.appendChild(tag);
-        } else {
-          if (a.last_sync_error) {
-            var err = document.createElement('span');
-            err.className = 'gcal-acct__err';
-            err.textContent = '許可が切れています。もう一度追加してください';
-            row.appendChild(err);
-          }
-          var rm = document.createElement('button');
-          rm.type = 'button';
-          rm.className = 'btn btn--sm';
-          rm.textContent = '外す';
-          rm.setAttribute('aria-label', (a.google_email || 'このアカウント') + ' を外す');
-          rm.addEventListener('click', function () { removeAccount(a); });
-          row.appendChild(rm);
-        }
-        box.appendChild(row);
-      });
-      var n = rows.length;
+      var n = 1 + ((gcal && gcal.accounts) || []).length;
       EM.$('#gcalAddBtn').hidden = n >= 6;
-      EM.$('#gcalAddNote').textContent = n >= 6
-        ? 'つなげられる Google アカウントは6つまでです。'
-        : '仕事用と個人用など、Google アカウントをいくつかお使いなら追加できます（全部で6つまで）。';
+      var note = EM.$('#gcalAddNote');
+      note.hidden = n < 6;
+      note.textContent = 'つなげられる Google アカウントは6つまでです。';
     }
 
     function removeAccount(a) {
@@ -588,7 +556,7 @@
         renderCalendars();
       }).catch(function () {
         EM.$('#gcalWriteWrap').hidden = true;
-        EM.$('#gcalBusyWrap').hidden = true;
+        EM.$('#gcalBusyList').textContent = '';
       });
     }
 
@@ -599,24 +567,35 @@
     function acctKey(id) { return id || 'main'; }
     function acctLabel(a) { return (a.email || 'Google アカウント') + (a.main ? '（1つ目）' : ''); }
 
+    function calLabel(c) { return c.primary ? 'メイン' : c.name; }
+    function acctError(a) {
+      if (a.error) return 'カレンダーを読めませんでした';
+      var x = ((gcal && gcal.accounts) || []).filter(function (g) { return g.id === a.id; })[0];
+      return x && x.last_sync_error ? '許可が切れています' : '';
+    }
+
+    // アカウントごとに1枚のカード：見出し（アカウント）＋カレンダーのボタン（押すと「埋まっている日」に入る・外れる）
     function renderCalendars() {
       if (!gcalAccts || !gcalAccts.length) return;
       var writeId = (gcal && gcal.calendar_id) || 'primary';
       var multi = gcalAccts.length > 1;
 
+      // 書き出す先：アカウントが2つ以上なら、アカウントごとにまとめて出す
       var sel = EM.$('#gcalWriteCal');
       sel.textContent = '';
       gcalAccts.forEach(function (a) {
         var parent = sel;
         if (multi) {
           parent = document.createElement('optgroup');
-          parent.label = acctLabel(a);
+          parent.label = a.email || 'Google アカウント';
           sel.appendChild(parent);
         }
         (a.calendars || []).filter(function (c) { return c.writable; }).forEach(function (c) {
           var o = document.createElement('option');
           o.value = acctKey(a.id) + '|' + c.id;
-          o.textContent = c.name + (c.primary ? '（メイン）' : '');
+          // 閉じているときもどのアカウントか分かるように、アカウント名（@の前）を添える
+          var who = String(a.email || '').split('@')[0];
+          o.textContent = calLabel(c) + (multi && who ? '（' + who + '）' : '');
           if (acctKey(a.id) === acctKey(gcalPushAcct) && sameCalIn(a.calendars, c.id, writeId)) o.selected = true;
           parent.appendChild(o);
         });
@@ -625,41 +604,63 @@
       var list = EM.$('#gcalBusyList');
       list.textContent = '';
       gcalAccts.forEach(function (a) {
-        var group = document.createElement('div');
-        group.className = 'gcal-group stack';
-        if (multi) {
-          var h = document.createElement('p');
-          h.className = 'gcal-group__head small';
-          h.textContent = acctLabel(a);
-          group.appendChild(h);
+        var card = document.createElement('div');
+        card.className = 'gcal-card';
+
+        var head = document.createElement('div');
+        head.className = 'gcal-card__head';
+        var main = (a.calendars || []).filter(function (c) { return c.primary; })[0];
+        var av = document.createElement('span');
+        av.className = 'gcal-card__avatar';
+        av.textContent = String(a.email || 'G').charAt(0).toUpperCase();
+        if (main && main.color) av.style.background = main.color;
+        head.appendChild(av);
+        var name = document.createElement('span');
+        name.className = 'gcal-card__name';
+        name.textContent = a.email || 'Google アカウント';
+        name.title = a.email || '';
+        head.appendChild(name);
+        var err = acctError(a);
+        if (err) {
+          var e = document.createElement('span');
+          e.className = 'gcal-card__err';
+          e.textContent = err;
+          head.appendChild(e);
         }
-        if (a.error) {
-          var e = document.createElement('p');
-          e.className = 'small gcal-acct__err';
-          e.textContent = 'このアカウントのカレンダーを読めませんでした。上の一覧で外してから、もう一度追加してください。';
-          group.appendChild(e);
+        if (!a.main) {
+          var rm = document.createElement('button');
+          rm.type = 'button';
+          rm.className = 'gcal-card__remove';
+          rm.textContent = '外す';
+          rm.setAttribute('aria-label', (a.email || 'このアカウント') + ' を外す');
+          rm.addEventListener('click', function () { removeAccount({ id: a.id, google_email: a.email }); });
+          head.appendChild(rm);
         }
+        card.appendChild(head);
+
+        var chips = document.createElement('div');
+        chips.className = 'gcal-chips';
         var busy = a.busy_calendar_ids || [];
         (a.calendars || []).forEach(function (c) {
           var lab = document.createElement('label');
-          lab.className = 'checkbox';
+          lab.className = 'gcal-chip';
           var cb = document.createElement('input');
           cb.type = 'checkbox';
           cb.value = c.id;
           cb.setAttribute('data-acct', acctKey(a.id));
           cb.checked = busy.some(function (b) { return sameCalIn(a.calendars, b, c.id); });
-          var sp = document.createElement('span');
-          if (c.color) {
-            var dot = document.createElement('span');
-            dot.className = 'gcal-dot';
-            dot.style.background = c.color;
-            sp.appendChild(dot);
-          }
-          sp.appendChild(document.createTextNode(c.name + (c.primary ? '（メイン）' : '')));
-          lab.appendChild(cb); lab.appendChild(sp);
-          group.appendChild(lab);
+          lab.classList.toggle('is-on', cb.checked);
+          cb.addEventListener('change', function () { lab.classList.toggle('is-on', cb.checked); });
+          var dot = document.createElement('span');
+          dot.className = 'gcal-dot';
+          if (c.color) dot.style.background = c.color;
+          var t = document.createElement('span');
+          t.textContent = calLabel(c);
+          lab.appendChild(cb); lab.appendChild(dot); lab.appendChild(t);
+          chips.appendChild(lab);
         });
-        list.appendChild(group);
+        card.appendChild(chips);
+        list.appendChild(card);
       });
 
       syncSubVisibility();
@@ -725,7 +726,11 @@
     function syncSubVisibility() {
       var ready = !!(gcalCals && gcalCals.length);
       EM.$('#gcalWriteWrap').hidden = !ready || !EM.$('#gcalPush').checked;
-      EM.$('#gcalBusyWrap').hidden = !ready || !EM.$('#gcalPull').checked;
+      var pull = EM.$('#gcalPull').checked;
+      EM.$('#gcalBusyList').classList.toggle('is-off', !pull);
+      EM.$('#gcalBusyHint').textContent = pull
+        ? 'タップしたカレンダーの予定を「埋まっている日」に含めます（件名・場所は取り込みません）。'
+        : 'つないでいる Google アカウント（「埋まっている日」に含めるをオンにすると、カレンダーを選べます）';
     }
     EM.$('#gcalPush').addEventListener('change', syncSubVisibility);
     EM.$('#gcalPull').addEventListener('change', syncSubVisibility);
