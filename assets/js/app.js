@@ -29,6 +29,37 @@
     }
   } catch (e) { /* 何もしない */ }
 
+  /* ---------- アクセス解析（Google アナリティクス 4） ----------
+     何人来て、どのページが見られたかを数えるためのもの。
+     ★個人情報を Google に送らないための決まり
+       ・送るページの住所は「?」「#」より後ろを消す
+         （共有ページの合言葉入りURLや、ログインの戻り値を送らないため）
+       ・Google シグナル・広告のための個人向け設定は使わない
+       ・管理画面・ログイン画面と、手元での試し（localhost）では動かさない
+         （ログイン画面のURLには、ログインの戻り値が付くことがあるため）
+     プライバシーポリシー第6条に、送る内容と送り先を書いている。 */
+  try {
+    var GA_ID = 'G-E54MLSQMNM';
+    var host = global.location.hostname;
+    var path = global.location.pathname;
+    if (/(^|\.)eizo-maps\.com$/.test(host) && path.indexOf('/admin/') !== 0 && path.indexOf('/auth/') !== 0) {
+      global.dataLayer = global.dataLayer || [];
+      var gtag = function () { global.dataLayer.push(arguments); };
+      global.gtag = gtag;
+      gtag('js', new Date());
+      gtag('config', GA_ID, {
+        page_location: global.location.origin + path,
+        page_referrer: document.referrer ? document.referrer.split(/[?#]/)[0] : '',
+        allow_google_signals: false,
+        allow_ad_personalization_signals: false
+      });
+      var s = document.createElement('script');
+      s.async = true;
+      s.src = 'https://www.googletagmanager.com/gtag/js?id=' + GA_ID;
+      document.head.appendChild(s);
+    }
+  } catch (e) { /* 解析が動かなくてもサイトは普通に使える */ }
+
   var cfg = global.EM_CONFIG || {};
   var EM = {};
   EM.config = cfg;
