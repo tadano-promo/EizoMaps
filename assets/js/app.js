@@ -39,7 +39,7 @@
          （ログイン画面のURLには、ログインの戻り値が付くことがあるため）
      プライバシーポリシー第6条に、送る内容と送り先を書いている。 */
   try {
-    var GA_ID = 'G-E54MLSQMNM';
+    var GA_ID = 'G-ZRRZBPW5K1';
     var host = global.location.hostname;
     var path = global.location.pathname;
     if (/(^|\.)eizo-maps\.com$/.test(host) && path.indexOf('/admin/') !== 0 && path.indexOf('/auth/') !== 0) {
