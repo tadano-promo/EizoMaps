@@ -30,6 +30,7 @@
       if (!r.data) {
         EM.notice(msg, 'さきにプロフィールを作成してください。', 'error');
         EM.$('#addForm').hidden = true;
+        EM.$('#workAddBtn').hidden = true;
         EM.$('#shareForm').hidden = true;
         EM.$('#pfList').appendChild(el('div', { class: 'empty' }, el('a', { class: 'btn', href: '/mypage/', text: 'プロフィールを作成する' })));
         return;
@@ -170,6 +171,7 @@
         parsed = null; pickedTags = [];
         EM.$$('#tagChips .chip').forEach(function (b) { b.setAttribute('aria-pressed', 'false'); });
         EM.toast('作品を登録しました');
+        if (EM.portfolioCloseAdd) EM.portfolioCloseAdd();
         EM.notice(msg, '');
         return reload();
       }).catch(function (err) {
@@ -216,7 +218,7 @@
       var box = EM.$('#pfList');
       EM.clear(box);
       EM.$('#pfCount').textContent = '（' + items.length + ' / ' + LIMIT + '件）';
-      if (!items.length) { box.appendChild(el('div', { class: 'empty', text: 'まだ作品がありません。上のフォームから追加してください。' })); return; }
+      if (!items.length) { box.appendChild(el('div', { class: 'empty', text: 'まだ作品がありません。右上の「＋ 作品を追加」から登録できます。' })); return; }
 
       items.forEach(function (p, idx) {
         var thumb = el('div', { class: 'thumb' }, [
@@ -374,10 +376,14 @@
     }
     // 見出しの「＋ 作品を追加」：入力欄へ移ってすぐ入力できるように
     var workAdd = EM.$('#workAddBtn');
-    if (workAdd) workAdd.addEventListener('click', function (e) {
-      e.preventDefault();
-      EM.$('#addCard').scrollIntoView({ behavior: 'smooth', block: 'start' });
-      setTimeout(function () { EM.$('#videoUrl').focus({ preventScroll: true }); }, 350);
-    });
+    function openAdd() {
+      EM.$('#addCard').hidden = false;
+      workAdd.hidden = true;   // 開いている間は右上のボタンを隠す（同じボタンを2つ並べない）
+      setTimeout(function () { EM.$('#videoUrl').focus(); }, 50);
+    }
+    function closeAdd() { EM.$('#addCard').hidden = true; workAdd.hidden = false; }
+    EM.portfolioCloseAdd = closeAdd;
+    workAdd.addEventListener('click', function (e) { e.preventDefault(); openAdd(); });
+    EM.$('#addCancel').addEventListener('click', function () { EM.$('#addForm').reset(); EM.$('#previewBox').hidden = true; closeAdd(); });
   });
 })(window.EM);

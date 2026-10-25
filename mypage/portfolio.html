@@ -33,8 +33,7 @@
     <p class="lead">ここが作品棚です。1回登録した作品は、プロフィール・限定共有リンク・ストックページのどれにも使えます。</p>
     <div class="notice" id="pageMsg" hidden></div>
 
-    <section class="card" id="addCard">
-      <h2>作品を追加</h2>
+    <section class="card add-panel" id="addCard" hidden>
       <form id="addForm" class="stack" novalidate>
         <label class="field">
           <span class="label">作品のURL <span class="muted">（動画を載せているページ）</span></span>
@@ -77,6 +76,8 @@
         </label>
         <div class="form-actions">
           <button class="btn btn--primary" type="submit" id="addBtn">登録する</button>
+        
+          <button class="btn btn--ghost" type="button" id="addCancel">やめる</button>
         </div>
       </form>
     </section>

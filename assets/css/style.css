@@ -1438,3 +1438,4 @@ a.setsum__sub:hover { color: var(--accent); }
 .page-head h1 { margin-bottom: 0; flex: 1 1 auto; min-width: 0; }
 .page-head__add { flex: 0 0 auto; white-space: nowrap; }
 .page-head { margin-bottom: .6em; }
+.add-panel { margin-bottom: 18px; }
