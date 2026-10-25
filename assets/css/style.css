@@ -1486,7 +1486,7 @@ a.setsum__sub:hover { color: var(--accent); }
 
 /* トップページの広告枠：ページの下の方に、1つずつ、控えめに */
 .ad-area { border-top: 1px solid var(--border); }
-.ad-slot { max-width: 240px; margin-inline: auto; text-align: center; }
+.ad-slot { max-width: 300px; margin-inline: auto; text-align: center; }
 .ad-slot__label {
   margin: 0 0 8px; font-size: 10px; line-height: 1.5; color: var(--muted);
   display: flex; flex-wrap: wrap; justify-content: center; gap: 2px 8px;
