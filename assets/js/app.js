@@ -20,6 +20,15 @@
     document.documentElement.style.display = 'none';
   }
 
+  /* ---------- 暗号化されていない接続（http://）で開かれたら、https:// に移す ----------
+     ログインの合言葉などが途中で盗み見られないようにするため。
+     本来は GitHub Pages の設定「Enforce HTTPS」で止めるが、その保険。 */
+  try {
+    if (global.location.protocol === 'http:' && /(^|\.)eizo-maps\.com$/.test(global.location.hostname)) {
+      global.location.replace('https://' + global.location.host + global.location.pathname + global.location.search + global.location.hash);
+    }
+  } catch (e) { /* 何もしない */ }
+
   var cfg = global.EM_CONFIG || {};
   var EM = {};
   EM.config = cfg;
