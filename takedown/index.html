@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; base-uri 'self'; object-src 'none'; form-action 'self'; script-src 'self' https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.116.0/; style-src 'self' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src 'self' data: https://img.youtube.com https://i.ytimg.com https://i.vimeocdn.com https://*.supabase.co; connect-src 'self' https://*.supabase.co wss://*.supabase.co https://vimeo.com; frame-src https://www.youtube.com https://player.vimeo.com; upgrade-insecure-requests">
+<meta name="referrer" content="strict-origin-when-cross-origin">
+<title>作品の掲載についての申し立て — Eizo Maps</title>
+<meta name="description" content="Eizo Maps に載っている作品について、権利者・関係者の方が削除を申し立てるページです。">
+<meta name="robots" content="noindex, nofollow">
+<meta property="og:site_name" content="Eizo Maps">
+<meta property="og:title" content="作品の掲載についての申し立て — Eizo Maps">
+<meta property="og:description" content="Eizo Maps に載っている作品について、権利者・関係者の方が削除を申し立てるページです。">
+<meta property="og:type" content="website">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bebas+Neue&amp;family=DM+Mono:wght@400;500&amp;family=Noto+Sans+JP:wght@300;400;500;700&amp;display=swap">
+<link rel="stylesheet" href="/assets/css/style.css">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.116.0/dist/umd/supabase.js" integrity="sha384-iLddHTLokph6Omwoyid4XKxHaWa6w41BnoEj0q5oOrzmYPpHIKt1wyjReA7s//pP" crossorigin="anonymous" referrerpolicy="no-referrer" defer></script>
+<script src="/assets/js/config.js" defer></script>
+<script src="/assets/js/app.js" defer></script>
+<script src="/assets/js/page-takedown.js" defer></script>
+</head>
+<body>
+<main class="section">
+  <div class="wrap doc">
+    <p class="eyebrow">Takedown</p>
+    <h1>作品の掲載についての申し立て</h1>
+    <div class="notice" id="pageMsg" hidden></div>
+
+    <div class="notice">
+      <p class="small"><strong>このページは、Eizo Maps に載っている作品について、権利者や関係者の方が掲載の取り下げを求めるためのものです。</strong></p>
+      <p class="small">例：放送・公開の前の作品が載っている／守秘義務（NDA）のある作品が許可なく載っている／ご自身が出演している映像が許可なく載っている／他人の作品が自分の実績として載っている</p>
+      <p class="small"><strong>申し立てを受け付けると、その作品はすぐに一時非公開になります。</strong>運営が、作品を載せた方の言い分とあわせて確認し、掲載を続けるかどうかを判断します。ログインは不要です。</p>
+    </div>
+
+    <div class="card" id="workBox" hidden></div>
+
+    <form id="tdForm" class="stack" novalidate>
+      <label class="field">
+        <span class="label">お名前 <span class="muted">（必須）</span></span>
+        <input type="text" id="tdName" maxlength="100" required autocomplete="name">
+      </label>
+      <label class="field">
+        <span class="label">会社名・団体名 <span class="muted">（任意）</span></span>
+        <input type="text" id="tdOrg" maxlength="100" autocomplete="organization">
+        <span class="hint">作品を載せた方には、会社名と立場だけが伝わります（お名前とメールアドレスは伝わりません）。</span>
+      </label>
+      <label class="field">
+        <span class="label">メールアドレス <span class="muted">（必須・運営からの確認に使います）</span></span>
+        <input type="email" id="tdEmail" maxlength="200" required autocomplete="email">
+      </label>
+      <label class="field">
+        <span class="label">作品とのご関係 <span class="muted">（必須）</span></span>
+        <select id="tdRelation" required>
+          <option value="">選んでください</option>
+          <option value="client">クライアント（発注した会社）</option>
+          <option value="agency">代理店</option>
+          <option value="production">制作会社</option>
+          <option value="performer">出演者・その事務所</option>
+          <option value="creator">制作に関わった人</option>
+          <option value="other">その他</option>
+        </select>
+      </label>
+      <label class="field">
+        <span class="label">理由 <span class="muted">（必須）</span></span>
+        <select id="tdReason" required>
+          <option value="">選んでください</option>
+          <option value="confidential">守秘義務がある・公開前の作品</option>
+          <option value="copyright">著作権の侵害</option>
+          <option value="portrait">肖像権（顔・姿が許可なく出ている）</option>
+          <option value="impersonation">なりすまし・実績の偽り</option>
+          <option value="other">その他</option>
+        </select>
+      </label>
+      <label class="field">
+        <span class="label">くわしい内容 <span class="muted">（必須・10文字以上）</span></span>
+        <textarea id="tdDetail" rows="6" minlength="10" maxlength="4000" required placeholder="例：この作品は 11月1日に放送開始のCMで、まだ公開できません。制作会社として掲載の許可は出していません。"></textarea>
+      </label>
+      <label class="rights-check">
+        <input type="checkbox" id="tdAgree" required>
+        <span class="small">この申し立ての内容が事実であることを確認しました。<span class="muted">事実と違う申し立てで作品を非公開にさせた場合、責任を問われることがあります。</span></span>
+      </label>
+      <div class="form-actions">
+        <button class="btn btn--primary" type="submit" id="tdSubmit">申し立てを送る</button>
+      </div>
+    </form>
+
+    <div id="tdDone" hidden>
+      <div class="notice notice--ok">申し立てを受け付けました。作品は一時非公開にしました。運営が確認のうえ、ご入力のメールアドレスにご連絡します。</div>
+      <p class="small muted">お急ぎの場合や、追加でお伝えしたいことがある場合は info@eizo-maps.com までご連絡ください。</p>
+    </div>
+  </div>
+</main>
+</body>
+</html>

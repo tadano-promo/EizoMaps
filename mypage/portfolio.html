@@ -74,6 +74,16 @@
           </select>
           <span class="hint">どの作品も、ストックページ（パスワード付きのページ）に並べられます。「パスワードページだけ」にした作品は、プロフィールにも限定リンクにも出ません。</span>
         </label>
+        <label class="field">
+          <span class="label">解禁日 <span class="muted">（任意）</span></span>
+          <input type="date" id="releaseOn">
+          <span class="hint">放送・公開の前の作品は、その日まであなた以外のどこにも出ません（プロフィール・限定リンク・パスワードページのすべて）。その日になると自動で表示されます。</span>
+        </label>
+        <label class="check-row rights-check">
+          <input type="checkbox" id="rightsOk" required>
+          <span><strong>この作品を載せる許可があります</strong><br>
+          <span class="small muted">自主制作の作品か、クライアント・制作会社さんから「実績として出してよい」と言われている作品です。守秘義務（NDA）がある作品は、許可された範囲・時期だけ載せます。確認した日時が記録されます。</span></span>
+        </label>
         <div class="form-actions">
           <button class="btn btn--primary" type="submit" id="addBtn">登録する</button>
         </div>
