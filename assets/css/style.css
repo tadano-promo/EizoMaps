@@ -1471,3 +1471,14 @@ a.setsum__sub:hover { color: var(--accent); }
 .page-head__add { flex: 0 0 auto; white-space: nowrap; }
 .page-head { margin-bottom: .6em; }
 .add-panel { margin-bottom: 18px; }
+
+/* 日ごとの表示：Google カレンダーの予定（見るだけ） */
+.day-allday__item--g, .day-item--g {
+  background: repeating-linear-gradient(135deg, rgba(255,255,255,.08) 0 4px, transparent 4px 8px), var(--surface2);
+  border: 1px solid rgba(255,255,255,.22); cursor: default;
+}
+.day-allday__item--g .day-kind, .day-group--g .day-kind { color: var(--muted); }
+.day-group--g { --bar: #9aa0b5; }
+.day-col--g { min-width: 160px; }
+
+.day-col--g .day-body { cursor: default; }

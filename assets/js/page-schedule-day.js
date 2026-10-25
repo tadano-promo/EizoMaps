@@ -19,6 +19,7 @@
     var WD = ['日', '月', '火', '水', '木', '金', '土'];
 
     var me = null, day = null, events = [], items = [], projects = {};
+    var gevents = [], gSeq = 0;   // 自分にだけ見せる Google の予定（その場で読むだけ。保存しない）
 
     /* ---------------- 日付と時刻 ---------------- */
     function pad(n) { return String(n).padStart(2, '0'); }
@@ -84,8 +85,28 @@
         if (r[0].error) throw r[0].error;
         events = r[0].data || [];
         items = (!r[1].error && r[1].data) || [];
+        gevents = [];
         render();
+        loadGoogle(day);
       }).catch(function (e) { EM.notice(msg, EM.errorText(e), 'error'); });
+    }
+
+    // Google カレンダーの予定（件名と時間）を、その日の分だけ Google から読む
+    function loadGoogle(d) {
+      var seq = ++gSeq;
+      sb.functions.invoke('google-calendar', { body: { action: 'my_events', from: d, to: d } }).then(function (r) {
+        if (seq !== gSeq || r.error || !r.data || !r.data.ok) return;   // 連携していない・読めないときは何も出さない
+        gevents = (r.data.events || []).map(function (e) {
+          var s = 0, t = 24 * 60, allDay = !e.start_time;
+          if (!allDay) {
+            if (e.start_day === d) s = timeToMin(e.start_time);
+            if (e.end_day === d) { t = timeToMin(e.end_time); if (t <= s) t = 24 * 60; }
+            if (e.start_day < d && e.end_day > d) allDay = true;   // 何日も続く予定の途中の日
+          }
+          return { title: e.title, _s: s, _t: t, allDay: allDay };
+        });
+        render();
+      }).catch(function () {});
     }
 
     function go(n) { day = addDays(day, n); closeForm(); load(); }
@@ -144,8 +165,22 @@
         ]));
       });
 
-      EM.$('#dayEmpty').hidden = !!events.length;
-      if (!timed.length) { grid.hidden = true; return; }
+      // Google の終日の予定
+      var gAll = gevents.filter(function (g) { return g.allDay; });
+      var gTimed = gevents.filter(function (g) { return !g.allDay; });
+      gAll.forEach(function (g) {
+        allBox.appendChild(el('div', { class: 'day-allday__item day-allday__item--g' }, [
+          el('span', { class: 'day-kind', text: 'Google' }),
+          el('span', { text: g.title + '（終日）' })
+        ]));
+      });
+      if (gAll.length) allBox.hidden = false;
+      gTimed.forEach(function (g) { from = Math.min(from, g._s); to = Math.max(to, g._t); });
+      from = Math.floor(from / 60) * 60; to = Math.min(48 * 60, Math.ceil(to / 60) * 60);
+      height = (to - from) / 60 * HOUR;
+
+      EM.$('#dayEmpty').hidden = !!(events.length || gevents.length);
+      if (!timed.length && !gTimed.length) { grid.hidden = true; return; }
       grid.hidden = false;
 
       // 時刻の目盛り
@@ -154,6 +189,34 @@
         axis.appendChild(el('span', { class: 'day-axis__h mono', style: { top: y(m) + 'px' }, text: fmtMin(m) }));
       }
       grid.appendChild(el('div', { class: 'day-col day-col--axis' }, [el('div', { class: 'day-head day-head--axis' }), axis]));
+
+      // Google カレンダーの予定（見るだけ。件名はあなたの画面にだけ出る）。時間の目盛りのすぐ右に置く
+      if (gTimed.length) {
+        var gGroup = el('section', { class: 'day-group day-group--g' });
+        gGroup.appendChild(el('header', { class: 'day-group__head' }, [
+          el('p', { class: 'day-group__title' }, [el('span', { class: 'day-kind', text: 'Google' }), el('span', { text: 'Google の予定' })]),
+          el('p', { class: 'day-group__time small muted', text: 'あなたにだけ表示' })
+        ]));
+        var gCol = el('div', { class: 'day-col day-col--g' }, [el('div', { class: 'day-head', text: 'Google カレンダー' })]);
+        var gBody = el('div', { class: 'day-body', style: { height: height + 'px' } });
+        var packed = gTimed.map(function (g) { return { start_min: g._s, end_min: g._t, g: g }; });
+        var subs = packLane(packed);
+        packed.forEach(function (it) {
+          var w = 100 / subs;
+          gBody.appendChild(el('div', {
+            class: 'day-item day-item--g',
+            style: { top: y(it.start_min) + 'px', height: Math.max(20, y(it.end_min) - y(it.start_min) - 2) + 'px',
+                     left: 'calc(' + (it._sub * w) + '% + 2px)', width: 'calc(' + w + '% - 4px)' },
+            title: it.g.title
+          }, [
+            el('span', { class: 'day-item__time mono', text: fmtMin(it.start_min) + '〜' + fmtMin(it.end_min) }),
+            el('span', { class: 'day-item__title', text: it.g.title })
+          ]));
+        });
+        gCol.appendChild(gBody);
+        gGroup.appendChild(el('div', { class: 'day-group__cols' }, [gCol]));
+        grid.appendChild(gGroup);
+      }
 
       // 大枠ごとのまとまり
       timed.forEach(function (e) {
@@ -202,6 +265,7 @@
         group.appendChild(cols);
         grid.appendChild(group);
       });
+
     }
 
     function pjName(e) {
