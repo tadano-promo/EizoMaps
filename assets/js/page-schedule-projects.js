@@ -34,7 +34,6 @@
       }
       function closeNew() { card.hidden = true; addBtn.setAttribute('aria-expanded', 'false'); addBtn.hidden = false; EM.$('#projEmpty').hidden = !!EM.$('#projList').children.length; }
       addBtn.addEventListener('click', function () { if (card.hidden) openNew(true); else closeNew(); });
-      EM.$('#newProjCancel').addEventListener('click', function () { EM.$('#newProjName').value = ''; closeNew(); });
       EM.projOpenNew = openNew;
       if (EM.param('new') === '1') openNew(true);
       return load();

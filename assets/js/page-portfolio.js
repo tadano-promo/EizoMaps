@@ -384,6 +384,5 @@
     function closeAdd() { EM.$('#addCard').hidden = true; workAdd.hidden = false; }
     EM.portfolioCloseAdd = closeAdd;
     workAdd.addEventListener('click', function (e) { e.preventDefault(); openAdd(); });
-    EM.$('#addCancel').addEventListener('click', function () { EM.$('#addForm').reset(); EM.$('#previewBox').hidden = true; closeAdd(); });
   });
 })(window.EM);
