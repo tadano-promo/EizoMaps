@@ -25,12 +25,15 @@
 <main class="section">
   <div class="wrap">
     <p class="eyebrow"><a href="/schedule/" class="plain-link">Schedule</a> ／ Projects</p>
-    <h1>案件と共有リンク</h1>
+    <div class="page-head">
+      <h1>案件と共有リンク</h1>
+      <button class="btn btn--sm btn--primary page-head__add" type="button" id="projAddBtn" aria-controls="projNewCard" aria-expanded="false">＋ 案件を追加</button>
+    </div>
     <p class="small muted">案件ごとに、チーム・クライアントさん・代理店さんへ予定を見せるリンクを作れます。相手は Eizo Maps に登録しなくても、リンクとパスワードで見られます。見るだけで、書き込みはできません。</p>
     <div class="notice" id="pageMsg" hidden></div>
 
     <section id="projBody" hidden>
-      <div class="card stack">
+      <div class="card stack" id="projNewCard" hidden>
         <h2>新しい案件を作る</h2>
         <div class="row">
           <label class="field">
@@ -44,7 +47,7 @@
         <p class="small muted">予定を入れるときに「案件」で選ぶと、その案件の予定になります（スケジュールの「予定を追加」から）。</p>
       </div>
 
-      <p class="small muted" id="projEmpty" hidden>まだ案件がありません。</p>
+      <p class="small muted" id="projEmpty" hidden>まだ案件がありません。上の「＋ 案件を追加」から作れます。</p>
       <div class="stack" id="projList"></div>
     </section>
   </div>

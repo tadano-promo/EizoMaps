@@ -68,6 +68,7 @@
     /* ---------------- 詳細 ---------------- */
     function loadDetail() {
       EM.$('#listView').hidden = true;
+      EM.$('#pageAddBtn').hidden = true;
       EM.$('#detailView').hidden = false;
       return Promise.all([
         sb.from('projects').select(SELECT).eq('id', projectId).maybeSingle(),

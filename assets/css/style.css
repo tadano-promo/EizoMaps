@@ -1432,3 +1432,9 @@ a.setsum__sub:hover { color: var(--accent); }
 .setsum__ok { color: #4ade80; }
 .setsum__actions { display: flex; gap: 8px; flex-wrap: wrap; }
 .handle-box .setsum { margin-top: 2px; }
+
+/* ページの見出し＋そのページで作るボタン（2026-10-25） */
+.page-head { display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; }
+.page-head h1 { margin-bottom: 0; flex: 1 1 auto; min-width: 0; }
+.page-head__add { flex: 0 0 auto; white-space: nowrap; }
+.page-head { margin-bottom: .6em; }

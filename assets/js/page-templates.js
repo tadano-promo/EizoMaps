@@ -120,7 +120,7 @@
         a.addEventListener('click', function () { select(x); });
         ul.appendChild(el('li', null, a));
       });
-      if (!list.length) ul.appendChild(el('li', { class: 'small muted tpl__empty', text: 'まだひな形がありません。下のおすすめから選ぶか、「＋ 作る」で作れます。' }));
+      if (!list.length) ul.appendChild(el('li', { class: 'small muted tpl__empty', text: 'まだひな形がありません。下のおすすめから選ぶか、「＋ ひな形を追加」で作れます。' }));
 
       // おすすめ（まだ同じ名前のひな形を持っていないものだけ）
       var st = EM.$('#tplStarters');

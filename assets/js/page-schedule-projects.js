@@ -23,7 +23,19 @@
       EM.$('#newProjBtn').addEventListener('click', createProject);
       EM.$('#newProjName').addEventListener('keydown', function (e) { if (e.key === 'Enter') createProject(); });
       // ヘッダーの「＋ 追加 → 案件を作る」から来たときは、名前の欄にすぐ書けるようにする
-      if (EM.param('new') === '1') setTimeout(function () { var n = EM.$('#newProjName'); n.scrollIntoView({ block: 'center' }); n.focus(); }, 150);
+      // 「＋ 案件を追加」で作る欄を開く（案件が1つもないとき・＋メニューから来たときは最初から開く）
+      var addBtn = EM.$('#projAddBtn'), card = EM.$('#projNewCard');
+      function openNew(focus) {
+        card.hidden = false;
+        addBtn.setAttribute('aria-expanded', 'true');
+        if (focus) setTimeout(function () { var n = EM.$('#newProjName'); n.scrollIntoView({ block: 'center' }); n.focus(); }, 50);
+      }
+      addBtn.addEventListener('click', function () {
+        if (card.hidden) openNew(true);
+        else { card.hidden = true; addBtn.setAttribute('aria-expanded', 'false'); }
+      });
+      EM.projOpenNew = openNew;
+      if (EM.param('new') === '1') openNew(true);
       return load();
     }).catch(function (e) { EM.notice(msg, EM.errorText(e), 'error'); });
 
@@ -68,6 +80,8 @@
         if (r.error) throw r.error;
         EM.$('#newProjName').value = '';
         EM.toast('案件を作りました');
+        EM.$('#projNewCard').hidden = true;
+        EM.$('#projAddBtn').setAttribute('aria-expanded', 'false');
         EM.notice(msg, '');
         return load();
       }).catch(function (e) { EM.notice(msg, EM.errorText(e), 'error'); });
@@ -77,6 +91,7 @@
       var box = EM.$('#projList');
       EM.clear(box);
       EM.$('#projEmpty').hidden = !!sprojects.length;
+      if (!sprojects.length && EM.projOpenNew) EM.projOpenNew(false);   // まだ1つもないときは作る欄を出しておく
       return Promise.all(sprojects.map(function (p) {
         return sb.rpc('my_schedule_shares', { p_project_id: p.id }).then(function (r) {
           return { p: p, shares: (!r.error && r.data) || [] };

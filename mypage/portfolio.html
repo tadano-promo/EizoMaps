@@ -26,11 +26,14 @@
 <main class="section">
   <div class="wrap">
     <p class="eyebrow">Portfolio</p>
-    <h1>ポートフォリオ管理</h1>
+    <div class="page-head">
+      <h1>ポートフォリオ管理</h1>
+      <a class="btn btn--sm btn--primary page-head__add" id="workAddBtn" href="#addForm">＋ 作品を追加</a>
+    </div>
     <p class="lead">ここが作品棚です。1回登録した作品は、プロフィール・限定共有リンク・ストックページのどれにも使えます。</p>
     <div class="notice" id="pageMsg" hidden></div>
 
-    <section class="card">
+    <section class="card" id="addCard">
       <h2>作品を追加</h2>
       <form id="addForm" class="stack" novalidate>
         <label class="field">

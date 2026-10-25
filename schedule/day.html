@@ -25,7 +25,10 @@
 <main class="section">
   <div class="wrap">
     <p class="eyebrow"><a href="/schedule/" class="plain-link">Schedule</a> ／ Day</p>
-    <h1>日ごとの予定</h1>
+    <div class="page-head">
+      <h1>日ごとの予定</h1>
+      <a class="btn btn--sm btn--primary page-head__add" id="newBigBtn" href="/schedule/">＋ 予定を追加</a>
+    </div>
     <div class="notice" id="pageMsg" hidden></div>
 
     <section id="dayBody" hidden>
@@ -39,7 +42,6 @@
         </div>
         <div class="vcal-nav">
           <a class="btn btn--sm" id="toMonth" href="/schedule/">月の表示へ</a>
-          <a class="btn btn--sm btn--primary" id="newBigBtn" href="/schedule/">大枠の予定を追加</a>
         </div>
       </div>
 

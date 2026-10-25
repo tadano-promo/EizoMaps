@@ -25,7 +25,10 @@
 <main class="section">
   <div class="wrap">
     <p class="eyebrow">Schedule</p>
-    <h1>スケジュール</h1>
+    <div class="page-head">
+      <h1>スケジュール</h1>
+      <button class="btn btn--sm btn--primary page-head__add" type="button" id="newEventBtn">＋ 予定を追加</button>
+    </div>
     <div class="notice" id="pageMsg" hidden></div>
 
     <section id="scheduleBody" hidden>
@@ -40,7 +43,6 @@
           <a class="btn btn--sm" href="/schedule/projects.html">案件と共有リンク</a>
         </div>
         <div class="vcal-nav">
-          <button class="btn btn--sm btn--primary" type="button" id="newEventBtn">予定を追加</button>
         </div>
       </div>
 

@@ -372,5 +372,12 @@
         ]));
       });
     }
+    // 見出しの「＋ 作品を追加」：入力欄へ移ってすぐ入力できるように
+    var workAdd = EM.$('#workAddBtn');
+    if (workAdd) workAdd.addEventListener('click', function (e) {
+      e.preventDefault();
+      EM.$('#addCard').scrollIntoView({ behavior: 'smooth', block: 'start' });
+      setTimeout(function () { EM.$('#videoUrl').focus({ preventScroll: true }); }, 350);
+    });
   });
 })(window.EM);

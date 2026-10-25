@@ -23,6 +23,7 @@
       EM.$('#ganttBody').hidden = false;
       EM.$('#gPrev').addEventListener('click', function () { from = EM.addDays(from, -7 * step()); load(); });
       EM.$('#gNext').addEventListener('click', function () { from = EM.addDays(from, 7 * step()); load(); });
+      EM.$('#ganttAddBtn').href = '/schedule/?new=' + EM.today();
       EM.$('#gToday').addEventListener('click', function () { from = EM.weekStart(EM.today()); load(); });
       EM.$('#gWeeks').addEventListener('change', function () {
         weeks = +this.value || 8;
