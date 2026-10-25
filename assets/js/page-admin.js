@@ -14,7 +14,7 @@
     var adImageUrl = null;
 
     var ANN_COLS = 'id,kind,title,body,link_url,link_label,visibility,is_published,pinned,published_at,created_at,updated_at';
-    var AD_COLS  = 'id,slot,title,body,sponsor,image_url,link_url,starts_at,ends_at,is_active,sort_order,created_at,updated_at';
+    var AD_COLS  = 'id,slot,title,body,sponsor,image_url,link_url,ad_code,starts_at,ends_at,is_active,sort_order,created_at,updated_at';
     var ART_COLS = 'id,slug,title,excerpt,category,visibility,status,source,author_user_id,published_at,updated_at';
 
     var STATUS_LABEL = { draft: '下書き', review: '確認待ち', published: '公開中' };
@@ -256,6 +256,7 @@
       EM.$('#adTitle').value = '';
       EM.$('#adBody').value = '';
       EM.$('#adLink').value = '';
+      EM.$('#adCode').value = ''; renderCodePreview();
       EM.$('#adStart').value = '';
       EM.$('#adEnd').value = '';
       EM.$('#adOrder').value = '0';
@@ -292,11 +293,30 @@
       }).catch(function (err) { EM.notice(msg, EM.errorText(err), 'error'); });
     });
 
+    // A8 さんの広告コードの見え方（貼った時点で確かめる）
+    function renderCodePreview() {
+      var box = EM.$('#adCodePreview'), code = EM.$('#adCode').value.trim();
+      EM.clear(box);
+      if (!code) { box.hidden = true; return; }
+      var nodes = EM.a8Nodes(code);
+      box.hidden = false;
+      if (!nodes) { box.appendChild(el('p', { class: 'small', text: 'このコードは表示できません。A8 さんの管理画面で「素材をコピー」したコードを、そのまま貼り付けてください（A8 さん以外の住所や、スクリプトの入ったコードは使えません）。' })); return; }
+      box.appendChild(el('p', { class: 'small muted', text: '見え方（押さないでください）' }));
+      box.appendChild(el('div', { class: 'ad ad--affiliate' }, nodes));
+    }
+    EM.$('#adCode').addEventListener('input', renderCodePreview);
+
     EM.$('#adForm').addEventListener('submit', function (e) {
       e.preventDefault();
       var title = EM.$('#adTitle').value.trim();
+      var code = EM.$('#adCode').value.trim();
       var link = EM.safeUrl(EM.$('#adLink').value.trim());
       if (!title) { EM.notice(msg, '見出しを入力してください。', 'error'); return; }
+      if (code) {
+        var a8 = EM.a8Href(code);
+        if (!a8) { EM.notice(msg, 'A8 さんの広告コードを読み取れませんでした。管理画面でコピーしたコードを、そのまま貼り付けてください。', 'error'); return; }
+        link = a8.replace(/^http:/i, 'https:');   // 管理用の控え（表示にはコードをそのまま使う）
+      }
       if (!link) { EM.notice(msg, 'リンク先は https:// から始まる URL にしてください。', 'error'); return; }
       var starts = fromLocalInput(EM.$('#adStart').value);
       var ends = fromLocalInput(EM.$('#adEnd').value);
@@ -309,8 +329,9 @@
         title: title,
         body: EM.$('#adBody').value.trim() || null,
         sponsor: EM.$('#adSponsor').value.trim() || null,
-        image_url: adImageUrl || null,
+        image_url: code ? null : (adImageUrl || null),
         link_url: link,
+        ad_code: code || null,
         starts_at: starts,
         ends_at: ends,
         sort_order: Number(EM.$('#adOrder').value) || 0,
@@ -354,6 +375,7 @@
             ])
           ]),
           el('p', { class: 'small muted mono', text: period + (a.updated_at ? ' ／ 最終保存 ' + EM.datetime(a.updated_at) : '') }),
+          a.ad_code ? el('p', { class: 'small' }, el('span', { class: 'tag', text: 'A8 さんの広告コード' })) : null,
           el('p', { class: 'small muted mono', text: a.link_url })
         ]));
       });
@@ -365,7 +387,8 @@
       EM.$('#adSponsor').value = a.sponsor || '';
       EM.$('#adTitle').value = a.title;
       EM.$('#adBody').value = a.body || '';
-      EM.$('#adLink').value = a.link_url;
+      EM.$('#adLink').value = a.ad_code ? '' : a.link_url;
+      EM.$('#adCode').value = a.ad_code || ''; renderCodePreview();
       EM.$('#adStart').value = toLocalInput(a.starts_at);
       EM.$('#adEnd').value = toLocalInput(a.ends_at);
       EM.$('#adOrder').value = String(a.sort_order || 0);

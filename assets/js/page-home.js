@@ -403,7 +403,7 @@
         .order('published_at', { ascending: false })
         .limit(10),
       sb.from('ads')
-        .select('id,slot,title,body,sponsor,image_url,link_url,sort_order')
+        .select('id,slot,title,body,sponsor,image_url,link_url,ad_code,sort_order')
         .eq('slot', 'home_top')
         .order('sort_order')
         .limit(3)
@@ -466,7 +466,16 @@
     function renderAds(rows) {
       EM.clear(adBox);
       adBox.appendChild(el('p', { class: 'eyebrow', text: 'PR' }));
+      var hasAffiliate = false;
       rows.forEach(function (a) {
+        // アフィリエイト（A8 さん）の広告は、コードをそのまま並べる
+        if (a.ad_code) {
+          var nodes = EM.a8Nodes(a.ad_code);
+          if (!nodes) return;
+          hasAffiliate = true;
+          adBox.appendChild(el('div', { class: 'ad ad--affiliate' }, nodes));
+          return;
+        }
         var href = EM.safeUrl(a.link_url);
         if (!href) return;
         var img = EM.safeUrl(a.image_url);
@@ -493,6 +502,8 @@
         ]);
         adBox.appendChild(card);
       });
+      // A8 さんの決まり：広告だと分かる表示を、見落とさない位置（広告の上）に
+      if (hasAffiliate) adBox.insertBefore(el('p', { class: 'small muted ad__note', text: 'このサイトはアフィリエイト広告を利用しています' }), adBox.childNodes[1] || null);
       if (adBox.childNodes.length > 1) adBox.hidden = false;
     }
   });

@@ -1482,3 +1482,9 @@ a.setsum__sub:hover { color: var(--accent); }
 .day-col--g { min-width: 160px; }
 
 .day-col--g .day-body { cursor: default; }
+
+/* アフィリエイト（A8 さん）の広告：コードのまま並べる。大きさはバナーの指定どおり */
+.ad--affiliate { display: flex; justify-content: center; align-items: center; flex-wrap: wrap; gap: 4px; padding: 8px; }
+.ad--affiliate img { max-width: 100%; height: auto; }
+.ad__note { margin: 0 0 6px; }
+.ad-code-preview { border: 1px dashed var(--border); border-radius: var(--radius); padding: 10px; }

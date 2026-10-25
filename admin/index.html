@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<meta http-equiv="Content-Security-Policy" content="default-src 'self'; base-uri 'self'; object-src 'none'; form-action 'self'; script-src 'self' https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.116.0/; style-src 'self' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src 'self' data: https://img.youtube.com https://i.ytimg.com https://i.vimeocdn.com https://*.supabase.co; connect-src 'self' https://*.supabase.co wss://*.supabase.co https://vimeo.com; frame-src 'none'; upgrade-insecure-requests">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; base-uri 'self'; object-src 'none'; form-action 'self'; script-src 'self' https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.116.0/; style-src 'self' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src 'self' data: https://img.youtube.com https://i.ytimg.com https://i.vimeocdn.com https://*.supabase.co https://*.a8.net; connect-src 'self' https://*.supabase.co wss://*.supabase.co https://vimeo.com; frame-src 'none'; upgrade-insecure-requests">
 <meta name="referrer" content="strict-origin-when-cross-origin">
 <title>管理画面 — Eizo Maps</title>
 <meta name="description" content="運営用の管理画面。">
@@ -103,7 +103,7 @@
 
         <hr class="divider">
         <h2>広告枠</h2>
-        <p class="small muted">画像とリンクだけを扱います。外部の広告スクリプトは読み込みません。</p>
+        <p class="small muted">画像とリンク、またはアフィリエイト（A8 さん）の広告コードを扱います。外部の広告スクリプトは読み込みません。</p>
         <form id="adForm" class="card stack" novalidate>
           <input type="hidden" id="adId">
           <div class="row">
@@ -128,8 +128,14 @@
             <input type="text" id="adBody" maxlength="200">
           </label>
           <label class="field">
-            <span class="label">リンク先 <span class="muted">（https のみ・必須）</span></span>
-            <input type="url" id="adLink" maxlength="500" required placeholder="https://">
+            <span class="label">A8 さんの広告コード <span class="muted">（アフィリエイトの場合だけ・任意）</span></span>
+            <textarea id="adCode" rows="4" maxlength="4000" placeholder="A8 さんの管理画面の「広告リンク」で「素材をコピー」したコードを、そのまま貼り付け"></textarea>
+            <span class="hint">貼ると、コードを変えずにそのまま表示します（A8 さんの決まり）。リンク先と画像の欄は使いません。見出しは管理用（表には出ません）。動作確認のときも、本番の広告は押さないでください（自分で押すのは禁止）。</span>
+          </label>
+          <div id="adCodePreview" class="ad-code-preview" hidden></div>
+          <label class="field">
+            <span class="label">リンク先 <span class="muted">（https のみ・広告コードを使わない場合は必須）</span></span>
+            <input type="url" id="adLink" maxlength="500" placeholder="https://">
           </label>
           <div class="field">
             <span class="label">バナー画像 <span class="muted">（JPEG / PNG / WebP / GIF、3MB まで）</span></span>

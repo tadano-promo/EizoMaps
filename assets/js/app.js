@@ -273,6 +273,43 @@
     return el('div', { class: 'avatar' + (big ? ' avatar--lg' : ''), 'aria-hidden': 'true' }, EM.initials(name));
   };
 
+  /* ---------- アフィリエイト（A8 さん）の広告コード ----------
+     A8 さんの決まりで、広告コードは変えずにそのまま載せる（リンク部分だけ使うのも禁止）。
+     ただし Eizo Maps は HTML をそのまま差し込まない方針なので、
+     コードを読み取り、a と img だけが A8 さんの住所を指しているときに限って、
+     その要素を属性もそのままに写して並べる（中身は変えない）。条件に合わなければ何も出さない。 */
+  var A8_HOST = /^https?:\/\/([a-z0-9-]+\.)*a8\.net\//i;
+  var A8_ATTR = { A: ['href', 'rel', 'target'], IMG: ['src', 'width', 'height', 'border', 'alt'] };
+  EM.a8Nodes = function (code) {
+    if (!code || typeof DOMParser === 'undefined') return null;
+    var doc = new DOMParser().parseFromString('<body>' + String(code) + '</body>', 'text/html');
+    var ok = true;
+    function check(node, insideA) {
+      if (node.nodeType === 3) return;                       // 文字（テキストの広告・改行）
+      if (node.nodeType !== 1) { ok = false; return; }
+      var tag = node.tagName;
+      if (!A8_ATTR[tag]) { if (tag !== 'BR') ok = false; return; }
+      if (tag === 'A' && insideA) { ok = false; return; }
+      for (var i = 0; i < node.attributes.length; i++) {
+        if (A8_ATTR[tag].indexOf(node.attributes[i].name.toLowerCase()) === -1) { ok = false; return; }
+      }
+      var url = node.getAttribute(tag === 'A' ? 'href' : 'src') || '';
+      if (!A8_HOST.test(url)) { ok = false; return; }
+      for (var j = 0; j < node.childNodes.length; j++) check(node.childNodes[j], insideA || tag === 'A');
+    }
+    var kids = Array.prototype.slice.call(doc.body.childNodes);
+    kids.forEach(function (n) { check(n, false); });
+    if (!ok || !kids.some(function (n) { return n.nodeType === 1 && n.tagName === 'A'; })) return null;
+    return kids.map(function (n) { return document.importNode(n, true); });
+  };
+  // コードの中のリンク先（管理用に控えておく）
+  EM.a8Href = function (code) {
+    var nodes = EM.a8Nodes(code);
+    if (!nodes) return null;
+    for (var i = 0; i < nodes.length; i++) if (nodes[i].tagName === 'A') return nodes[i].getAttribute('href');
+    return null;
+  };
+
   /* ---------- 都道府県 ---------- */
   EM.PREFS = ['北海道','青森県','岩手県','宮城県','秋田県','山形県','福島県','茨城県','栃木県','群馬県',
     '埼玉県','千葉県','東京都','神奈川県','新潟県','富山県','石川県','福井県','山梨県','長野県',
