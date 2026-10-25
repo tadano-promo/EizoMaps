@@ -52,7 +52,7 @@
       sprojects = (!r[2].error && r[2].data) || [];
       fillProjectSelect();
       return finishConnect().then(finishAddAccount).then(loadGcal).then(load).then(function () {
-        // 日ごとの表示から「大枠の予定を追加」で来たとき
+        // 日ごとの表示から「予定を追加」で来たとき
         if (/^\d{4}-\d{2}-\d{2}$/.test(qnew)) {
           openNew();
           EM.$('#evStart').value = qnew; EM.$('#evEnd').value = qnew;

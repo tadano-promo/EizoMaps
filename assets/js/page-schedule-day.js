@@ -192,7 +192,7 @@
         if (mine) {
           cols.appendChild(el('div', { class: 'day-col day-col--add' }, [
             el('button', {
-              type: 'button', class: 'day-head day-head--add', text: '＋ 班を追加',
+              type: 'button', class: 'day-head day-head--add', text: '＋ 担当を追加',
               onclick: function () { openNewItem(e, '', e._s); }
             }),
             el('div', { class: 'day-body day-body--add', style: { height: height + 'px' },
@@ -263,7 +263,7 @@
     }
 
     function openNewItem(e, lane, startMin) {
-      EM.$('#itemFormTitle').textContent = '小枠を追加';
+      EM.$('#itemFormTitle').textContent = 'タイムテーブルに追加';
       EM.$('#itemFormParent').textContent = parentLine(e);
       EM.$('#itId').value = ''; EM.$('#itEvent').value = e.id;
       EM.$('#itLane').value = lane || '';
@@ -277,7 +277,7 @@
     }
 
     function openEditItem(it, e) {
-      EM.$('#itemFormTitle').textContent = '小枠を編集';
+      EM.$('#itemFormTitle').textContent = 'タイムテーブルを編集';
       EM.$('#itemFormParent').textContent = parentLine(e);
       EM.$('#itId').value = it.id; EM.$('#itEvent').value = it.event_id;
       EM.$('#itLane').value = it.lane;
@@ -301,7 +301,7 @@
     function save() {
       var lane = EM.$('#itLane').value.trim(), title = EM.$('#itTitle').value.trim();
       var s = parseHM(EM.$('#itStart').value), t = parseHM(EM.$('#itEnd').value);
-      if (!lane) { EM.notice(msg, '班・担当を入れてください。', 'error'); return; }
+      if (!lane) { EM.notice(msg, '担当を入れてください。', 'error'); return; }
       if (!title) { EM.notice(msg, '内容を入れてください。', 'error'); return; }
       if (s === null || t === null) { EM.notice(msg, '時刻は「7:30」や「25:00」のように入れてください。', 'error'); return; }
       if (t <= s) { EM.notice(msg, '終了は開始より後にしてください（翌日にまたぐときは 25:00 のように書けます）。', 'error'); return; }
@@ -321,7 +321,7 @@
 
     function remove() {
       var id = EM.$('#itId').value;
-      if (!id || !confirm('この小枠を削除しますか？')) return;
+      if (!id || !confirm('このタイムテーブルの項目を削除しますか？')) return;
       sb.from('schedule_items').delete().eq('id', id).then(function (r) {
         if (r.error) throw r.error;
         closeForm(); return load();

@@ -6,11 +6,11 @@
 <meta http-equiv="Content-Security-Policy" content="default-src 'self'; base-uri 'self'; object-src 'none'; form-action 'self'; script-src 'self' https://cdn.jsdelivr.net; style-src 'self' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src 'self' data: https://img.youtube.com https://i.ytimg.com https://i.vimeocdn.com https://*.supabase.co; connect-src 'self' https://*.supabase.co wss://*.supabase.co https://vimeo.com; frame-src 'none'; upgrade-insecure-requests">
 <meta name="referrer" content="strict-origin-when-cross-origin">
 <title>日ごとの予定 — Eizo Maps</title>
-<meta name="description" content="1日の時間割。大枠の予定の中に、班ごとの細かい動きを入れる。">
+<meta name="description" content="1日の時間割。予定の中に、担当ごとのタイムテーブルを入れる。">
 <meta name="robots" content="noindex, nofollow">
 <meta property="og:site_name" content="Eizo Maps">
 <meta property="og:title" content="日ごとの予定 — Eizo Maps">
-<meta property="og:description" content="1日の時間割。大枠の予定の中に、班ごとの細かい動きを入れる。">
+<meta property="og:description" content="1日の時間割。予定の中に、担当ごとのタイムテーブルを入れる。">
 <meta property="og:type" content="website">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -27,7 +27,7 @@
     <p class="eyebrow"><a href="/schedule/" class="plain-link">Schedule</a> ／ Day</p>
     <div class="page-head">
       <h1>日ごとの予定</h1>
-      <a class="btn btn--sm btn--primary page-head__add" id="newBigBtn" href="/schedule/">＋ 大枠の予定を追加</a>
+      <a class="btn btn--sm btn--primary page-head__add" id="newBigBtn" href="/schedule/">＋ 予定を追加</a>
     </div>
     <div class="notice" id="pageMsg" hidden></div>
 
@@ -46,7 +46,7 @@
       </div>
 
       <p class="small muted day-hint">
-        大枠（撮影など）の中の空いているところを押すと、その時間に<strong>小枠</strong>（班ごとの細かい動き）を入れられます。
+        予定（撮影など）の中の空いているところを押すと、その時間に<strong>タイムテーブル</strong>（担当ごとの細かい流れ。例：7:00 車両 弁当ピックアップ）を入れられます。
         夜をまたぐときは 25:00 のように書けます。
       </p>
 
@@ -54,17 +54,17 @@
       <div class="day-scroll">
         <div class="day-grid" id="dayGrid"></div>
       </div>
-      <p class="empty" id="dayEmpty" hidden>この日の予定はまだありません。右上の「＋ 大枠の予定を追加」から入れてください。</p>
+      <p class="empty" id="dayEmpty" hidden>この日の予定はまだありません。右上の「＋ 予定を追加」から入れてください。</p>
 
-      <!-- 小枠の入力 -->
+      <!-- タイムテーブルの入力 -->
       <div class="card stack day-form" id="itemForm" hidden>
-        <h2 id="itemFormTitle">小枠を追加</h2>
+        <h2 id="itemFormTitle">タイムテーブルに追加</h2>
         <p class="small muted" id="itemFormParent"></p>
         <input type="hidden" id="itId">
         <input type="hidden" id="itEvent">
         <label class="field">
-          <span class="label">班・担当 <span class="muted">（列の名前。案件ごとに自由に決めてください・40文字まで）</span></span>
-          <input type="text" id="itLane" maxlength="40" list="laneList" required placeholder="例：撮影本隊／車両部／別班">
+          <span class="label">担当 <span class="muted">（列の名前。案件ごとに自由に決めてください・40文字まで）</span></span>
+          <input type="text" id="itLane" maxlength="40" list="laneList" required placeholder="例：撮影チーム／車両／キャスト対応">
           <datalist id="laneList"></datalist>
         </label>
         <label class="field">

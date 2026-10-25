@@ -153,7 +153,7 @@
 
     function shareRow(p, s, formHost) {
       var st = statusOf(s);
-      var scope = s.all_lanes ? '大枠＋全部の班' : (s.lanes.length ? '大枠＋' + s.lanes.join('・') : '大枠だけ');
+      var scope = s.all_lanes ? '予定＋タイムテーブル（全部の担当）' : (s.lanes.length ? '予定＋タイムテーブル（' + s.lanes.join('・') + '）' : '予定だけ');
       var exp = (s.expires_on ? jpDate(s.expires_on) + 'まで' : jpDate(s.effective_expiry) + 'まで（自動）');
       return el('div', { class: 'share-row' }, [
         el('div', { class: 'share-row__main' }, [
@@ -231,7 +231,7 @@
         return el('label', { class: 'checkbox' }, [cb, el('span', { text: l })]);
       });
       var lanePick = el('div', { class: 'stack share-form__lanes' }, boxes.length ? boxes
-        : [el('p', { class: 'small muted', text: 'この案件にはまだ班（小枠の列）がありません。今は大枠だけが見えます。' })]);
+        : [el('p', { class: 'small muted', text: 'この案件にはまだタイムテーブルの担当がありません。今は予定だけが見えます。' })]);
       function syncScope() { lanePick.hidden = allR.checked; }
       allR.addEventListener('change', syncScope); pickR.addEventListener('change', syncScope);
       syncScope();
@@ -255,9 +255,9 @@
           el('span', { class: 'hint', text: 'パスワードは URL とは別の方法で伝えてください（例：URL はメール、パスワードは電話）。' })]),
         el('div', { class: 'field' }, [
           el('span', { class: 'label', text: '見せる範囲' }),
-          el('p', { class: 'small muted', text: '大枠（例：撮影 6:00〜22:00）は、どのリンクでも必ず見えます。' }),
-          el('label', { class: 'checkbox' }, [allR, el('span', { text: '全部の班（これから増える班も含む）' })]),
-          el('label', { class: 'checkbox' }, [pickR, el('span', { text: '選んだ班だけ' })]),
+          el('p', { class: 'small muted', text: '予定（例：撮影 6:00〜22:00）は、どのリンクでも必ず見えます。' }),
+          el('label', { class: 'checkbox' }, [allR, el('span', { text: 'タイムテーブル：全部の担当（これから増える担当も含む）' })]),
+          el('label', { class: 'checkbox' }, [pickR, el('span', { text: 'タイムテーブル：選んだ担当だけ' })]),
           lanePick
         ]),
         el('label', { class: 'checkbox' }, [details, el('span', { text: '場所・メモも見せる（例：撮影部には集合場所を見せたいとき）' })]),
