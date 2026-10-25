@@ -12,6 +12,8 @@ on:
 
 jobs:
   claude-review:
+    # 公開リポジトリなので、このリポジトリの中から出した変更だけ見る（よその人が出した変更では動かさない）
+    if: github.event.pull_request.head.repo.full_name == github.repository
     # Optional: Filter by PR author
     # if: |
     #   github.event.pull_request.user.login == 'external-contributor' ||
