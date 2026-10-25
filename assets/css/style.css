@@ -1519,3 +1519,16 @@ a.setsum__sub:hover { color: var(--accent); }
 .ad-slot__dot[aria-current="true"]::before { background: var(--muted); }
 @media (prefers-reduced-motion: reduce) { .ad-slot__frame, .ad-slot__frame.is-on { transition: none; } }
 .ad-code-preview { border: 1px dashed var(--border); border-radius: var(--radius); padding: 10px; }
+
+/* 作品の掲載の許可・解禁日・削除の申し立て（10/25） */
+.tag--danger { border-color: #ff6b6b; color: #ffb3b3; background: rgba(255, 107, 107, .1); white-space: normal; }
+.notice--warn { border-color: #ff8b6b; background: rgba(255, 139, 107, .06); }
+.pf-status { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; margin: 6px 0; }
+.pf-status .takedown-box { flex: 1 1 100%; display: grid; gap: 6px; }
+.pf-release { display: inline-flex; gap: 6px; align-items: center; }
+.pf-release input { width: auto; padding: 4px 6px; font-size: 12px; }
+.pre { white-space: pre-wrap; word-break: break-word; }
+.rights-check { display: flex; gap: 10px; align-items: flex-start; padding: 12px; border: 1px solid var(--border); border-radius: var(--radius); background: var(--surface2); cursor: pointer; }
+.rights-check input { margin-top: 3px; width: auto; flex: 0 0 auto; }
+.work-report { font-size: 11px; color: var(--muted); text-decoration: underline; background: none; border: 0; padding: 0; cursor: pointer; }
+.work-report:hover { color: var(--text); }

@@ -30,7 +30,7 @@
         .eq('id', id).maybeSingle(),
       sb.from('genres').select('id,name_ja'),
       sb.from('portfolios')
-        .select('id,title,description,provider,video_id,video_url,thumbnail_url,sort_order,created_at,portfolio_tags(tag)')
+        .select('id,title,description,provider,video_id,video_url,thumbnail_url,sort_order,created_at,release_on,takedown_hold,portfolio_tags(tag)')
         .eq('creator_id', id).eq('visibility', 'public')
         .order('sort_order').order('created_at', { ascending: false }),
       sb.from('creator_project_stats').select('completed_count').eq('creator_id', id).maybeSingle(),
@@ -250,6 +250,9 @@
       var sec = EM.$('#portfolioSection'), grid = EM.$('#portfolioGrid');
       sec.hidden = false;
       EM.clear(grid);
+      // 本人が自分のページを見たときも、解禁前・一時非公開の作品はほかの人と同じく出さない
+      var today = new Date(Date.now() + 9 * 3600000).toISOString().slice(0, 10);
+      items = items.filter(function (p) { return !p.takedown_hold && !(p.release_on && p.release_on > today); });
       if (!items.length) { grid.appendChild(el('div', { class: 'empty', text: '公開されている作品はまだありません。' })); return; }
       items.forEach(function (p) {
         var tags = el('div', { class: 'tags' });
@@ -258,7 +261,8 @@
           EM.workMedia(p),
           el('h3', { class: 'pf-title', text: p.title }),
           p.description ? el('p', { class: 'small muted', text: p.description }) : null,
-          tags
+          tags,
+          el('p', { class: 'work-report-row' }, el('a', { class: 'work-report', href: '/takedown/?w=' + encodeURIComponent(p.id), text: 'この作品の掲載について申し立てる' }))
         ]));
       });
     }

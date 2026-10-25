@@ -6,7 +6,7 @@
     var msg = EM.$('#pageMsg');
     if (!sb) { return; }  // 未設定の案内はヘッダー直下に共通表示される
 
-    var creator = null, user = null, items = [], links = [], parsed = null, pickedTags = [];
+    var creator = null, user = null, items = [], links = [], takedowns = [], parsed = null, pickedTags = [];
 
     // 作品の見せ方（作品棚）
     var VIS = [
@@ -43,15 +43,17 @@
     function reload() {
       return Promise.all([
         sb.from('portfolios')
-          .select('id,title,description,provider,video_id,video_url,thumbnail_url,visibility,sort_order,created_at,portfolio_tags(tag),stock_items(id)')
+          .select('id,title,description,provider,video_id,video_url,thumbnail_url,visibility,sort_order,created_at,rights_confirmed_at,release_on,takedown_hold,portfolio_tags(tag),stock_items(id)')
           .eq('creator_id', creator.id).order('sort_order').order('created_at', { ascending: false }),
+        sb.rpc('my_takedown_requests'),
         sb.from('share_links')
           .select('id,token,title,is_active,view_count,created_at,share_link_items(portfolio_id)')
           .eq('creator_id', creator.id).order('created_at', { ascending: false })
       ]).then(function (res) {
         if (res[0].error) throw res[0].error;
         items = res[0].data || [];
-        links = res[1].data || [];
+        takedowns = (!res[1].error && res[1].data) || [];
+        links = res[2].data || [];
         renderList();
         renderPicker();
         renderLinks();
@@ -137,6 +139,7 @@
       if (!parsed) { preview(); if (!parsed) return; }
       var title = EM.$('#title').value.trim();
       if (!title) { EM.notice(msg, 'タイトルを入力してください。', 'error'); return; }
+      if (!EM.$('#rightsOk').checked) { EM.notice(msg, '「この作品を載せる許可があります」にチェックを入れてください。許可がない作品は載せられません。', 'error'); return; }
       var tf = EM.$('#thumbFile').files && EM.$('#thumbFile').files[0];
       if (tf && checkImage(tf)) { EM.notice(msg, checkImage(tf), 'error'); return; }
 
@@ -152,6 +155,8 @@
         video_url: parsed.video_url,
         thumbnail_url: parsed.thumbnail_url || null,
         visibility: EM.$('#visibility').value,
+        release_on: EM.$('#releaseOn').value || null,
+        rights_confirmed_at: new Date().toISOString(),   // 実際の日時はサーバーの時計で入る
         sort_order: items.length
       }).select('id').single().then(function (r) {
         if (r.error) throw r.error;
@@ -233,6 +238,7 @@
           el('div', null, [
             el('h3', { class: 'pf-title', text: p.title }),
             el('p', { class: 'small muted', text: visLabel(p.visibility) + ' / ' + EM.date(p.created_at) }),
+            statusRow(p),
             inStock(p) ? el('p', { class: 'small' }, el('span', { class: 'tag tag--accent', text: 'ストックページで使用中' })) : null,
             p.description ? el('p', { class: 'small', text: p.description }) : null,
             tags,
@@ -240,6 +246,7 @@
               el('button', { class: 'btn btn--sm', type: 'button', text: '↑', 'aria-label': '上へ移動', disabled: idx === 0, onclick: function () { move(idx, -1); } }),
               el('button', { class: 'btn btn--sm', type: 'button', text: '↓', 'aria-label': '下へ移動', disabled: idx === items.length - 1, onclick: function () { move(idx, 1); } }),
               visSelect(p),
+              releaseButton(p),
               thumbButton(p),
               el('a', { class: 'btn btn--sm btn--ghost', href: EM.safeUrl(p.video_url) || '#', target: '_blank', rel: 'noopener noreferrer', text: p.provider === 'link' ? 'ページを開く' : '動画を開く' }),
               el('button', { class: 'btn btn--sm btn--danger', type: 'button', text: '削除', onclick: function () { remove(p); } })
@@ -247,6 +254,68 @@
           ])
         ]));
       });
+    }
+
+    // 掲載の許可・解禁日・申し立ての状態
+    function todayJst() { return new Date(Date.now() + 9 * 3600000).toISOString().slice(0, 10); }
+    function fmtDay(s) { var p = String(s).split('-'); return (+p[1]) + '/' + (+p[2]); }
+    function statusRow(p) {
+      var parts = [];
+      if (p.takedown_hold) parts.push(el('span', { class: 'tag tag--danger', text: '一時非公開（削除の申し立てあり）' }));
+      if (p.release_on && p.release_on > todayJst()) parts.push(el('span', { class: 'tag tag--warn', text: '解禁前：' + fmtDay(p.release_on) + ' から表示' }));
+      if (!p.rights_confirmed_at) {
+        parts.push(el('button', { class: 'btn btn--sm btn--ghost', type: 'button', text: '載せる許可を確認する',
+          onclick: function () { confirmRights(p); } }));
+      }
+      var box = el('div', { class: 'pf-status' }, parts);
+      takedowns.filter(function (t) { return t.portfolio_id === p.id && t.status === 'open'; }).forEach(function (t) {
+        box.appendChild(takedownBox(t));
+      });
+      return box.childNodes.length ? box : null;
+    }
+
+    function confirmRights(p) {
+      if (!confirm('「' + p.title + '」について確認します。\n\n自主制作の作品か、クライアント・制作会社さんから「実績として出してよい」と言われている作品ですか？\n守秘義務（NDA）がある場合は、許可された範囲・時期だけ載せていますか？\n\n「OK」を押すと、確認した日時が記録されます。')) return;
+      sb.from('portfolios').update({ rights_confirmed_at: new Date().toISOString() }).eq('id', p.id).then(function (r) {
+        if (r.error) EM.notice(msg, EM.errorText(r.error), 'error');
+        else { EM.toast('確認を記録しました'); reload(); }
+      });
+    }
+
+    function releaseButton(p) {
+      var input = el('input', { type: 'date', class: 'select--sm', 'aria-label': '解禁日', value: p.release_on || '' });
+      input.addEventListener('change', function () {
+        sb.from('portfolios').update({ release_on: input.value || null }).eq('id', p.id).then(function (r) {
+          if (r.error) { EM.notice(msg, EM.errorText(r.error), 'error'); input.value = p.release_on || ''; }
+          else { EM.toast(input.value ? '解禁日を ' + fmtDay(input.value) + ' にしました' : '解禁日を外しました'); reload(); }
+        });
+      });
+      return el('label', { class: 'pf-release small' }, [el('span', { class: 'muted', text: '解禁日' }), input]);
+    }
+
+    var REASON = { confidential: '守秘義務・公開前の作品', copyright: '著作権', portrait: '肖像権（顔・姿）', impersonation: 'なりすまし・実績の偽り', other: 'その他' };
+    var RELATION = { client: 'クライアント', agency: '代理店', production: '制作会社', performer: '出演者', creator: '制作に関わった人', other: 'その他' };
+    function takedownBox(t) {
+      var box = el('div', { class: 'notice notice--warn takedown-box' });
+      box.appendChild(el('p', { class: 'small' }, [el('strong', { text: '削除の申し立てが届いています' })]));
+      box.appendChild(el('p', { class: 'small', text: '申し立てた人：' + (RELATION[t.relation] || t.relation) + (t.requester_org ? '（' + t.requester_org + '）' : '') + ' ／ 理由：' + (REASON[t.reason] || t.reason) }));
+      box.appendChild(el('p', { class: 'small pre', text: t.detail }));
+      box.appendChild(el('p', { class: 'small muted', text: '運営が確認するまで、この作品はあなた以外に見えません。許可を得ている・事実と違うなどの場合は、下に言い分を書いてください。運営が両方を見て判断します。' }));
+      if (t.creator_response) {
+        box.appendChild(el('p', { class: 'small' }, [el('span', { class: 'muted', text: 'あなたの言い分：' }), document.createTextNode(t.creator_response)]));
+      } else {
+        var ta = el('textarea', { rows: 3, maxlength: 4000, placeholder: '例：放送後の掲載について、制作会社の担当の方からメールで許可をもらっています（10/1）' });
+        var btn = el('button', { class: 'btn btn--sm', type: 'button', text: '言い分を送る', onclick: function () {
+          var v = ta.value.trim();
+          if (v.length < 5) { EM.notice(msg, '5文字以上で書いてください。', 'error'); return; }
+          sb.rpc('respond_takedown', { p_id: t.id, p_text: v }).then(function (r) {
+            if (r.error) EM.notice(msg, EM.errorText(r.error), 'error');
+            else { EM.toast('言い分を送りました'); reload(); }
+          });
+        } });
+        box.appendChild(ta); box.appendChild(btn);
+      }
+      return box;
     }
 
     function move(idx, dir) {
