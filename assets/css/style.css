@@ -1354,6 +1354,11 @@ a.gantt__dia--link:hover { filter: brightness(1.25); }
 /* ---- 天気 ---- */
 .wx__top { display: flex; align-items: center; gap: 10px; }
 .wx__pref { width: auto; padding: 5px 8px; font-size: 13px; }
+.wx__here { display: inline-flex; align-items: center; gap: 4px; }
+.wx__here .ico { width: 14px; height: 14px; }
+.wx__note { margin: 6px 0 0; display: flex; flex-wrap: wrap; gap: 2px 8px; align-items: baseline; }
+.wx__msg:empty { display: none; }
+.wx__note .linklike { background: none; border: 0; padding: 0; font: inherit; color: var(--accent); text-decoration: underline; cursor: pointer; }
 .wx__days { display: grid; gap: 2px; }
 .wx__day { display: grid; grid-template-columns: 76px 22px 1fr auto auto; align-items: center; gap: 8px; padding: 6px 4px; border-bottom: 1px solid var(--border); font-size: 13px; position: relative; }
 .wx__day.is-today .wx__date { color: var(--accent); font-weight: 700; }

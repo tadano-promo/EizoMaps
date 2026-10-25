@@ -287,13 +287,44 @@
 
       /* ---- 天気（気象庁さんの予報。撮影の日に印） ---- */
       weather: function (body) {
-        var pref = home.weather_pref || (creator && creator.area_pref) || '東京都';
-        if (!JMA[pref]) pref = '東京都';
+        var usual = home.weather_pref || (creator && creator.area_pref) || '東京都';
+        if (!JMA[usual]) usual = '東京都';
+        var pref = (wxHere && JMA[wxHere]) ? wxHere : usual;
         var sel = el('select', { class: 'wx__pref', 'aria-label': '天気の地域' });
         Object.keys(JMA).forEach(function (p) { sel.appendChild(el('option', { value: p, text: p })); });
         sel.value = pref;
-        sel.addEventListener('change', function () { home.weather_pref = sel.value; saveHome({ weather_pref: sel.value }); var b = body; EM.clear(b); RENDER.weather(b); });
-        body.appendChild(el('div', { class: 'wx__top' }, [sel, el('span', { class: 'small muted', text: JMA[pref][1] + 'の予報' })]));
+        sel.addEventListener('change', function () { wxHere = null; home.weather_pref = sel.value; saveHome({ weather_pref: sel.value }); var b = body; EM.clear(b); RENDER.weather(b); });
+
+        // 「現在地」：押したときだけ位置情報の許可を聞き、いちばん近い都道府県に切り替える。
+        // 位置はこの端末の中で都道府県に変えるだけ。Eizo Maps にも外にも送らず、保存もしない
+        var hereBtn = el('button', { class: 'btn btn--sm wx__here', type: 'button', 'aria-label': '現在地の天気にする' }, [EM.icon('pin'), '現在地']);
+        var msg = el('span', { class: 'small muted wx__msg', 'aria-live': 'polite' });
+        hereBtn.addEventListener('click', function () {
+          if (!navigator.geolocation) { msg.textContent = 'この端末では現在地を使えません'; return; }
+          hereBtn.disabled = true;
+          msg.textContent = '現在地を確認しています…';
+          navigator.geolocation.getCurrentPosition(function (pos) {
+            hereBtn.disabled = false;
+            var p = nearestPref(pos.coords.latitude, pos.coords.longitude);
+            if (!p) { msg.textContent = '日本の外にいるため、切り替えられませんでした'; return; }
+            wxHere = p;
+            var b = body; EM.clear(b); RENDER.weather(b);
+          }, function (err) {
+            hereBtn.disabled = false;
+            msg.textContent = err && err.code === 1
+              ? '位置情報の利用が許可されていません（端末やブラウザの設定で変えられます）'
+              : '現在地を確認できませんでした。少し待ってからお試しください';
+          }, { enableHighAccuracy: false, timeout: 10000, maximumAge: 600000 });
+        });
+        var top = [sel, hereBtn];
+        body.appendChild(el('div', { class: 'wx__top' }, top));
+        if (wxHere && pref === wxHere) {
+          var back = el('button', { class: 'linklike small', type: 'button', text: 'いつもの地域（' + usual + '）に戻す' });
+          back.addEventListener('click', function () { wxHere = null; var b = body; EM.clear(b); RENDER.weather(b); });
+          body.appendChild(el('p', { class: 'small muted wx__note' }, ['現在地付近（' + JMA[pref][1] + 'の予報）・保存はしていません　', back]));
+        } else {
+          body.appendChild(el('p', { class: 'small muted wx__note' }, [JMA[pref][1] + 'の予報', msg]));
+        }
         var out = el('div', { class: 'wx__days' }, el('p', { class: 'small muted', text: '読み込み中…' }));
         body.appendChild(out);
         body.appendChild(el('p', { class: 'wx__src small muted' }, [
@@ -347,6 +378,35 @@
     }
 
     /* ---------------- 天気：気象庁さんの予報（都道府県ごとの代表地点） ---------------- */
+    /* 現在地 → 都道府県（いちばん近い点の都道府県にする）。
+       県庁所在地に、広い県の主な町を足して、県境の近くでもずれにくくしている */
+    var wxHere = null;
+    var PREF_POINTS = [
+      ['北海道',43.06,141.35],['北海道',43.77,142.37],['北海道',41.77,140.73],['北海道',42.98,144.38],['北海道',42.92,143.20],['北海道',44.02,144.27],['北海道',45.42,141.67],['北海道',42.32,140.97],
+      ['青森県',40.82,140.74],['青森県',40.51,141.49],['岩手県',39.70,141.15],['岩手県',39.64,141.95],['岩手県',39.29,141.11],['宮城県',38.27,140.87],['宮城県',38.43,141.30],
+      ['秋田県',39.72,140.10],['秋田県',39.31,140.56],['山形県',38.24,140.36],['山形県',38.91,139.84],['福島県',37.75,140.47],['福島県',37.49,139.93],['福島県',37.05,140.89],
+      ['茨城県',36.34,140.45],['茨城県',36.08,140.11],['栃木県',36.57,139.88],['栃木県',36.87,140.02],['群馬県',36.39,139.06],['群馬県',36.32,139.00],['埼玉県',35.86,139.65],['埼玉県',36.15,139.39],['埼玉県',35.99,139.09],
+      ['千葉県',35.61,140.12],['千葉県',35.05,140.10],['千葉県',35.73,140.83],['東京都',35.69,139.69],['東京都',35.67,139.30],['神奈川県',35.45,139.64],['神奈川県',35.26,139.15],['神奈川県',35.57,139.37],
+      ['新潟県',37.90,139.02],['新潟県',37.15,138.24],['新潟県',37.45,138.85],['富山県',36.70,137.21],['石川県',36.59,136.63],['石川県',37.39,136.90],['福井県',36.07,136.22],['福井県',35.49,135.75],
+      ['山梨県',35.66,138.57],['長野県',36.65,138.18],['長野県',36.24,137.97],['長野県',35.51,137.82],['長野県',36.40,138.25],['岐阜県',35.42,136.76],['岐阜県',36.15,137.25],
+      ['静岡県',34.98,138.38],['静岡県',34.71,137.73],['静岡県',35.10,138.86],['愛知県',35.18,136.91],['愛知県',34.77,137.39],['三重県',34.73,136.51],['三重県',34.07,136.19],
+      ['滋賀県',35.00,135.87],['滋賀県',35.38,136.27],['京都府',35.02,135.76],['京都府',35.47,135.39],['大阪府',34.69,135.52],['大阪府',34.47,135.39],['兵庫県',34.69,135.18],['兵庫県',34.82,134.69],['兵庫県',35.54,134.82],
+      ['奈良県',34.69,135.83],['奈良県',34.13,135.84],['和歌山県',34.23,135.17],['和歌山県',33.73,135.38],['鳥取県',35.50,134.24],['鳥取県',35.43,133.33],['島根県',35.47,133.05],['島根県',34.68,131.84],
+      ['岡山県',34.66,133.93],['岡山県',35.07,134.00],['広島県',34.40,132.46],['広島県',34.49,133.36],['広島県',34.81,132.86],['山口県',34.19,131.47],['山口県',33.96,130.94],['山口県',34.17,132.22],
+      ['徳島県',34.07,134.56],['徳島県',33.80,134.34],['香川県',34.34,134.04],['愛媛県',33.84,132.77],['愛媛県',33.22,132.56],['愛媛県',33.96,133.28],['高知県',33.56,133.53],['高知県',32.91,132.92],['高知県',33.29,134.15],
+      ['福岡県',33.61,130.42],['福岡県',33.88,130.88],['福岡県',33.32,130.51],['佐賀県',33.25,130.30],['長崎県',32.74,129.87],['長崎県',33.18,129.72],['熊本県',32.79,130.74],['熊本県',32.21,130.76],
+      ['大分県',33.24,131.61],['大分県',33.32,130.94],['宮崎県',31.91,131.42],['宮崎県',32.58,131.66],['鹿児島県',31.56,130.56],['鹿児島県',31.38,130.85],['鹿児島県',28.38,129.49],['沖縄県',26.21,127.68],['沖縄県',24.34,124.16],['沖縄県',26.59,127.98]
+    ];
+    function nearestPref(lat, lon) {
+      // 日本のだいたいの範囲の外なら切り替えない
+      if (!(lat > 20 && lat < 46.5 && lon > 122 && lon < 154.5)) return null;
+      var best = null, bd = Infinity, k = Math.cos(lat * Math.PI / 180);
+      PREF_POINTS.forEach(function (p) {
+        var dy = lat - p[1], dx = (lon - p[2]) * k, d = dx * dx + dy * dy;
+        if (d < bd) { bd = d; best = p[0]; }
+      });
+      return best;
+    }
     var JMA = {
       '北海道': ['016000', '札幌'], '青森県': ['020000', '青森'], '岩手県': ['030000', '盛岡'], '宮城県': ['040000', '仙台'],
       '秋田県': ['050000', '秋田'], '山形県': ['060000', '山形'], '福島県': ['070000', '福島'], '茨城県': ['080000', '水戸'],
