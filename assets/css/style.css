@@ -575,11 +575,7 @@ input[type=range]:focus-visible { outline: 2px solid var(--accent); outline-offs
    ===================================================================== */
 .news { border-bottom: 1px solid var(--border); }
 .news.section--tight { padding-block: 14px; }
-.news__layout {
-  display: grid; gap: 28px;
-  grid-template-columns: minmax(0, 1fr) 300px;
-  align-items: start;
-}
+.news__layout { display: block; }
 .news__main { max-width: 720px; }
 .news__label { margin: 0 0 6px; font-size: 11px; }
 .news__list { display: flex; flex-direction: column; }
@@ -1487,4 +1483,34 @@ a.setsum__sub:hover { color: var(--accent); }
 .ad--affiliate { display: flex; justify-content: center; align-items: center; flex-wrap: wrap; gap: 4px; padding: 8px; }
 .ad--affiliate img { max-width: 100%; height: auto; }
 .ad__note { margin: 0 0 6px; }
+
+/* トップページの広告枠：ページの下の方に、1つずつ、控えめに */
+.ad-area { border-top: 1px solid var(--border); }
+.ad-slot { max-width: 240px; margin-inline: auto; text-align: center; }
+.ad-slot__label {
+  margin: 0 0 8px; font-size: 10px; line-height: 1.5; color: var(--muted);
+  display: flex; flex-wrap: wrap; justify-content: center; gap: 2px 8px;
+}
+.ad-slot__pr { font-family: var(--font-mono); letter-spacing: .16em; }
+.ad-slot__stage { display: grid; }
+.ad-slot__frame {
+  grid-area: 1 / 1; position: relative; opacity: 0; visibility: hidden;
+  transition: opacity .6s ease, visibility 0s linear .6s;
+}
+.ad-slot__frame.is-on { opacity: 1; visibility: visible; transition: opacity .6s ease; }
+.ad-slot .ad { border: 0; background: none; border-radius: 0; }
+.ad-slot .ad--affiliate { padding: 0; gap: 0; }
+.ad-slot .ad--affiliate img { display: block; }
+.ad-slot .ad--affiliate img[width="1"] { position: absolute; width: 1px; height: 1px; }
+.ad-slot__dots { display: flex; justify-content: center; gap: 4px; margin-top: 6px; }
+.ad-slot__dot {
+  width: 22px; height: 22px; padding: 0; border: 0; background: none; cursor: pointer;
+  display: grid; place-items: center;
+}
+.ad-slot__dot::before {
+  content: ''; width: 6px; height: 6px; border-radius: 50%;
+  background: var(--border); transition: background var(--t);
+}
+.ad-slot__dot[aria-current="true"]::before { background: var(--muted); }
+@media (prefers-reduced-motion: reduce) { .ad-slot__frame, .ad-slot__frame.is-on { transition: none; } }
 .ad-code-preview { border: 1px dashed var(--border); border-radius: var(--radius); padding: 10px; }

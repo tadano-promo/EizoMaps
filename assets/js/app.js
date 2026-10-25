@@ -311,7 +311,9 @@
      その要素を属性もそのままに写して並べる（中身は変えない）。条件に合わなければ何も出さない。 */
   var A8_HOST = /^https?:\/\/([a-z0-9-]+\.)*a8\.net\//i;
   var A8_ATTR = { A: ['href', 'rel', 'target'], IMG: ['src', 'width', 'height', 'border', 'alt'] };
-  EM.a8Nodes = function (code) {
+  // checkOnly：形が正しいかだけ確かめ、ページの部品は作らない
+  // （部品を作った時点で画像の読み込みが始まり、見せていない広告まで表示回数に数えられてしまうため）
+  EM.a8Nodes = function (code, checkOnly) {
     if (!code || typeof DOMParser === 'undefined') return null;
     var doc = new DOMParser().parseFromString('<body>' + String(code) + '</body>', 'text/html');
     var ok = true;
@@ -331,6 +333,7 @@
     var kids = Array.prototype.slice.call(doc.body.childNodes);
     kids.forEach(function (n) { check(n, false); });
     if (!ok || !kids.some(function (n) { return n.nodeType === 1 && n.tagName === 'A'; })) return null;
+    if (checkOnly) return true;
     return kids.map(function (n) { return document.importNode(n, true); });
   };
   // コードの中のリンク先（管理用に控えておく）

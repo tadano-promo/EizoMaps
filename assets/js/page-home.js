@@ -413,7 +413,7 @@
 
       if (news.length) renderNews(news);
       if (ads.length)  renderAds(ads);
-      if (news.length || ads.length) section.hidden = false;
+      if (news.length) section.hidden = false;
     }).catch(function () {
       // お知らせは補助的な情報なので、取れなくてもトップページは普通に出す
     });
@@ -463,48 +463,107 @@
       }
     }
 
+    /* ---------- 広告枠 ----------
+       ・ページの下の方に、一度に1つだけ、控えめに出す
+       ・8秒ごとに入れ替える（マウスを乗せている間・別のタブを見ている間・
+         「動きを減らす」設定の人には自動で入れ替えない。丸を押せば切り替えられる）
+       ・A8 さんの広告コードは1文字も変えない。見せる・隠すを切り替えるだけ
+       ・まだ見せていない広告は読み込まない（表示回数を水増ししないため） */
+    var AD_INTERVAL = 8000;
     function renderAds(rows) {
-      EM.clear(adBox);
-      adBox.appendChild(el('p', { class: 'eyebrow', text: 'PR' }));
+      var items = [];
       var hasAffiliate = false;
       rows.forEach(function (a) {
-        // アフィリエイト（A8 さん）の広告は、コードをそのまま並べる
         if (a.ad_code) {
-          var nodes = EM.a8Nodes(a.ad_code);
-          if (!nodes) return;
+          if (!EM.a8Nodes(a.ad_code, true)) return;   // 形が正しいかだけ先に確かめる（読み込みはしない）
           hasAffiliate = true;
-          adBox.appendChild(el('div', { class: 'ad ad--affiliate' }, nodes));
+          items.push({ title: a.title, build: function () {
+            return el('div', { class: 'ad ad--affiliate' }, EM.a8Nodes(a.ad_code));
+          } });
           return;
         }
         var href = EM.safeUrl(a.link_url);
         if (!href) return;
-        var img = EM.safeUrl(a.image_url);
-        var imgEl = null;
-        if (img) {
-          imgEl = el('img', {
-            class: 'ad__img', src: img, alt: a.title,
-            loading: 'lazy', referrerpolicy: 'no-referrer'
-          });
-          // 画像が消えていたら、割れた画像を出さずに文字だけにする
-          imgEl.addEventListener('error', function () {
-            if (imgEl.parentNode) imgEl.parentNode.removeChild(imgEl);
-          });
-        }
-        var card = el('a', {
-          class: 'ad', href: href, target: '_blank', rel: 'noopener noreferrer sponsored'
-        }, [
-          imgEl,
-          el('div', { class: 'ad__body' }, [
-            el('p', { class: 'ad__title', text: a.title }),
-            a.body ? el('p', { class: 'small muted', text: a.body }) : null,
-            a.sponsor ? el('p', { class: 'ad__sponsor small muted', text: a.sponsor }) : null
-          ])
-        ]);
-        adBox.appendChild(card);
+        items.push({ title: a.title, build: function () {
+          var img = EM.safeUrl(a.image_url);
+          var imgEl = null;
+          if (img) {
+            imgEl = el('img', { class: 'ad__img', src: img, alt: a.title, referrerpolicy: 'no-referrer' });
+            // 画像が消えていたら、割れた画像を出さずに文字だけにする
+            imgEl.addEventListener('error', function () {
+              if (imgEl.parentNode) imgEl.parentNode.removeChild(imgEl);
+            });
+          }
+          return el('a', { class: 'ad', href: href, target: '_blank', rel: 'noopener noreferrer sponsored' }, [
+            imgEl,
+            el('div', { class: 'ad__body' }, [
+              el('p', { class: 'ad__title', text: a.title }),
+              a.body ? el('p', { class: 'small muted', text: a.body }) : null,
+              a.sponsor ? el('p', { class: 'ad__sponsor small muted', text: a.sponsor }) : null
+            ])
+          ]);
+        } });
       });
-      // A8 さんの決まり：広告だと分かる表示を、見落とさない位置（広告の上）に
-      if (hasAffiliate) adBox.insertBefore(el('p', { class: 'small muted ad__note', text: 'このサイトはアフィリエイト広告を利用しています' }), adBox.childNodes[1] || null);
-      if (adBox.childNodes.length > 1) adBox.hidden = false;
+      if (!items.length) return;
+
+      EM.clear(adBox);
+      // A8 さんの決まり：広告だと分かる表示を、広告の上に
+      adBox.appendChild(el('p', { class: 'ad-slot__label' }, [
+        el('span', { class: 'ad-slot__pr', text: 'PR' }),
+        hasAffiliate ? el('span', { text: 'このサイトはアフィリエイト広告を利用しています' }) : null
+      ]));
+      var stage = el('div', { class: 'ad-slot__stage', 'aria-live': 'off' });
+      adBox.appendChild(stage);
+      var frames = items.map(function () {
+        var fr = el('div', { class: 'ad-slot__frame', 'aria-hidden': 'true' });
+        stage.appendChild(fr);
+        return fr;
+      });
+
+      var dots = [];
+      if (items.length > 1) {
+        var nav = el('div', { class: 'ad-slot__dots' });
+        items.forEach(function (it, i) {
+          var d = el('button', { class: 'ad-slot__dot', type: 'button', 'aria-label': '広告 ' + (i + 1) + ' / ' + items.length });
+          d.addEventListener('click', function () { show(i); restart(); });
+          nav.appendChild(d);
+          dots.push(d);
+        });
+        adBox.appendChild(nav);
+      }
+
+      var cur = -1;
+      function show(i) {
+        if (!frames[i].firstChild) frames[i].appendChild(items[i].build());   // 初めて見せるときに読み込む
+        frames.forEach(function (fr, k) {
+          var on = k === i;
+          fr.classList.toggle('is-on', on);
+          fr.setAttribute('aria-hidden', on ? 'false' : 'true');
+          fr.inert = !on;
+        });
+        dots.forEach(function (d, k) { d.setAttribute('aria-current', k === i ? 'true' : 'false'); });
+        cur = i;
+      }
+
+      var timer = null;
+      var paused = false;
+      var reduce = false;
+      try { reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches; } catch (e) { /* なし */ }
+      function stop() { if (timer) { clearInterval(timer); timer = null; } }
+      function restart() {
+        stop();
+        if (items.length < 2 || reduce || paused || document.hidden) return;
+        timer = setInterval(function () { show((cur + 1) % items.length); }, AD_INTERVAL);
+      }
+      adBox.addEventListener('mouseenter', function () { paused = true; stop(); });
+      adBox.addEventListener('mouseleave', function () { paused = false; restart(); });
+      adBox.addEventListener('focusin', function () { paused = true; stop(); });
+      adBox.addEventListener('focusout', function () { paused = false; restart(); });
+      document.addEventListener('visibilitychange', restart);
+
+      show(0);
+      EM.$('#adArea').hidden = false;
+      restart();
     }
   });
 })(window.EM);

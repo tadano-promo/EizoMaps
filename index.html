@@ -23,15 +23,12 @@
 </head>
 <body>
 <main>
-  <!-- 公式のお知らせと広告枠。中身が無いときは丸ごと非表示にする -->
+  <!-- 公式のお知らせ。中身が無いときは丸ごと非表示にする -->
   <section class="section section--tight news" id="newsSection" hidden>
     <div class="wrap">
-      <div class="news__layout">
-        <div class="news__main">
-          <p class="eyebrow news__label">お知らせ</p>
-          <div id="newsList" class="news__list"></div>
-        </div>
-        <aside class="news__side" id="adSlot" hidden></aside>
+      <div class="news__main">
+        <p class="eyebrow news__label">お知らせ</p>
+        <div id="newsList" class="news__list"></div>
       </div>
     </div>
   </section>
@@ -122,6 +119,13 @@
         </div>
       </div>
       <p class="small muted home-help">使い方がわからないときは <a href="/help/">使い方・ヘルプ</a> へ。</p>
+    </div>
+  </section>
+
+  <!-- 広告枠（トップページのここだけ）。ページの下の方に、一度に1つだけ控えめに出す。広告が無いときは出さない -->
+  <section class="section section--tight ad-area" id="adArea" hidden>
+    <div class="wrap">
+      <aside class="ad-slot" id="adSlot" aria-label="広告"></aside>
     </div>
   </section>
 
