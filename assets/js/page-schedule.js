@@ -25,6 +25,7 @@
 
     var me = null, creator = null, projects = [], sprojects = [], events = [];
     var gbusy = {};   // Google 側で予定がある日（日付だけ。件名などは持たない）
+    var showPast = false;   // 今月を見ているとき、終わった日（昨日まで）も出すか
     var cursor = new Date(); cursor.setDate(1);
     var qm = String(EM.param('m') || ''), qnew = String(EM.param('new') || '');
     if (/^\d{4}-\d{2}$/.test(qm)) cursor = new Date(+qm.slice(0, 4), +qm.slice(5, 7) - 1, 1);
@@ -89,13 +90,13 @@
     }
 
     EM.$('#prevMonth').addEventListener('click', function () {
-      cursor = new Date(cursor.getFullYear(), cursor.getMonth() - 1, 1); load();
+      cursor = new Date(cursor.getFullYear(), cursor.getMonth() - 1, 1); showPast = false; load();
     });
     EM.$('#nextMonth').addEventListener('click', function () {
-      cursor = new Date(cursor.getFullYear(), cursor.getMonth() + 1, 1); load();
+      cursor = new Date(cursor.getFullYear(), cursor.getMonth() + 1, 1); showPast = false; load();
     });
     EM.$('#thisMonth').addEventListener('click', function () {
-      cursor = new Date(); cursor.setDate(1); load();
+      cursor = new Date(); cursor.setDate(1); showPast = false; load();
     });
 
     /* ---------------- 描画 ---------------- */
@@ -137,8 +138,15 @@
       var box = EM.$('#vcal');
       EM.clear(box);
       var cols = columns();
-      var days = daysInMonth(cursor);
-      var mStart = monthStart();
+      var allDays = daysInMonth(cursor);
+      var now = new Date();
+      var isThisMonth = now.getFullYear() === cursor.getFullYear() && now.getMonth() === cursor.getMonth();
+      // 今月を見ているときは、終わった日（昨日まで）をしまって今日から出す
+      var off = (isThisMonth && !showPast) ? now.getDate() - 1 : 0;
+      var days = allDays - off;
+      var mStart = new Date(cursor.getFullYear(), cursor.getMonth(), 1 + off);
+      var todayIdx = isThisMonth ? now.getDate() - 1 - off : -1;
+      renderPastToggle(isThisMonth, now.getDate() - 1);
 
       box.style.gridTemplateColumns = '58px repeat(' + cols.length + ', minmax(116px, 1fr))';
 
@@ -151,16 +159,17 @@
       // 日付の列
       var today = ymd(new Date());
       for (var i = 0; i < days; i++) {
-        var d = new Date(mStart.getFullYear(), mStart.getMonth(), i + 1);
+        var d = new Date(mStart.getFullYear(), mStart.getMonth(), mStart.getDate() + i);
         var wd = d.getDay();
+        var isToday = ymd(d) === today;
         box.appendChild(el('a', {
           href: '/schedule/day.html?d=' + ymd(d),
           title: 'この日の時間割を開く',
           class: 'vcal__day' + (wd === 0 ? ' is-sun' : wd === 6 ? ' is-sat' : '')
-                 + (ymd(d) === today ? ' is-today' : ''),
+                 + (isToday ? ' is-today' : '') + (i < todayIdx ? ' is-past' : ''),
           style: { gridColumn: '1', gridRow: String(i + 2) }
         }, [
-          el('span', { class: 'vcal__dnum', text: String(i + 1) }),
+          el('span', { class: 'vcal__dnum', text: String(d.getDate()) }),
           el('span', { class: 'vcal__dwd', text: WD[wd] })
         ]));
       }
@@ -180,10 +189,17 @@
           if (c.id) return e.project_id === c.id && !e.sched_project_id;
           return !e.project_id && !e.sched_project_id;
         });
+        // 今日の行に色の帯を敷く（どの列でも今日の位置が分かるように）／終わった日は少し暗く
+        if (todayIdx > 0) {
+          lane.appendChild(el('div', { class: 'vcal__past', style: { top: '0px', height: (todayIdx * ROW) + 'px' } }));
+        }
+        if (todayIdx >= 0) {
+          lane.appendChild(el('div', { class: 'vcal__today', style: { top: (todayIdx * ROW) + 'px', height: ROW + 'px' } }));
+        }
         // 個人の予定の列に、Google 側で予定がある日の印を敷く（予定のバーの下に出る）
         if (!c.id && !c.sp) {
           for (var di = 0; di < days; di++) {
-            var dk = ymd(new Date(mStart.getFullYear(), mStart.getMonth(), di + 1));
+            var dk = ymd(new Date(mStart.getFullYear(), mStart.getMonth(), mStart.getDate() + di));
             if (!gbusy[dk]) continue;
             lane.appendChild(el('div', {
               class: 'vcal__gbusy',
@@ -192,6 +208,8 @@
             }, el('span', { text: 'Google に予定あり' })));
           }
         }
+        var endKey = ymd(mStart);
+        list = list.filter(function (e) { return e.ends_on >= endKey; });   // しまった日だけの予定は出さない
         var laneCount = assignLanes(list);
         list.forEach(function (e) {
           lane.appendChild(bar(e, mStart, days, laneCount));
@@ -233,6 +251,21 @@
         timeText ? el('span', { class: 'vcal__bar-time mono', text: timeText }) : null
       ]);
       return node;
+    }
+
+    // 「終わった日も表示」の切り替え（今月を見ているときだけ）
+    function renderPastToggle(isThisMonth, pastCount) {
+      var b = EM.$('#pastToggle');
+      if (!b) {
+        b = el('button', { type: 'button', class: 'vcal-past-toggle', id: 'pastToggle',
+          onclick: function () { showPast = !showPast; render(); } });
+        var sc = EM.$('.vcal-scroll');
+        sc.parentNode.insertBefore(b, sc);
+      }
+      b.hidden = !isThisMonth || pastCount < 1;
+      b.textContent = showPast
+        ? '↑ 終わった日をしまう'
+        : '↓ 終わった日（1〜' + pastCount + '日）も表示';
     }
 
     function renderLegend() {

@@ -682,8 +682,24 @@ details[open] > summary.news__row::after { content: '−'; }
 .vcal__dwd { color: var(--muted); font-size: 11px; }
 .vcal__day.is-sat .vcal__dwd { color: #7ad1ff; }
 .vcal__day.is-sun .vcal__dwd { color: #ff8b6b; }
-.vcal__day.is-today { background: var(--surface2); }
-.vcal__day.is-today .vcal__dnum { color: var(--accent); font-weight: 700; }
+.vcal__day.is-today { background: var(--accent); color: #0a0a0f; }
+.vcal__day.is-today .vcal__dnum { color: #0a0a0f; font-weight: 700; }
+.vcal__day.is-today .vcal__dwd { color: #0a0a0f; font-weight: 700; }
+a.vcal__day.is-today:hover .vcal__dnum { color: #0a0a0f; }
+.vcal__day.is-past .vcal__dnum, .vcal__day.is-past .vcal__dwd { opacity: .45; }
+.vcal__today {
+  position: absolute; left: 0; right: 0; pointer-events: none;
+  background: color-mix(in srgb, var(--accent) 9%, transparent);
+  border-top: 1px solid var(--accent); border-bottom: 1px solid var(--accent);
+}
+.vcal__past { position: absolute; left: 0; right: 0; pointer-events: none; background: rgba(0,0,0,.28); }
+.vcal-past-toggle {
+  display: block; width: 100%; margin: 0 0 8px; padding: 9px 12px;
+  border: 1px dashed var(--border); border-radius: var(--radius);
+  background: transparent; color: var(--muted); font: inherit; font-size: 12px; cursor: pointer;
+}
+.vcal-past-toggle:hover { color: var(--text); border-color: var(--muted); }
+.vcal-past-toggle[hidden] { display: none; }
 
 .vcal__col {
   position: relative;
