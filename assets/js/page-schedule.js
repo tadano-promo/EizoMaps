@@ -24,7 +24,9 @@
     function kindColor(k) { for (var i = 0; i < KINDS.length; i++) if (KINDS[i][0] === k) return KINDS[i][2]; return '#9aa0b5'; }
 
     var me = null, creator = null, projects = [], sprojects = [], events = [];
-    var gbusy = {};   // Google 側で予定がある日（日付だけ。件名などは持たない）
+    var gbusy = {};   // Google 側で予定がある日（日付だけ。件名は gev で本人にだけ出す）
+    var gev = null;     // 自分にだけ見せる Google の予定（日付 → [{title, start_time, end_time}]）。保存はしない
+    var gevSeq = 0;
     var showPast = false;   // 今月を見ているとき、終わった日（昨日まで）も出すか
     var cursor = new Date(); cursor.setDate(1);
     var qm = String(EM.param('m') || ''), qnew = String(EM.param('new') || '');
@@ -85,8 +87,65 @@
           events = r.data || [];
           gbusy = {};
           (rs[1].data || []).forEach(function (g) { gbusy[g.day] = true; });
+          gev = null;
           render();
+          loadGoogleTitles(from, to);
         }).catch(function (e) { EM.notice(msg, EM.errorText(e), 'error'); });
+    }
+
+    // Google の予定の件名と時間を、その場で Google から読んで自分の画面にだけ出す
+    function loadGoogleTitles(from, to) {
+      if (!gcal || !gcal.connected || !gcal.sync_pull) return;
+      var seq = ++gevSeq;
+      gcalCall({ action: 'my_events', from: from, to: to }).then(function (d) {
+        if (seq !== gevSeq) return;   // 別の月に移っていたら捨てる
+        var map = {};
+        (d.events || []).forEach(function (e) {
+          var t = parseYmd(e.start_day), last = parseYmd(e.end_day);
+          for (var k = 0; t <= last && k < 62; k++) {
+            var key = ymd(t);
+            (map[key] = map[key] || []).push(e);
+            t = new Date(t.getFullYear(), t.getMonth(), t.getDate() + 1);
+          }
+        });
+        gev = map;
+        render();
+      }).catch(function () { /* 読めないときは今までどおり「Google に予定あり」だけ出す */ });
+    }
+
+    function gTime(e, key) {
+      if (!e.start_time) return '終日';
+      if (e.start_day === e.end_day) return e.start_time + '–' + e.end_time;
+      if (key === e.start_day) return e.start_time + '〜';
+      if (key === e.end_day) return '〜' + e.end_time;
+      return '終日';
+    }
+
+    function showGoogleDay(key) {
+      var box = EM.$('#gdayBox');
+      if (!box) {
+        box = el('div', { class: 'card gday', id: 'gdayBox' });
+        var sc = EM.$('.vcal-scroll');
+        sc.parentNode.insertBefore(box, sc.nextSibling);
+      }
+      EM.clear(box);
+      var d = parseYmd(key);
+      box.appendChild(el('div', { class: 'gday__head' }, [
+        el('strong', { text: (d.getMonth() + 1) + '/' + d.getDate() + '（' + WD[d.getDay()] + '）の Google の予定' }),
+        el('button', { type: 'button', class: 'gday__close', 'aria-label': '閉じる', text: '×',
+          onclick: function () { box.hidden = true; } })
+      ]));
+      var ul = el('ul', { class: 'gday__list' });
+      (gev[key] || []).forEach(function (e) {
+        ul.appendChild(el('li', {}, [
+          el('span', { class: 'gday__time mono', text: gTime(e, key) }),
+          el('span', { class: 'gday__title', text: e.title })
+        ]));
+      });
+      box.appendChild(ul);
+      box.appendChild(el('p', { class: 'small muted', text: '件名はあなたの画面にだけ表示しています（Eizo Maps には保存していません）。ほかの人には「予定あり」とだけ見えます。' }));
+      box.hidden = false;
+      box.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
     }
 
     EM.$('#prevMonth').addEventListener('click', function () {
@@ -114,6 +173,8 @@
           .map(function (p) { return { id: p.id, label: p.title }; }))
         .slice(0, 8);
       cols.push({ id: null, label: '個人の予定' });
+      // Google カレンダーの予定は別の列に分ける（Eizo Maps の予定と重なって隠れないように）
+      if (gcal && gcal.connected && gcal.sync_pull) cols.push({ g: true, label: 'Google の予定' });
       return cols;
     }
 
@@ -184,7 +245,7 @@
             height: (days * ROW) + 'px'
           }
         });
-        var list = events.filter(function (e) {
+        var list = c.g ? [] : events.filter(function (e) {
           if (c.sp) return e.sched_project_id === c.sp;
           if (c.id) return e.project_id === c.id && !e.sched_project_id;
           return !e.project_id && !e.sched_project_id;
@@ -196,10 +257,28 @@
         if (todayIdx >= 0) {
           lane.appendChild(el('div', { class: 'vcal__today', style: { top: (todayIdx * ROW) + 'px', height: ROW + 'px' } }));
         }
-        // 個人の予定の列に、Google 側で予定がある日の印を敷く（予定のバーの下に出る）
-        if (!c.id && !c.sp) {
+        // Google の予定の列：件名が読めた日は件名を、読めない日は「Google に予定あり」の印を出す
+        if (c.g) {
           for (var di = 0; di < days; di++) {
             var dk = ymd(new Date(mStart.getFullYear(), mStart.getMonth(), mStart.getDate() + di));
+            var gl = gev && gev[dk];
+            if (gl && gl.length) {
+              (function (key, list) {
+                var first = list[0];
+                lane.appendChild(el('button', {
+                  type: 'button',
+                  class: 'vcal__gbusy vcal__gev',
+                  style: { top: (di * ROW + 2) + 'px', height: (ROW - 4) + 'px' },
+                  title: list.map(function (e) { return gTime(e, key) + ' ' + e.title; }).join('\n'),
+                  onclick: function () { showGoogleDay(key); }
+                }, [
+                  el('span', { class: 'vcal__gev-time mono', text: gTime(first, key).split('–')[0] }),
+                  el('span', { class: 'vcal__gev-title', text: first.title }),
+                  list.length > 1 ? el('span', { class: 'vcal__gev-more', text: '+' + (list.length - 1) }) : null
+                ]));
+              })(dk, gl);
+              continue;
+            }
             if (!gbusy[dk]) continue;
             lane.appendChild(el('div', {
               class: 'vcal__gbusy',
@@ -762,7 +841,7 @@
       var pull = EM.$('#gcalPull').checked;
       EM.$('#gcalBusyList').classList.toggle('is-off', !pull);
       EM.$('#gcalBusyHint').textContent = pull
-        ? 'タップしたカレンダーの予定を「埋まっている日」に含めます（件名・場所は取り込みません）。'
+        ? 'タップしたカレンダーの予定を「埋まっている日」に含めます。件名はあなたの画面にだけ表示し、保存はしません。ほかの人には「予定あり」とだけ見えます。'
         : 'つないでいる Google アカウント（「埋まっている日」に含めるをオンにすると、カレンダーを選べます）';
     }
     EM.$('#gcalPush').addEventListener('change', syncSubVisibility);

@@ -744,6 +744,22 @@ a.vcal__day.is-today:hover .vcal__dnum { color: #0a0a0f; }
   font-size: 10px; color: var(--muted);
 }
 
+.vcal__gev {
+  justify-content: flex-start; gap: 6px; pointer-events: auto; cursor: pointer;
+  color: var(--text); font: inherit; font-size: 11px; text-align: left; overflow: hidden; white-space: nowrap;
+}
+.vcal__gev:hover { border-color: rgba(255,255,255,.4); }
+.vcal__gev-time { color: var(--muted); font-size: 10px; flex: 0 0 auto; }
+.vcal__gev-title { overflow: hidden; text-overflow: ellipsis; min-width: 0; }
+.vcal__gev-more { color: var(--muted); font-size: 10px; flex: 0 0 auto; margin-left: auto; }
+.gday { margin: 12px 0 0; }
+.gday[hidden] { display: none; }
+.gday__head { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+.gday__close { background: none; border: 0; color: var(--muted); font-size: 18px; cursor: pointer; padding: 0 4px; }
+.gday__list { list-style: none; margin: 10px 0; padding: 0; display: grid; gap: 6px; }
+.gday__list li { display: flex; gap: 10px; font-size: 13px; }
+.gday__time { color: var(--muted); font-size: 12px; min-width: 92px; }
+
 /* 空き状況 */
 .avail { display: flex; flex-wrap: wrap; gap: 3px; margin-top: 8px; }
 .avail__day {

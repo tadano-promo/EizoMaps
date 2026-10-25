@@ -763,6 +763,67 @@ Deno.serve(async (req) => {
       return json({ ok: true, ...result }, 200, origin);
     }
 
+    /* ---- 本人にだけ、Google の予定の件名と時間を見せる（Eizo Maps には保存しない） ---- */
+    if (action === 'my_events') {
+      const from = String(payload.from ?? ''), to = String(payload.to ?? '');
+      if (!/^\d{4}-\d{2}-\d{2}$/.test(from) || !/^\d{4}-\d{2}-\d{2}$/.test(to)) {
+        return json({ error: '日付の形が正しくありません' }, 400, origin);
+      }
+      const tMin = Date.parse(from + 'T00:00:00+09:00');
+      const tMax = Date.parse(to + 'T00:00:00+09:00') + DAY;
+      if (!(tMax > tMin) || tMax - tMin > 62 * DAY) return json({ error: '期間が長すぎます' }, 400, origin);
+      if (!link.sync_pull) return json({ ok: true, events: [] }, 200, origin);
+      const extras = await extraAccts(db, user.id);
+      const heads = new Heads([mainAcct(link), ...extras]);
+      const pushAcct: string | null = link.push_account_id && heads.find(link.push_account_id) ? link.push_account_id : null;
+      const writeCal = link.calendar_id ?? 'primary';
+      const plan: { id: string | null; cals: string[] }[] = [
+        { id: null, cals: (link.busy_calendar_ids && link.busy_calendar_ids.length) ? link.busy_calendar_ids.slice(0, 20) : (pushAcct === null ? [writeCal] : ['primary']) },
+        ...extras.map((a) => ({ id: a.id, cals: (a.busy_calendar_ids ?? []).slice(0, 20) })),
+      ];
+      const jst = (ms: number) => {
+        const d = new Date(ms + 9 * 3600000);
+        return { day: d.toISOString().slice(0, 10), hm: d.toISOString().slice(11, 16) };
+      };
+      const out: { start_day: string; end_day: string; start_time: string | null; end_time: string | null; title: string }[] = [];
+      const seen = new Set<string>();
+      for (const pl of plan) {
+        if (!pl.cals.length) continue;
+        let gh: Record<string, string>;
+        try { gh = await heads.get(pl.id); } catch (_) { continue; }
+        for (const cal of pl.cals) {
+          const q = new URLSearchParams({
+            timeMin: new Date(tMin).toISOString(), timeMax: new Date(tMax).toISOString(),
+            singleEvents: 'true', orderBy: 'startTime', maxResults: '500',
+            fields: 'items(id,status,transparency,summary,start,end,source/url)',
+          });
+          const res = await fetch(`https://www.googleapis.com/calendar/v3/calendars/${encodeURIComponent(cal)}/events?${q}`, { headers: gh });
+          if (!res.ok) continue;   // 空き時間だけ共有されているカレンダーなどは、件名を出さない（今までどおり「予定あり」）
+          const j = await res.json();
+          for (const ev of j.items ?? []) {
+            if (ev.status === 'cancelled' || ev.transparency === 'transparent') continue;
+            if (String(ev.source?.url ?? '').includes('eizo-maps.com')) continue;   // Eizo Maps から書き出した予定は二重に出さない
+            if (seen.has(ev.id)) continue;
+            seen.add(ev.id);
+            const title = String(ev.summary ?? '（件名なし）').slice(0, 100);
+            if (ev.start?.date) {
+              const endEx = ev.end?.date ?? ev.start.date;
+              const last = new Date(Date.parse(endEx + 'T00:00:00Z') - DAY).toISOString().slice(0, 10);
+              out.push({ start_day: ev.start.date, end_day: last < ev.start.date ? ev.start.date : last, start_time: null, end_time: null, title });
+            } else if (ev.start?.dateTime) {
+              const s0 = jst(Date.parse(ev.start.dateTime));
+              const e0 = jst(Date.parse(ev.end?.dateTime ?? ev.start.dateTime) - 1);
+              const e1 = jst(Date.parse(ev.end?.dateTime ?? ev.start.dateTime));
+              out.push({ start_day: s0.day, end_day: e0.day < s0.day ? s0.day : e0.day, start_time: s0.hm, end_time: e1.hm, title });
+            }
+            if (out.length >= 800) break;
+          }
+        }
+      }
+      out.sort((a, b) => (a.start_day + (a.start_time ?? '')).localeCompare(b.start_day + (b.start_time ?? '')));
+      return json({ ok: true, events: out }, 200, origin);
+    }
+
     if (action !== 'list_calendars' && action !== 'set_calendars') {
       return json({ error: '不明な操作です' }, 400, origin);
     }
