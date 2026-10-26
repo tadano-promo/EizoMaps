@@ -1,0 +1,180 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; base-uri 'self'; object-src 'none'; form-action 'self'; script-src 'self' https://www.googletagmanager.com https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.116.0/; style-src 'self' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src 'self' data: https://*.supabase.co https://*.google-analytics.com https://*.googletagmanager.com; connect-src 'self' https://*.supabase.co wss://*.supabase.co https://*.google-analytics.com https://*.analytics.google.com https://*.googletagmanager.com https://www.google.com; frame-src 'none'; upgrade-insecure-requests">
+<meta name="referrer" content="strict-origin-when-cross-origin">
+<title>営業先ごとに、見せる作品を変える — Eizo Maps</title>
+<meta name="description" content="営業先ごとに見せる作品を選んで、相手ごとに別のリンクを作れます。相手は登録なしで開くだけ。開かれた回数も分かります。">
+<link rel="canonical" href="https://eizo-maps.com/features/share/">
+<meta property="og:site_name" content="Eizo Maps">
+<meta property="og:title" content="営業先ごとに、見せる作品を変える — Eizo Maps">
+<meta property="og:description" content="営業先ごとに見せる作品を選んで、相手ごとに別のリンクを作れます。">
+<meta property="og:type" content="article">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bebas+Neue&amp;family=DM+Mono:wght@400;500&amp;family=Noto+Sans+JP:wght@300;400;500;700&amp;display=swap">
+<link rel="stylesheet" href="/assets/css/style.css">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.116.0/dist/umd/supabase.js" integrity="sha384-iLddHTLokph6Omwoyid4XKxHaWa6w41BnoEj0q5oOrzmYPpHIKt1wyjReA7s//pP" crossorigin="anonymous" referrerpolicy="no-referrer" defer></script>
+<script src="/assets/js/config.js" defer></script>
+<script src="/assets/js/app.js" defer></script>
+<script src="/assets/js/page-features.js" defer></script>
+</head>
+<body>
+<main class="feat">
+
+  <!-- ===== はじめの一画面 ===== -->
+  <section class="feat-hero">
+    <div class="wrap feat-hero__inner">
+      <div class="feat-hero__text">
+        <p class="eyebrow"><a href="/features/">Features</a> ／ 02 営業先ごとの限定共有リンク</p>
+        <h1>営業先ごとに、<br>見せる作品を変える。<br><span class="feat-accent">リンクで、分けて送る。</span></h1>
+        <p class="lead">
+          食品メーカーさんには食品の CM を。アパレルの会社さんにはファッションの映像を。相手に合わせて作品を選び、相手ごとに別のリンクを作れます。受け取った人は、登録なしでリンクを開くだけです。
+        </p>
+        <div class="cta">
+          <a class="btn btn--primary" href="/auth/" data-cta-out>無料で作ってみる</a>
+          <a class="btn btn--primary" href="/mypage/portfolio.html" data-cta-in hidden>共有リンクを作る</a>
+          <a class="btn" href="/help/#works">使い方を見る</a>
+        </div>
+      </div>
+
+      <!-- 画面のイメージ（絵だけ。本物のデータではありません） -->
+      <div class="feat-mock feat-mock--links" aria-hidden="true">
+        <div class="feat-links">
+          <p class="feat-links__head">営業用の共有リンク</p>
+          <div class="feat-links__row">
+            <span class="feat-links__thumbs"><i></i><i></i><i></i></span>
+            <span class="feat-links__text"><b>食品メーカーさま向け</b><small>3作品 ／ 閲覧 4回</small></span>
+          </div>
+          <div class="feat-links__row">
+            <span class="feat-links__thumbs"><i></i><i></i><i></i></span>
+            <span class="feat-links__text"><b>制作会社さま向け</b><small>5作品 ／ 閲覧 1回</small></span>
+          </div>
+          <div class="feat-links__row is-off">
+            <span class="feat-links__thumbs"><i></i><i></i></span>
+            <span class="feat-links__text"><b>アパレルさま向け</b><small>2作品 ／ 停止中</small></span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===== あるある ===== -->
+  <section class="section">
+    <div class="wrap">
+      <p class="eyebrow">Why</p>
+      <h2>営業のたびに、こんなことありませんか。</h2>
+      <div class="grid grid--3 feat-pains">
+        <div class="card">
+          <p class="num">01</p>
+          <h3>全部入りのリールは長すぎる</h3>
+          <p class="small muted">得意なジャンルが多いほど、1本のリールは長くなります。相手が見たいのは、その中の数本だけかもしれません。</p>
+        </div>
+        <div class="card">
+          <p class="num">02</p>
+          <h3>相手ごとに作り直すのが大変</h3>
+          <p class="small muted">相手に合わせてリールを編集し直したり、URLを並べたメールを毎回書いたり。営業の準備に時間がかかります。</p>
+        </div>
+        <div class="card">
+          <p class="num">03</p>
+          <h3>見てもらえたか分からない</h3>
+          <p class="small muted">送ったあと、相手が開いてくれたのかどうか。返事が来るまで分からないまま待つことになります。</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===== しくみ ===== -->
+  <section class="section feat-band">
+    <div class="wrap feat-split">
+      <div>
+        <p class="eyebrow">How</p>
+        <h2>作品は1回登録するだけ。<br>あとは<span class="feat-accent">選んで、リンクにする</span>。</h2>
+        <p class="lead">
+          ポートフォリオに登録した作品の中から、その相手に見せたいものにチェックを入れるだけ。同じ作品を、いくつのリンクに入れても大丈夫です。
+        </p>
+        <p class="small muted">リンクを作るとすぐにコピーされるので、そのままメールやメッセージに貼れます。</p>
+      </div>
+      <ul class="feat-sources">
+        <li><b>相手ごとに名前を付ける</b><span>例：「食品メーカーさま向け」</span></li>
+        <li><b>見せる作品を選ぶ</b><span>チェックを入れるだけ</span></li>
+        <li><b>開かれた回数が分かる</b><span>リンクごとに閲覧の回数を表示</span></li>
+        <li><b>いつでも止められる</b><span>止めたリンクは、すぐ見られなくなる</span></li>
+        <li><b>また使える</b><span>止めたリンクは、再開もできます</span></li>
+        <li><b>相手は登録いらず</b><span>リンクを開くだけで見られます</span></li>
+      </ul>
+    </div>
+  </section>
+
+  <!-- ===== 3ステップ ===== -->
+  <section class="section">
+    <div class="wrap">
+      <p class="eyebrow">Steps</p>
+      <h2>3ステップで、相手に合わせて渡せる。</h2>
+      <ol class="feat-steps">
+        <li>
+          <span class="feat-steps__n">1</span>
+          <h3>作品のURLを登録する</h3>
+          <p class="small muted">YouTube や Vimeo、SNS、クライアントのサイトなど、作品のURLを貼るだけ。動画を上げ直す必要はありません。</p>
+        </li>
+        <li>
+          <span class="feat-steps__n">2</span>
+          <h3>見せる作品を選ぶ</h3>
+          <p class="small muted">「営業用の共有リンク」で、相手に合う作品にチェック。リンクの名前も付けておくと、あとで見分けやすくなります。</p>
+        </li>
+        <li>
+          <span class="feat-steps__n">3</span>
+          <h3>リンクを送る</h3>
+          <p class="small muted">できたリンクを、メールやメッセージに貼って送るだけ。開かれた回数は、あとから確かめられます。</p>
+        </li>
+      </ol>
+    </div>
+  </section>
+
+  <!-- ===== 安心のつくり ===== -->
+  <section class="section feat-band">
+    <div class="wrap">
+      <p class="eyebrow">Point</p>
+      <h2>見せる範囲は、自分で決める。</h2>
+      <div class="grid grid--2 feat-safe">
+        <div class="feat-safe__item">
+          <h3>リンクを知っている人だけが見られる</h3>
+          <p class="small muted">リンクには、長くてランダムな文字が入っています。当てずっぽうではたどり着けません。</p>
+        </div>
+        <div class="feat-safe__item">
+          <h3>プロフィールには出さない作品も入れられる</h3>
+          <p class="small muted">作品の見せ方を「限定リンクのみ」にすると、プロフィールには出ず、共有リンクを送った相手だけが見られます。</p>
+        </div>
+        <div class="feat-safe__item">
+          <h3>守秘義務のある作品は、入らない</h3>
+          <p class="small muted">「パスワードページだけ」にした作品は、共有リンクには出ません。カギをかけて渡したい作品は、<a href="/features/stock/">パスワード付きの作品集</a>で。</p>
+        </div>
+        <div class="feat-safe__item">
+          <h3>送ったあとでも止められる</h3>
+          <p class="small muted">営業が終わったら、リンクを止めるだけ。止めたリンクを開いても、作品は表示されません。</p>
+        </div>
+      </div>
+      <p class="small muted feat-note">共有リンクにはパスワードはかかりません。閲覧の回数には、自分で開いた分も入ります。</p>
+    </div>
+  </section>
+
+  <!-- ===== しめ ===== -->
+  <section class="section feat-end">
+    <div class="wrap">
+      <h2>次の営業は、<br>相手に合わせたリンクで。</h2>
+      <p class="lead">
+          登録は無料。メールアドレスか Google アカウントで始められます。
+        </p>
+      <div class="cta">
+        <a class="btn btn--primary" href="/auth/" data-cta-out>無料で作ってみる</a>
+        <a class="btn btn--primary" href="/mypage/portfolio.html" data-cta-in hidden>共有リンクを作る</a>
+        <a class="btn" href="/features/">ほかの便利な機能を見る</a>
+      </div>
+    </div>
+  </section>
+
+</main>
+</body>
+</html>

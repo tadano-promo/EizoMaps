@@ -1532,3 +1532,22 @@ a.setsum__sub:hover { color: var(--accent); }
 .rights-check input { margin-top: 3px; width: auto; flex: 0 0 auto; }
 .work-report { font-size: 11px; color: var(--muted); text-decoration: underline; background: none; border: 0; padding: 0; cursor: pointer; }
 .work-report:hover { color: var(--text); }
+
+/* 機能紹介 02・03 の画面イメージ */
+.feat-links { width: 260px; padding: 14px; border-radius: 12px; background: var(--surface); border: 1px solid var(--border); }
+.feat-links__head { font-size: 11px; color: var(--muted); margin: 0 0 10px; }
+.feat-links__row { display: flex; align-items: center; gap: 10px; padding: 9px; border-radius: 8px; background: var(--surface2); border: 1px solid var(--border); margin-top: 8px; }
+.feat-links__row.is-off { opacity: .45; }
+.feat-links__thumbs { display: flex; gap: 3px; flex: none; }
+.feat-links__thumbs i { width: 18px; height: 24px; border-radius: 3px; background: linear-gradient(135deg, #3a3f55, #6b7090); }
+.feat-links__thumbs i:nth-child(2) { background: linear-gradient(135deg, #2f6b7a, #142a33); }
+.feat-links__thumbs i:nth-child(3) { background: linear-gradient(135deg, #7a4a3a, #331c16); }
+.feat-links__text { display: grid; gap: 2px; min-width: 0; }
+.feat-links__text b { font-size: 12px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.feat-links__text small { font-size: 10.5px; color: var(--muted); font-family: var(--font-mono); }
+.feat-srcs { list-style: none; margin: 0; padding: 0; display: grid; gap: 6px; }
+.feat-srcs li { font-size: 11px; padding: 6px 10px; border-radius: 999px; border: 1px solid var(--border); background: var(--surface2); color: var(--muted); white-space: nowrap; }
+.feat-prof__url { font-family: var(--font-mono); font-size: 10.5px; color: var(--accent); margin: -6px 0 12px; }
+.feat-prof__grid { justify-content: center; grid-template-columns: repeat(2, 56px); }
+.feat-prof__grid span { width: 56px; height: 40px; }
+@media (max-width: 420px) { .feat-links { width: 100%; max-width: 300px; } .feat-srcs li { font-size: 10px; padding: 5px 8px; } }

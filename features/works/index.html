@@ -1,0 +1,176 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; base-uri 'self'; object-src 'none'; form-action 'self'; script-src 'self' https://www.googletagmanager.com https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.116.0/; style-src 'self' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src 'self' data: https://*.supabase.co https://*.google-analytics.com https://*.googletagmanager.com; connect-src 'self' https://*.supabase.co wss://*.supabase.co https://*.google-analytics.com https://*.analytics.google.com https://*.googletagmanager.com https://www.google.com; frame-src 'none'; upgrade-insecure-requests">
+<meta name="referrer" content="strict-origin-when-cross-origin">
+<title>作品を、1か所に — Eizo Maps</title>
+<meta name="description" content="YouTube・Vimeo・TikTok・SNS・クライアントのサイト。あちこちにある作品を、URLを貼るだけでプロフィールにまとめられます。">
+<link rel="canonical" href="https://eizo-maps.com/features/works/">
+<meta property="og:site_name" content="Eizo Maps">
+<meta property="og:title" content="作品を、1か所に — Eizo Maps">
+<meta property="og:description" content="あちこちにある作品を、URLを貼るだけでプロフィールにまとめられます。">
+<meta property="og:type" content="article">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bebas+Neue&amp;family=DM+Mono:wght@400;500&amp;family=Noto+Sans+JP:wght@300;400;500;700&amp;display=swap">
+<link rel="stylesheet" href="/assets/css/style.css">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.116.0/dist/umd/supabase.js" integrity="sha384-iLddHTLokph6Omwoyid4XKxHaWa6w41BnoEj0q5oOrzmYPpHIKt1wyjReA7s//pP" crossorigin="anonymous" referrerpolicy="no-referrer" defer></script>
+<script src="/assets/js/config.js" defer></script>
+<script src="/assets/js/app.js" defer></script>
+<script src="/assets/js/page-features.js" defer></script>
+</head>
+<body>
+<main class="feat">
+
+  <!-- ===== はじめの一画面 ===== -->
+  <section class="feat-hero">
+    <div class="wrap feat-hero__inner">
+      <div class="feat-hero__text">
+        <p class="eyebrow"><a href="/features/">Features</a> ／ 03 作品を1か所に</p>
+        <h1>あちこちにある作品を、<br>1か所に。<br><span class="feat-accent">URLを貼るだけで。</span></h1>
+        <p class="lead">
+          YouTube、Vimeo、TikTok、SNS の投稿、クライアントのサイト。散らばっている作品を、URLを貼るだけでプロフィールにまとめられます。「実績を見せてください」と言われたら、プロフィールのURLを1本送るだけです。
+        </p>
+        <div class="cta">
+          <a class="btn btn--primary" href="/auth/" data-cta-out>無料で作ってみる</a>
+          <a class="btn btn--primary" href="/mypage/portfolio.html" data-cta-in hidden>作品を登録する</a>
+          <a class="btn" href="/help/#works">使い方を見る</a>
+        </div>
+      </div>
+
+      <!-- 画面のイメージ（絵だけ。本物の作品ではありません） -->
+      <div class="feat-mock" aria-hidden="true">
+        <ul class="feat-srcs">
+          <li>YouTube</li><li>Vimeo</li><li>TikTok</li><li>Instagram</li><li>クライアントのサイト</li>
+        </ul>
+        <div class="feat-mock__arrow">→</div>
+        <div class="feat-mock__lock feat-prof">
+          <div class="feat-mock__avatar"></div>
+          <p class="feat-mock__name">kaz｜映像ディレクター</p>
+          <p class="feat-prof__url">eizo-maps.com/@kaz</p>
+          <div class="feat-mock__grid feat-prof__grid">
+            <span></span><span></span>
+            <span></span><span></span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===== あるある ===== -->
+  <section class="section">
+    <div class="wrap">
+      <p class="eyebrow">Why</p>
+      <h2>作品はあるのに、見せるのが大変。</h2>
+      <div class="grid grid--3 feat-pains">
+        <div class="card">
+          <p class="num">01</p>
+          <h3>URLを何本も送ることになる</h3>
+          <p class="small muted">「実績を見せてください」と言われるたびに、あちこちのURLを探して、メールに並べて送っていませんか。</p>
+        </div>
+        <div class="card">
+          <p class="num">02</p>
+          <h3>SNS だけだと、仕事の作品が埋もれる</h3>
+          <p class="small muted">日々の投稿の中に、仕事の作品が流れていってしまう。見てほしい作品ほど、たどり着いてもらえません。</p>
+        </div>
+        <div class="card">
+          <p class="num">03</p>
+          <h3>自分のサイトは、更新が止まりがち</h3>
+          <p class="small muted">作品が増えるたびにホームページを直すのは手間。気づけば、最新の仕事が載っていないままになります。</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===== URLを貼るだけ ===== -->
+  <section class="section feat-band">
+    <div class="wrap feat-split">
+      <div>
+        <p class="eyebrow">How</p>
+        <h2>動画は、置いてある場所のまま。<br>Eizo Maps には<span class="feat-accent">URLだけ</span>。</h2>
+        <p class="lead">
+          動画を Eizo Maps に上げ直す必要はありません。作品のURLを貼れば、プロフィールの中でそのまま再生できます。クライアントのサイトに載っている作品は、リンクとして並べられます。
+        </p>
+        <p class="small muted">表紙の画像は、YouTube と Vimeo なら自動で付きます。X・Instagram・Facebook は「公開」になっている投稿だけ表示できます。</p>
+      </div>
+      <ul class="feat-sources">
+        <li><b>YouTube</b><span>限定公開の動画もそのまま</span></li>
+        <li><b>Vimeo</b><span>ページの中で再生</span></li>
+        <li><b>TikTok</b><span>縦型のショート動画も</span></li>
+        <li><b>X / Instagram / Facebook</b><span>投稿をページの中で表示</span></li>
+        <li><b>クライアントのサイトなど</b><span>リンクとして並べられます</span></li>
+      </ul>
+    </div>
+  </section>
+
+  <!-- ===== 3ステップ ===== -->
+  <section class="section">
+    <div class="wrap">
+      <p class="eyebrow">Steps</p>
+      <h2>3ステップで、作品がそろう。</h2>
+      <ol class="feat-steps">
+        <li>
+          <span class="feat-steps__n">1</span>
+          <h3>作品のURLを貼る</h3>
+          <p class="small muted">「ポートフォリオ管理」で作品のURLを貼り、タイトルを付けるだけ。説明やタグ（最大8つ）も付けられます。</p>
+        </li>
+        <li>
+          <span class="feat-steps__n">2</span>
+          <h3>見せ方を選ぶ</h3>
+          <p class="small muted">誰でも見られる／限定リンクだけ／パスワードページだけ、の3つから。並び順も入れ替えられます。</p>
+        </li>
+        <li>
+          <span class="feat-steps__n">3</span>
+          <h3>プロフィールのURLを渡す</h3>
+          <p class="small muted">「eizo-maps.com/@あなたの名前」のような、覚えやすいURLでプロフィールを渡せます。</p>
+        </li>
+      </ol>
+    </div>
+  </section>
+
+  <!-- ===== 安心のつくり ===== -->
+  <section class="section feat-band">
+    <div class="wrap">
+      <p class="eyebrow">Point</p>
+      <h2>1回の登録で、いろんな場面に。</h2>
+      <div class="grid grid--2 feat-safe">
+        <div class="feat-safe__item">
+          <h3>登録した作品は、使い回せる</h3>
+          <p class="small muted">プロフィール、<a href="/features/share/">営業先ごとの共有リンク</a>、<a href="/features/stock/">パスワード付きの作品集</a>。同じ作品を、登録し直さずに使えます。</p>
+        </div>
+        <div class="feat-safe__item">
+          <h3>公開の日を決めておける</h3>
+          <p class="small muted">発表前の作品は「解禁日」を入れておけば、その日まではプロフィールに出ません。</p>
+        </div>
+        <div class="feat-safe__item">
+          <h3>載せてよい作品かを確かめてから</h3>
+          <p class="small muted">登録するときに「この作品を載せる許可があります」の確認を入れ、確かめた日時が記録されます。</p>
+        </div>
+        <div class="feat-safe__item">
+          <h3>作品の持ち主を守る窓口もある</h3>
+          <p class="small muted">自分の作品が勝手に載せられていたときは、<a href="/takedown/">削除の申し立て</a>ができます。届いた作品は、すぐに一時非公開になります。</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===== しめ ===== -->
+  <section class="section feat-end">
+    <div class="wrap">
+      <h2>「実績を見せて」と言われたら、<br>URLを1本送るだけ。</h2>
+      <p class="lead">
+          登録は無料。メールアドレスか Google アカウントで始められます。
+        </p>
+      <div class="cta">
+        <a class="btn btn--primary" href="/auth/" data-cta-out>無料で作ってみる</a>
+        <a class="btn btn--primary" href="/mypage/portfolio.html" data-cta-in hidden>作品を登録する</a>
+        <a class="btn" href="/features/">ほかの便利な機能を見る</a>
+      </div>
+    </div>
+  </section>
+
+</main>
+</body>
+</html>
