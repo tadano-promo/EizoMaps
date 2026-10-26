@@ -39,7 +39,14 @@
     ]).then(function (res) {
       var c = res[0].data;
       if (res[0].error) { EM.notice(msg, EM.errorText(res[0].error), 'error'); return; }
-      if (!c) { EM.notice(msg, 'このクリエイターは見つかりませんでした（非公開の可能性があります）。', 'error'); return; }
+      if (!c) {
+        sb.rpc('creator_suspended', { p_creator_id: id }).then(function (r) {
+          EM.notice(msg, r && r.data === true
+            ? 'このクリエイターは、利用規約違反により停止しています。'
+            : 'このクリエイターは見つかりませんでした（非公開の可能性があります）。', 'error');
+        });
+        return;
+      }
 
       var gmap = {}; (res[1].data || []).forEach(function (g) { gmap[g.id] = g.name_ja; });
       document.title = c.display_name + ' — Eizo Maps';

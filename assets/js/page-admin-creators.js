@@ -25,6 +25,93 @@
         all = r.data || [];
         renderControls();
         renderList();
+        return loadSuspensions();
+      }).catch(function (e) { EM.notice(msg, EM.errorText(e), 'error'); });
+    }
+
+    // ---- 利用規約違反による停止 ----
+    var REASONS = [
+      ['false_works', '虚偽の実績（他人の作品・関わっていない作品を載せた）'],
+      ['impersonation', 'なりすまし'],
+      ['fraud', '評価の不正・詐欺的な行為'],
+      ['other', 'その他の規約違反']
+    ];
+    function reasonText(k) { for (var i = 0; i < REASONS.length; i++) if (REASONS[i][0] === k) return REASONS[i][1]; return k; }
+
+    function suspendForm(c, holder) {
+      EM.clear(holder);
+      var m = el('div', { class: 'notice', hidden: true });
+      var reason = el('select', { 'aria-label': '理由' }, REASONS.map(function (r) { return el('option', { value: r[0], text: r[1] }); }));
+      var note = el('textarea', { rows: 3, maxlength: 4000, placeholder: '何があったか（運営の中だけの記録。本人や外には出ません）' });
+      var ev = el('textarea', { rows: 2, maxlength: 4000, placeholder: '証拠（URL・届いた連絡の要点など。なくても可）' });
+      var ok = el('input', { type: 'checkbox' });
+      var go = el('button', { class: 'btn btn--sm btn--danger', type: 'button', text: '止める' });
+      var cancel = el('button', { class: 'btn btn--sm', type: 'button', text: 'やめる' });
+      cancel.addEventListener('click', function () { EM.clear(holder); });
+      go.addEventListener('click', function () {
+        if (note.value.trim().length < 5) { EM.notice(m, '何があったかを5文字以上で書いてください。', 'error'); return; }
+        if (!ok.checked) { EM.notice(m, '確認のチェックを入れてください。', 'error'); return; }
+        go.disabled = true;
+        sb.rpc('admin_suspend_creator', { p_creator_id: c.id, p_reason: reason.value, p_note: note.value, p_evidence: ev.value })
+          .then(function (r) {
+            if (r.error) throw r.error;
+            EM.notice(msg, (c.display_name || 'このクリエイター') + ' を停止しました。', 'success');
+            return load();
+          }).catch(function (e) { go.disabled = false; EM.notice(m, EM.errorText(e), 'error'); });
+      });
+      holder.appendChild(el('div', { class: 'card stack suspend-form' }, [
+        el('p', { class: 'small', text: '止めると：ログインできなくなり、プロフィール・作品・ストックページ・限定共有リンクがすべて見えなくなります。同じメールアドレス・Google アカウント・@ハンドルでは登録し直せません。データは証拠として残り、あとで解除もできます。' }),
+        el('label', { class: 'field' }, [el('span', { class: 'label', text: '理由' }), reason]),
+        el('label', { class: 'field' }, [el('span', { class: 'label', text: '何があったか（必須）' }), note]),
+        el('label', { class: 'field' }, [el('span', { class: 'label', text: '証拠' }), ev]),
+        el('label', { class: 'checkbox' }, [ok, el('span', { text: '内容を確かめたうえで止めます' })]),
+        m,
+        el('div', { class: 'form-actions' }, [go, cancel])
+      ]));
+    }
+
+    function loadSuspensions() {
+      var box2 = EM.$('#adminSuspensions');
+      if (!box2) return;
+      return sb.rpc('admin_suspensions').then(function (r) {
+        if (r.error) throw r.error;
+        EM.clear(box2);
+        var rows = r.data || [];
+        if (!rows.length) { box2.appendChild(el('div', { class: 'empty', text: 'まだ止めたアカウントはありません。' })); return; }
+        rows.forEach(function (s) {
+          var holder = el('div');
+          var actions = null;
+          if (!s.lifted_at) {
+            var lift = el('button', { class: 'btn btn--sm', type: 'button', text: '解除する' });
+            lift.addEventListener('click', function () {
+              EM.clear(holder);
+              var m = el('div', { class: 'notice', hidden: true });
+              var why = el('input', { type: 'text', maxlength: 2000, placeholder: '解除する理由（例：本人の作品だと確認できた）' });
+              var yes = el('button', { class: 'btn btn--sm btn--primary', type: 'button', text: '解除を確定' });
+              yes.addEventListener('click', function () {
+                yes.disabled = true;
+                sb.rpc('admin_lift_suspension', { p_suspension_id: s.id, p_note: why.value }).then(function (r2) {
+                  if (r2.error) throw r2.error;
+                  EM.notice(msg, '停止を解除しました。公開に戻すかどうかは本人が決めます。', 'success');
+                  return load();
+                }).catch(function (e) { yes.disabled = false; EM.notice(m, EM.errorText(e), 'error'); });
+              });
+              holder.appendChild(el('div', { class: 'stack' }, [why, m, el('div', { class: 'form-actions' }, [yes])]));
+            });
+            actions = el('div', { class: 'form-actions' }, [lift]);
+          }
+          box2.appendChild(el('div', { class: 'admin-review' }, [
+            el('div', { class: 'myreview__head' }, [
+              el('strong', { text: s.display_name || '（名前未設定）' }),
+              el('span', { class: 'tag ' + (s.lifted_at ? '' : 'tag--warn'), text: s.lifted_at ? '解除済み' : '停止中' })
+            ]),
+            el('p', { class: 'small', text: '理由：' + reasonText(s.reason) + '　／　止めた日 ' + EM.date(s.suspended_at) + (s.lifted_at ? '　／　解除 ' + EM.date(s.lifted_at) : '') }),
+            el('p', { class: 'admin-review__private', text: '記録：' + s.note }),
+            s.evidence ? el('p', { class: 'admin-review__private', text: '証拠：' + s.evidence }) : null,
+            s.lifted_note ? el('p', { class: 'small muted', text: '解除の理由：' + s.lifted_note }) : null,
+            actions, holder
+          ]));
+        });
       }).catch(function (e) { EM.notice(msg, EM.errorText(e), 'error'); });
     }
 
@@ -38,7 +125,8 @@
         el('option', { value: 'public', text: '公開中だけ' }),
         el('option', { value: 'private', text: '非公開だけ' }),
         el('option', { value: 'noworks', text: '作品がまだない人' }),
-        el('option', { value: 'waiting', text: '確認待ちの評価がある人' })
+        el('option', { value: 'waiting', text: '確認待ちの評価がある人' }),
+        el('option', { value: 'suspended', text: '停止中の人' })
       ]);
       f.addEventListener('change', function () { state.filter = f.value; renderList(); });
       var s = el('select', { class: 'select--sm', 'aria-label': '並び順' }, [
@@ -56,6 +144,7 @@
       if (state.filter === 'private' && c.is_published) return false;
       if (state.filter === 'noworks' && Number(c.works) > 0) return false;
       if (state.filter === 'waiting' && !(Number(c.reviews_waiting) > 0)) return false;
+      if (state.filter === 'suspended' && !c.suspended) return false;
       if (!state.q) return true;
       var hay = [c.display_name, c.headline, c.area_pref, c.area_city, c.email]
         .concat(c.genres || []).join(' ').toLowerCase();
@@ -79,7 +168,8 @@
 
       rows.forEach(function (c) {
         var tags = el('div', { class: 'tags' });
-        tags.appendChild(el('span', { class: 'tag ' + (c.is_published ? 'tag--accent' : ''), text: c.is_published ? '公開中' : '非公開' }));
+        if (c.suspended) tags.appendChild(el('span', { class: 'tag tag--warn', text: '停止中（利用規約違反）' }));
+        else tags.appendChild(el('span', { class: 'tag ' + (c.is_published ? 'tag--accent' : ''), text: c.is_published ? '公開中' : '非公開' }));
         (c.genres || []).forEach(function (g) { tags.appendChild(el('span', { class: 'tag', text: g })); });
         if (Number(c.reviews_waiting) > 0) tags.appendChild(el('span', { class: 'tag tag--warn', text: '確認待ちの評価 ' + c.reviews_waiting + '件' }));
 
@@ -91,6 +181,12 @@
           '評価 ' + c.reviews_public + '件' + (c.review_avg != null ? '（平均 ' + Number(c.review_avg).toFixed(1) + '）' : '')
         ];
 
+        var sHolder = el('div');
+        var sBtn = null;
+        if (!c.suspended) {
+          sBtn = el('button', { class: 'btn btn--sm btn--danger', type: 'button', text: '利用規約違反で止める' });
+          sBtn.addEventListener('click', function () { suspendForm(c, sHolder); });
+        }
         list.appendChild(el('div', { class: 'admin-review' }, [
           el('div', { class: 'myreview__head' }, [
             el('strong', { text: c.display_name || '（名前未設定）' }),
@@ -106,8 +202,10 @@
           el('div', { class: 'form-actions' }, [
             c.is_published
               ? el('a', { class: 'btn btn--sm', href: '/creators/detail.html?id=' + encodeURIComponent(c.id), target: '_blank', rel: 'noopener', text: 'プロフィールを開く' })
-              : el('span', { class: 'small muted', text: '非公開なのでプロフィールは表に出ていません' })
-          ])
+              : el('span', { class: 'small muted', text: c.suspended ? '停止中なので表には何も出ていません' : '非公開なのでプロフィールは表に出ていません' }),
+            sBtn
+          ]),
+          sHolder
         ]));
       });
     }

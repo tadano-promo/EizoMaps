@@ -7,7 +7,7 @@
 --     （運営の中だけの記録。値そのものではなく、元に戻せない形＝指紋で持つ）
 --   ・解除もできる（誤りが分かったとき）。記録は消さずに「解除した」と残す
 --   ・外に出すのは「利用規約違反により停止しています」の一文だけ。理由の中身は出さない
---   ※ 「消す」系の命令は使わない（ログインの切断＝セッションの削除だけは例外）
+--   ※ 「消す」系の命令は使わない（ログインの切断も、消さずに無効の印を付ける形）
 --   ※ 安全案：ログインの仕組み（auth）の表には、仕掛け（トリガー）を付けない
 -- =====================================================================
 
@@ -169,7 +169,8 @@ begin
   update public.share_links set is_active = false where creator_id = c.id;
   -- ログインできなくする・今のログインも切る
   update auth.users set banned_until = 'infinity' where id = c.user_id;
-  delete from auth.sessions where user_id = c.user_id;
+  -- 「ログインを続ける券」を無効にする（消さずに無効の印を付ける）。今の画面も最長1時間で切れる
+  update auth.refresh_tokens set revoked = true where user_id = c.user_id::text and not revoked;
   return sid;
 end;
 $$;
