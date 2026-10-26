@@ -99,21 +99,26 @@
     <hr class="divider">
     <section>
       <p class="eyebrow">Share links</p>
-      <h2>営業用の共有リンク</h2>
-      <p class="small muted">見せたい作品だけを選んだページを発行できます。リンクを知っている人だけが閲覧できます。</p>
-      <form id="shareForm" class="card stack" novalidate>
-        <label class="field">
-          <span class="label">リンクの名前 <span class="muted">（自分用のメモ・80文字まで）</span></span>
-          <input type="text" id="shareTitle" maxlength="80" placeholder="例：◯◯商事さま向け">
-        </label>
-        <div class="field">
-          <span class="label">含める作品</span>
-          <div class="stack" id="sharePicker"></div>
-        </div>
-        <div class="form-actions">
-          <button class="btn btn--primary" type="submit">リンクを発行</button>
-        </div>
-      </form>
+      <div class="page-head">
+        <h2>営業用の共有リンク</h2>
+        <button class="btn btn--sm btn--primary page-head__add" type="button" id="shareAddBtn" aria-controls="shareCard" aria-expanded="false">＋ 共有リンクを作る</button>
+      </div>
+      <p class="small muted">見せたい作品だけを選んだページを発行できます。リンクを知っている人だけが閲覧できます。営業先ごとに別のリンクを作れます。</p>
+      <section class="card add-panel" id="shareCard" hidden>
+        <form id="shareForm" class="stack" novalidate>
+          <label class="field">
+            <span class="label">リンクの名前 <span class="muted">（自分用のメモ・80文字まで）</span></span>
+            <input type="text" id="shareTitle" maxlength="80" placeholder="例：◯◯商事さま向け">
+          </label>
+          <div class="field">
+            <span class="label">含める作品</span>
+            <div class="stack" id="sharePicker"></div>
+          </div>
+          <div class="form-actions">
+            <button class="btn btn--primary" type="submit">リンクを作る</button>
+          </div>
+        </form>
+      </section>
       <div class="stack" id="shareList"></div>
     </section>
   </div>

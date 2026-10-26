@@ -32,6 +32,7 @@
         EM.$('#addForm').hidden = true;
         EM.$('#workAddBtn').hidden = true;
         EM.$('#shareForm').hidden = true;
+        EM.$('#shareAddBtn').hidden = true;
         EM.$('#pfList').appendChild(el('div', { class: 'empty' }, el('a', { class: 'btn', href: '/mypage/', text: 'プロフィールを作成する' })));
         return;
       }
@@ -397,7 +398,8 @@
         })).then(function () { return r.data; });
       }).then(function (link) {
         EM.$('#shareForm').reset();
-        EM.toast('共有リンクを発行しました');
+        closeShare();
+        EM.toast('共有リンクを作りました');
         copy(shareUrl(link.token));
         return reload();
       }).catch(function (err) { EM.notice(msg, EM.errorText(err), 'error'); });
@@ -418,7 +420,7 @@
     function renderLinks() {
       var box = EM.$('#shareList');
       EM.clear(box);
-      if (!links.length) { box.appendChild(el('div', { class: 'empty', text: '共有リンクはまだありません。' })); return; }
+      if (!links.length) { box.appendChild(el('div', { class: 'empty', text: '共有リンクはまだありません。「＋ 共有リンクを作る」から作れます。' })); return; }
       links.forEach(function (s) {
         var url = shareUrl(s.token);
         box.appendChild(el('div', { class: 'card' }, [
@@ -452,6 +454,21 @@
     }
     function closeAdd() { EM.$('#addCard').hidden = true; workAdd.hidden = false; }
     EM.portfolioCloseAdd = closeAdd;
+
+    // 「＋ 共有リンクを作る」：押すと入力欄が開き、開いている間はボタンを隠す。作り終わると閉じる
+    var shareAdd = EM.$('#shareAddBtn');
+    function openShare() {
+      EM.$('#shareCard').hidden = false;
+      shareAdd.hidden = true;
+      shareAdd.setAttribute('aria-expanded', 'true');
+      setTimeout(function () { EM.$('#shareTitle').focus(); }, 50);
+    }
+    function closeShare() {
+      EM.$('#shareCard').hidden = true;
+      shareAdd.hidden = false;
+      shareAdd.setAttribute('aria-expanded', 'false');
+    }
+    shareAdd.addEventListener('click', openShare);
     workAdd.addEventListener('click', function (e) { e.preventDefault(); openAdd(); });
   });
 })(window.EM);
