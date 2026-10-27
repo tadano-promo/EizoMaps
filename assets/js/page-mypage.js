@@ -39,10 +39,52 @@
         var link = EM.$('#viewPublicLink');
         link.href = creator.handle ? '/@' + creator.handle : '/creators/detail.html?id=' + encodeURIComponent(creator.id);
         link.hidden = !creator.is_published;
+        showApproval();
+        loadMatches();
       } else {
         EM.notice(msg, 'プロフィールがまだありません。表示名を入れて保存すると作成されます。');
       }
       renderAvatar();
+      function showApproval() {
+        var n = EM.$('#approvalNote');
+        if (!n) return;
+        n.hidden = !(creator.is_published && !creator.approved);
+        n.textContent = '運営の確認待ちです。いまは活動名と職種だけが表に出ています。確認が終わると、作品・自己紹介・評価も表示されます（目安：数日以内）。';
+      }
+      // 「あなたではありませんか？」（プロフィールの SNS の URL と同じ、おすすめで作られたページ）
+      function loadMatches() {
+        var box = EM.$('#recMatches');
+        if (!box) return;
+        sb.rpc('my_recommendation_matches').then(function (r) {
+          EM.clear(box);
+          (r.data || []).forEach(function (m) {
+            var acts = el('div', { class: 'form-actions' });
+            if (m.claim === 'pending') acts.appendChild(el('span', { class: 'small muted', text: '「これは私です」を受け付けました。運営が確認しています。' }));
+            else {
+              var yes = el('button', { class: 'btn btn--sm btn--primary', type: 'button', text: 'これは私です' });
+              var no = el('button', { class: 'btn btn--sm', type: 'button', text: '違います' });
+              [[yes, true], [no, false]].forEach(function (pair) {
+                pair[0].addEventListener('click', function () {
+                  pair[0].disabled = true;
+                  sb.rpc('answer_recommendation', { p_rec_id: m.id, p_is_me: pair[1] }).then(function (x) {
+                    if (x.error) throw x.error;
+                    EM.toast(pair[1] ? '受け付けました。運営が確認してから、あなたのページにまとめます' : 'わかりました。このお知らせはもう出しません');
+                    loadMatches();
+                  }).catch(function (e) { pair[0].disabled = false; EM.notice(msg, EM.errorText(e), 'error'); });
+                });
+              });
+              acts.appendChild(yes); acts.appendChild(no);
+            }
+            box.appendChild(el('div', { class: 'card stack rec-match' }, [
+              el('strong', { text: 'あなたではありませんか？' }),
+              el('p', { class: 'small', text: 'ほかの利用者のおすすめで「' + m.display_name + '」さんのページが作られています。あなたのプロフィールと同じ SNS の URL がのっています。' }),
+              m.comment ? el('p', { class: 'small muted', text: 'おすすめのひとこと：' + m.comment }) : null,
+              el('a', { class: 'small', href: '/creators/rec.html?id=' + encodeURIComponent(m.id), target: '_blank', rel: 'noopener', text: 'そのページを見る' }),
+              acts
+            ]));
+          });
+        });
+      }
       renderGenres();
       initHandle();
       mountSaveBar();

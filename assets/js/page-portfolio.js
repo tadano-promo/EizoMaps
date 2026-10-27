@@ -425,9 +425,10 @@
         var url = shareUrl(s.token);
         box.appendChild(el('div', { class: 'card' }, [
           el('div', { class: 'share-row' }, [
-            el('div', null, [
+            el('div', { class: 'share-row__main' }, [
               el('p', { class: 'pf-title', text: s.title || '（名称未設定）' }),
-              el('p', { class: 'small muted', text: (s.share_link_items || []).length + '作品 / 閲覧 ' + s.view_count + '回 / ' + EM.date(s.created_at) + (s.is_active ? '' : ' / 停止中') })
+              el('p', { class: 'small muted', text: (s.share_link_items || []).length + '作品 / 閲覧 ' + s.view_count + '回 / ' + EM.date(s.created_at) + (s.is_active ? '' : ' / 停止中') }),
+              el('p', { class: 'share-url', text: url })
             ]),
             el('div', { class: 'pf-actions' }, [
               el('button', { class: 'btn btn--sm', type: 'button', text: 'リンクをコピー', onclick: function () { copy(url); } }),
@@ -440,8 +441,7 @@
                 sb.from('share_links').delete().eq('id', s.id).then(reload);
               } })
             ])
-          ]),
-          el('p', { class: 'share-url', text: url })
+          ])
         ]));
       });
     }

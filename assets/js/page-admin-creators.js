@@ -25,7 +25,7 @@
         all = r.data || [];
         renderControls();
         renderList();
-        return loadSuspensions();
+        return Promise.all([loadSuspensions(), loadRecs()]);
       }).catch(function (e) { EM.notice(msg, EM.errorText(e), 'error'); });
     }
 
@@ -68,6 +68,61 @@
         m,
         el('div', { class: 'form-actions' }, [go, cancel])
       ]));
+    }
+
+    function loadRecs() {
+      var rb = EM.$('#adminRecs');
+      if (!rb) return;
+      return sb.rpc('admin_recommendations').then(function (r) {
+        if (r.error) throw r.error;
+        EM.clear(rb);
+        var rows = r.data || [];
+        if (!rows.length) { rb.appendChild(el('div', { class: 'empty', text: 'まだおすすめで作られたページはありません。' })); return; }
+        rows.forEach(function (x) {
+          var st = x.status === 'open' ? '公開中（本人未確認）' : x.status === 'claimed' ? '本人のページにまとめ済み（' + (x.claimed_creator || '') + '）' : '外した' + (x.removed_reason ? '：' + x.removed_reason : '');
+          var claims = el('div', { class: 'stack' });
+          (x.claims || []).forEach(function (cl) {
+            var row = el('div', { class: 'form-actions' }, [el('span', { class: 'small', text: '名乗り出：' + cl.creator_name + '（' + EM.date(cl.created_at) + '・' + ({ pending: '確認待ち', approved: '認めた', rejected: '認めなかった' })[cl.status] + '）' })]);
+            if (cl.status === 'pending') {
+              [['認めて、まとめる', true, 'btn--primary'], ['認めない', false, '']].forEach(function (b) {
+                var bt = el('button', { class: 'btn btn--sm ' + b[2], type: 'button', text: b[0] });
+                bt.addEventListener('click', function () {
+                  bt.disabled = true;
+                  sb.rpc('admin_decide_claim', { p_claim_id: cl.id, p_approve: b[1] }).then(function (q) { if (q.error) throw q.error; EM.toast('記録しました'); return loadRecs(); })
+                    .catch(function (e) { bt.disabled = false; EM.notice(msg, EM.errorText(e), 'error'); });
+                });
+                row.appendChild(bt);
+              });
+            }
+            claims.appendChild(row);
+          });
+          var rm = null, holder = el('div');
+          if (x.status === 'open') {
+            rm = el('button', { class: 'btn btn--sm btn--danger', type: 'button', text: '表から外す' });
+            rm.addEventListener('click', function () {
+              EM.clear(holder);
+              var why = el('input', { type: 'text', maxlength: 200, placeholder: '外す理由（例：ご本人から連絡があった）' });
+              var ok = el('button', { class: 'btn btn--sm btn--danger', type: 'button', text: '外すのを確定' });
+              ok.addEventListener('click', function () {
+                ok.disabled = true;
+                sb.rpc('admin_remove_recommendation', { p_rec_id: x.id, p_reason: why.value }).then(function (q) { if (q.error) throw q.error; EM.toast('表から外しました'); return loadRecs(); })
+                  .catch(function (e) { ok.disabled = false; EM.notice(msg, EM.errorText(e), 'error'); });
+              });
+              holder.appendChild(el('div', { class: 'stack' }, [why, el('div', { class: 'form-actions' }, [ok])]));
+            });
+          }
+          rb.appendChild(el('div', { class: 'admin-review' }, [
+            el('div', { class: 'myreview__head' }, [el('strong', { text: x.display_name }), el('span', { class: 'small muted', text: EM.date(x.created_at) })]),
+            el('p', { class: 'small', text: st }),
+            el('p', { class: 'small muted', text: (x.links || []).join('　') }),
+            x.comment ? el('p', { class: 'small', text: 'ひとこと：' + x.comment }) : null,
+            el('p', { class: 'admin-review__private', text: 'おすすめした人（運営だけに見えています）：' + (x.recommended_by || '—') }),
+            claims,
+            el('div', { class: 'form-actions' }, [x.status === 'open' ? el('a', { class: 'btn btn--sm', href: '/creators/rec.html?id=' + encodeURIComponent(x.id), target: '_blank', rel: 'noopener', text: 'ページを開く' }) : null, rm]),
+            holder
+          ]));
+        });
+      }).catch(function (e) { EM.notice(msg, EM.errorText(e), 'error'); });
     }
 
     function loadSuspensions() {
@@ -126,7 +181,8 @@
         el('option', { value: 'private', text: '非公開だけ' }),
         el('option', { value: 'noworks', text: '作品がまだない人' }),
         el('option', { value: 'waiting', text: '確認待ちの評価がある人' }),
-        el('option', { value: 'suspended', text: '停止中の人' })
+        el('option', { value: 'suspended', text: '停止中の人' }),
+        el('option', { value: 'unapproved', text: '承認待ちの人' })
       ]);
       f.addEventListener('change', function () { state.filter = f.value; renderList(); });
       var s = el('select', { class: 'select--sm', 'aria-label': '並び順' }, [
@@ -145,6 +201,7 @@
       if (state.filter === 'noworks' && Number(c.works) > 0) return false;
       if (state.filter === 'waiting' && !(Number(c.reviews_waiting) > 0)) return false;
       if (state.filter === 'suspended' && !c.suspended) return false;
+      if (state.filter === 'unapproved' && (c.approved || !c.is_published)) return false;
       if (!state.q) return true;
       var hay = [c.display_name, c.headline, c.area_pref, c.area_city, c.email]
         .concat(c.genres || []).join(' ').toLowerCase();
@@ -170,6 +227,7 @@
         var tags = el('div', { class: 'tags' });
         if (c.suspended) tags.appendChild(el('span', { class: 'tag tag--warn', text: '停止中（利用規約違反）' }));
         else tags.appendChild(el('span', { class: 'tag ' + (c.is_published ? 'tag--accent' : ''), text: c.is_published ? '公開中' : '非公開' }));
+        if (!c.suspended && !c.approved) tags.appendChild(el('span', { class: 'tag tag--warn', text: c.is_published ? '承認待ち（活動名と職種だけ表示中）' : '未承認' }));
         (c.genres || []).forEach(function (g) { tags.appendChild(el('span', { class: 'tag', text: g })); });
         if (Number(c.reviews_waiting) > 0) tags.appendChild(el('span', { class: 'tag tag--warn', text: '確認待ちの評価 ' + c.reviews_waiting + '件' }));
 
@@ -181,6 +239,18 @@
           '評価 ' + c.reviews_public + '件' + (c.review_avg != null ? '（平均 ' + Number(c.review_avg).toFixed(1) + '）' : '')
         ];
 
+        var aBtn = null;
+        if (!c.suspended) {
+          aBtn = el('button', { class: 'btn btn--sm ' + (c.approved ? '' : 'btn--primary'), type: 'button', text: c.approved ? '承認を取り消す' : '承認する' });
+          aBtn.addEventListener('click', function () {
+            aBtn.disabled = true;
+            sb.rpc('admin_set_creator_approval', { p_creator_id: c.id, p_approved: !c.approved }).then(function (r) {
+              if (r.error) throw r.error;
+              EM.toast(c.approved ? '承認を取り消しました' : '承認しました。作品・自己紹介・評価が表に出ます');
+              return load();
+            }).catch(function (e) { aBtn.disabled = false; EM.notice(msg, EM.errorText(e), 'error'); });
+          });
+        }
         var sHolder = el('div');
         var sBtn = null;
         if (!c.suspended) {
@@ -203,6 +273,7 @@
             c.is_published
               ? el('a', { class: 'btn btn--sm', href: '/creators/detail.html?id=' + encodeURIComponent(c.id), target: '_blank', rel: 'noopener', text: 'プロフィールを開く' })
               : el('span', { class: 'small muted', text: c.suspended ? '停止中なので表には何も出ていません' : '非公開なのでプロフィールは表に出ていません' }),
+            aBtn,
             sBtn
           ]),
           sHolder

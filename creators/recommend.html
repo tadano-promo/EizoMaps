@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; base-uri 'self'; object-src 'none'; form-action 'self'; script-src 'self' https://www.googletagmanager.com https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.116.0/; style-src 'self' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src 'self' data: https://img.youtube.com https://i.ytimg.com https://i.vimeocdn.com https://*.supabase.co https://*.google-analytics.com https://*.googletagmanager.com; connect-src 'self' https://*.supabase.co wss://*.supabase.co https://vimeo.com https://*.google-analytics.com https://*.analytics.google.com https://*.googletagmanager.com https://www.google.com; frame-src https://www.youtube.com https://player.vimeo.com; upgrade-insecure-requests">
+<meta name="robots" content="noindex">
+<meta name="referrer" content="strict-origin-when-cross-origin">
+<title>クリエイターをおすすめする — Eizo Maps</title>
+<meta name="description" content="一緒に仕事をして良かったクリエイターを、Eizo Maps におすすめできます。">
+<link rel="canonical" href="https://eizo-maps.com/creators/recommend.html">
+<meta property="og:site_name" content="Eizo Maps">
+<meta property="og:title" content="クリエイターをおすすめする — Eizo Maps">
+<meta property="og:description" content="一緒に仕事をして良かったクリエイターを、Eizo Maps におすすめできます。">
+<meta property="og:type" content="website">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bebas+Neue&amp;family=DM+Mono:wght@400;500&amp;family=Noto+Sans+JP:wght@300;400;500;700&amp;display=swap">
+<link rel="stylesheet" href="/assets/css/style.css">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.116.0/dist/umd/supabase.js" integrity="sha384-iLddHTLokph6Omwoyid4XKxHaWa6w41BnoEj0q5oOrzmYPpHIKt1wyjReA7s//pP" crossorigin="anonymous" referrerpolicy="no-referrer" defer></script>
+<script src="/assets/js/config.js" defer></script>
+<script src="/assets/js/app.js" defer></script>
+<script src="/assets/js/page-recommend.js" defer></script>
+</head>
+<body>
+<main class="section">
+  <div class="wrap doc">
+    <p class="eyebrow"><a href="/creators/">Creators</a> ／ おすすめする</p>
+    <h1>クリエイターをおすすめする</h1>
+    <p class="lead">一緒に仕事をして良かったクリエイターがいたら、おすすめしてください。「おすすめで作られたページ」が作られます。ご本人が Eizo Maps に登録すると、ご本人のページにまとめられます。</p>
+    <div class="notice" id="pageMsg" hidden></div>
+    <form id="recForm" class="card stack rec-form" novalidate>
+      <label class="field">
+        <span class="label">活動名 <span class="muted">（必須・60文字まで）</span></span>
+        <input type="text" id="recName" maxlength="60" required placeholder="例：Eizo">
+      </label>
+      <div class="field">
+        <span class="label">職種 <span class="muted">（分かるものだけ）</span></span>
+        <div class="chips" id="recGenres"></div>
+      </div>
+      <div class="field">
+        <span class="label">公開されている SNS や作品のページの URL <span class="muted">（1つ以上・5つまで）</span></span>
+        <div id="recUrls"></div>
+        <span class="hint">例：https://www.instagram.com/〇〇/　ご本人が自分で公開しているページだけを入れてください。ご本人がプロフィールに同じ URL を入れると、「あなたではありませんか？」とお知らせが届きます。</span>
+      </div>
+      <label class="field">
+        <span class="label">おすすめのひとこと <span class="muted">（任意・200文字まで・ページに表示されます）</span></span>
+        <textarea id="recComment" maxlength="200" rows="3" placeholder="例：撮影の段取りが丁寧で、現場がとても進めやすかったです。"></textarea>
+      </label>
+      <label class="checkbox">
+        <input type="checkbox" id="recOk">
+        <span>公開されている情報だけを書きます。住所・電話番号・本名など、ご本人が公開していない情報や、悪口は書きません。</span>
+      </label>
+      <p class="small muted">おすすめした人の名前は、ページには出ません。1日5件までです。</p>
+      <div class="form-actions"><button class="btn btn--primary" type="submit" id="recSubmit">おすすめする</button></div>
+    </form>
+  </div>
+</main>
+</body>
+</html>

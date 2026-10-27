@@ -179,6 +179,40 @@
       EM.clear(listView);
       if (!rows.length) { listView.appendChild(el('div', { class: 'empty', text: '条件に合うクリエイターが見つかりませんでした。' })); return; }
       rows.forEach(function (c) { listView.appendChild(card(c)); });
+      renderMini();
+    }
+
+    // 承認待ち・おすすめのページ（活動名と職種だけ）。キーワード・職種の絞り込みは名前と職種で合わせる
+    var pending = [], recs = [];
+    Promise.all([sb.rpc('public_pending_creators'), sb.rpc('public_recommended_creators')]).then(function (r) {
+      pending = (r[0] && r[0].data) || []; recs = (r[1] && r[1].data) || [];
+      renderMini();
+    });
+    function miniMatch(x) {
+      var q = state.q.trim().toLowerCase();
+      if (state.genres.length) {
+        var ids = (x.genre_ids || []).map(Number);
+        for (var i = 0; i < state.genres.length; i++) if (ids.indexOf(Number(state.genres[i])) === -1) return false;
+      }
+      if (q && [x.display_name].concat(x.genres || []).join(' ').toLowerCase().indexOf(q) === -1) return false;
+      return true;
+    }
+    function miniItem(x, href, badge) {
+      var tags = el('span', { class: 'tags' });
+      (x.genres || []).forEach(function (g) { tags.appendChild(el('span', { class: 'tag', text: g })); });
+      return el('a', { class: 'mini-item', href: href }, [
+        el('strong', { text: x.display_name }), el('span', { class: 'tag tag--warn', text: badge }), tags
+      ]);
+    }
+    function renderMini() {
+      var pl = EM.$('#pendingList'), rl = EM.$('#recList');
+      if (!pl || !rl) return;
+      EM.clear(pl); EM.clear(rl);
+      var p2 = pending.filter(miniMatch), r2 = recs.filter(miniMatch);
+      EM.$('#pendingSection').hidden = !p2.length;
+      p2.forEach(function (x) { pl.appendChild(miniItem(x, x.handle ? '/@' + x.handle : '/creators/detail.html?id=' + encodeURIComponent(x.id), '運営の確認待ち')); });
+      if (!r2.length) rl.appendChild(el('p', { class: 'small muted', text: recs.length ? '条件に合うページはありません。' : 'まだありません。一緒に仕事をして良かったクリエイターがいたら、おすすめしてください。' }));
+      r2.forEach(function (x) { rl.appendChild(miniItem(x, '/creators/rec.html?id=' + encodeURIComponent(x.id), '本人未確認')); });
     }
 
     // 簡易エリア表示。地図APIは使わず、都道府県単位の人数で見せる。

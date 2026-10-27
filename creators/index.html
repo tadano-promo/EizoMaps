@@ -61,6 +61,21 @@
 
     <div id="listView" class="grid grid--2"></div>
     <div id="mapView" class="area-map" hidden></div>
+
+    <section class="mini-list" id="pendingSection" hidden>
+      <h2 class="h3">運営の確認待ちのクリエイター</h2>
+      <p class="small muted">登録したばかりの方です。確認が終わると、作品・自己紹介・評価が見られるようになります。</p>
+      <div class="mini-list__items" id="pendingList"></div>
+    </section>
+
+    <section class="mini-list" id="recSection">
+      <div class="page-head">
+        <h2 class="h3">おすすめで作られたページ</h2>
+        <a class="btn btn--sm" href="/creators/recommend.html">＋ クリエイターをおすすめする</a>
+      </div>
+      <p class="small muted">ほかの利用者のおすすめで作られた、ご本人の確認がまだのページです。のせているのは、活動名・職種・公開されている SNS のリンクだけです。</p>
+      <div class="mini-list__items" id="recList"></div>
+    </section>
   </div>
 </main>
 </body>

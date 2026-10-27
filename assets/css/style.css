@@ -1551,3 +1551,17 @@ a.setsum__sub:hover { color: var(--accent); }
 .feat-prof__grid { justify-content: center; grid-template-columns: repeat(2, 56px); }
 .feat-prof__grid span { width: 56px; height: 40px; }
 @media (max-width: 420px) { .feat-links { width: 100%; max-width: 300px; } .feat-srcs li { font-size: 10px; padding: 5px 8px; } }
+
+/* 承認待ち・おすすめのページ（活動名と職種だけ） */
+.mini-list { margin-top: 40px; }
+.mini-list .page-head h2 { margin: 0; }
+.mini-list__items { display: grid; gap: 8px; margin-top: 12px; }
+.mini-item { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 10px; padding: 12px 14px; border: 1px solid var(--border); border-radius: 10px; background: var(--surface); color: var(--text); text-decoration: none; }
+.mini-item:hover { border-color: var(--accent); }
+.mini-item .tags { margin: 0; }
+.rec-links { display: grid; gap: 6px; margin: 10px 0 0; padding: 0; list-style: none; }
+.rec-links a { word-break: break-all; }
+.rec-box { margin-top: 24px; }
+.rec-form .url-row { display: flex; gap: 8px; margin-bottom: 8px; }
+.rec-form .url-row input { flex: 1; }
+.rec-match { border-left: 3px solid var(--accent); }

@@ -39,14 +39,7 @@
     ]).then(function (res) {
       var c = res[0].data;
       if (res[0].error) { EM.notice(msg, EM.errorText(res[0].error), 'error'); return; }
-      if (!c) {
-        sb.rpc('creator_suspended', { p_creator_id: id }).then(function (r) {
-          EM.notice(msg, r && r.data === true
-            ? 'このクリエイターは、利用規約違反により停止しています。'
-            : 'このクリエイターは見つかりませんでした（非公開の可能性があります）。', 'error');
-        });
-        return;
-      }
+      if (!c) { showCard(); return; }
 
       var gmap = {}; (res[1].data || []).forEach(function (g) { gmap[g.id] = g.name_ja; });
       document.title = c.display_name + ' — Eizo Maps';
@@ -60,6 +53,32 @@
       // ハンドルが決まっている人は、アドレスバーも @ハンドル の形にそろえる
       if (c.handle && history.replaceState) history.replaceState(null, '', '/@' + c.handle);
     }).catch(function (e) { EM.notice(msg, EM.errorText(e), 'error'); });
+    }
+
+    // 表に中身を出せない人（承認待ち・停止中・非公開）のとき
+    function showCard() {
+      sb.rpc('creator_card', { p_creator_id: id }).then(function (r) {
+        var d = r && r.data;
+        if (d && d.state === 'suspended') { EM.notice(msg, 'このクリエイターは、利用規約違反により停止しています。', 'error'); return; }
+        if (d && d.state === 'pending') {
+          document.title = d.display_name + ' — Eizo Maps';
+          EM.clear(box);
+          var tags = el('div', { class: 'tags' });
+          (d.genres || []).forEach(function (g) { tags.appendChild(el('span', { class: 'tag tag--accent', text: g })); });
+          box.appendChild(el('div', { class: 'row profile-head' }, [
+            EM.avatar(null, d.display_name, true),
+            el('div', { class: 'profile-head__text' }, [
+              el('h1', { text: d.display_name }),
+              d.handle ? el('p', { class: 'profile-handle mono', text: '@' + d.handle }) : null,
+              el('p', { class: 'small' }, el('span', { class: 'tag tag--warn', text: '運営の確認待ち' }))
+            ])
+          ]));
+          box.appendChild(tags);
+          box.appendChild(el('p', { class: 'small muted', text: '登録したばかりのクリエイターです。運営の確認が終わると、作品・自己紹介・評価が表示されます。' }));
+          return;
+        }
+        EM.notice(msg, 'このクリエイターは見つかりませんでした（非公開の可能性があります）。', 'error');
+      });
     }
 
     function renderProfile(c, gmap, completedCount, links) {
