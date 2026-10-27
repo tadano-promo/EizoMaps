@@ -1565,3 +1565,15 @@ a.setsum__sub:hover { color: var(--accent); }
 .rec-form .url-row { display: flex; gap: 8px; margin-bottom: 8px; }
 .rec-form .url-row input { flex: 1; }
 .rec-match { border-left: 3px solid var(--accent); }
+
+/* 機能紹介：見本の作品の表紙（Canva さんで作った架空の作品の画像・Eizo さんの見本） */
+.feat-mock__grid span:nth-child(1), .feat-links__thumbs i:nth-child(1) { background: #111 url(/assets/img/feat/sample1.png) center / cover; }
+.feat-mock__grid span:nth-child(2), .feat-links__thumbs i:nth-child(2) { background: #111 url(/assets/img/feat/sample2.png) center / cover; }
+.feat-mock__grid span:nth-child(3), .feat-links__thumbs i:nth-child(3) { background: #111 url(/assets/img/feat/sample3.png) center / cover; }
+.feat-mock__grid span:nth-child(4) { background: #111 url(/assets/img/feat/sample4.png) center / cover; }
+.feat-mock__grid span:nth-child(5) { background: #111 url(/assets/img/feat/sample5.png) center / cover; }
+.feat-mock__grid span:nth-child(6) { background: #111 url(/assets/img/feat/sample6.png) center / cover; }
+.feat-links__row:nth-child(3) .feat-links__thumbs i:nth-child(1) { background-image: url(/assets/img/feat/sample4.png); }
+.feat-links__row:nth-child(3) .feat-links__thumbs i:nth-child(2) { background-image: url(/assets/img/feat/sample6.png); }
+.feat-links__row:nth-child(4) .feat-links__thumbs i:nth-child(1) { background-image: url(/assets/img/feat/sample5.png); }
+.feat-links__row:nth-child(4) .feat-links__thumbs i:nth-child(2) { background-image: url(/assets/img/feat/sample2.png); }
