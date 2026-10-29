@@ -51,14 +51,14 @@ const PLATFORM = { youtube: 'YouTube', vimeo: 'Vimeo', tiktok: 'TikTok', x: 'X',
 
 const todayJst = new Date(Date.now() + 9 * 3600000).toISOString().slice(0, 10);
 
-const creators = await get('creators?select=id,user_id,handle,display_name,headline,bio,area_pref,area_city,years_of_experience,response_time_hours,avatar_url,website_url,updated_at,service_area,travel_ok,equipment,business_type,invoice_registered,creator_genres(genre_id)&is_published=eq.true&approved=eq.true&suspended=eq.false&order=created_at');
+const creators = await get('creators?select=id,user_id,handle,display_name,headline,bio,area_pref,area_city,years_of_experience,response_time_hours,avatar_url,website_url,updated_at,service_area,travel_ok,equipment,business_type,invoice_registered,moods,creator_genres(genre_id)&is_published=eq.true&approved=eq.true&suspended=eq.false&order=created_at');
 const genres = await get('genres?select=id,name_ja');
 const gmap = Object.fromEntries(genres.map((g) => [g.id, g.name_ja]));
 
 let works = [], reviews = [], stats = [], links = [], packages = [];
 if (creators.length) {
   const ids = creators.map((c) => c.id), uids = creators.map((c) => c.user_id);
-  works = await get(`portfolios?select=creator_id,title,description,provider,video_url,release_on,takedown_hold,sort_order,created_at,role,purpose,industry,length_label,client_display,client_name,pinned&visibility=eq.public&creator_id=${inList(ids)}&order=sort_order,created_at.desc`);
+  works = await get(`portfolios?select=creator_id,title,description,provider,video_url,release_on,takedown_hold,sort_order,created_at,role,purpose,industry,length_label,client_display,client_name,pinned,work_year,credits&visibility=eq.public&creator_id=${inList(ids)}&order=sort_order,created_at.desc`);
   reviews = await get(`public_reviews?select=reviewee_id,score,comment,reviewer_role,published_at,source,objected,objection_kept&reviewee_id=${inList(uids)}&order=published_at.desc`);
   stats = await get(`creator_project_stats?select=creator_id,completed_count&creator_id=${inList(ids)}`);
   packages = await get(`creator_packages?select=creator_id,title,description,price_yen,price_from,delivery_days,revisions,sort_order,created_at&creator_id=${inList(ids)}&order=sort_order,created_at`);
@@ -72,12 +72,14 @@ let written = 0;
 // 作品の「担当・目的・業種・尺・取引先」
 const workMetaHtml = (w) => {
   const parts = [];
+  if (w.work_year) parts.push(w.work_year + '年');
   if (w.role) parts.push('担当：' + w.role);
   if (w.purpose) parts.push('目的：' + w.purpose);
   if (w.industry) parts.push('業種：' + w.industry);
   if (w.length_label) parts.push('尺：' + w.length_label);
   if (w.client_display === 'named' && w.client_name) parts.push('取引先：' + w.client_name);
   else if (w.client_display === 'industry' && w.industry) parts.push('取引先：' + w.industry + 'の企業（社名は非公開）');
+  if (w.credits) parts.push('ほかのスタッフ：' + w.credits);
   return parts.length ? `<ul class="work-meta">${parts.map((t) => `<li>${esc(t)}</li>`).join('')}</ul>` : '';
 };
 const BUSINESS = { individual: '個人（フリーランス）', corporation: '法人' };
@@ -85,6 +87,7 @@ const infoRows = (c) => {
   const rows = [];
   const area = c.service_area || [c.area_pref, c.area_city].filter(Boolean).join(' ');
   if (area || c.travel_ok != null) rows.push(['対応エリア', [area, c.travel_ok === true ? '出張できます' : c.travel_ok === false ? '出張はしていません' : ''].filter(Boolean).join('／')]);
+  if (c.moods && c.moods.length) rows.push(['得意な雰囲気', c.moods.join('・')]);
   if (c.equipment) rows.push(['主な機材', c.equipment]);
   if (c.business_type) rows.push(['事業の形', BUSINESS[c.business_type] || '']);
   if (c.invoice_registered != null) rows.push(['インボイス', c.invoice_registered ? '適格請求書発行事業者（登録あり）' : '登録なし']);

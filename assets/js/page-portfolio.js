@@ -28,6 +28,9 @@
       var purpose = selectOf(PURPOSES, p.purpose, '目的');
       var industry = selectOf(INDUSTRIES, p.industry, '業種');
       var len = el('input', { type: 'text', maxlength: 30, value: p.length_label || '', placeholder: '例：90秒＋縦型15秒×3本' });
+      var year = el('input', { type: 'number', min: 1950, max: 2100, step: 1, value: p.work_year || '', placeholder: '例：2026' });
+      var credits = el('textarea', { rows: 2, maxlength: 500, placeholder: '例：代理店：〇〇／制作会社：〇〇／監督：〇〇／撮影：〇〇' });
+      credits.value = p.credits || '';
       var disp = el('select', { 'aria-label': '取引先名の出し方' }, [
         el('option', { value: 'hidden', text: '出さない' }),
         el('option', { value: 'industry', text: '業種だけ出す（例：食品・飲料の企業）' }),
@@ -44,8 +47,11 @@
         el('div', { class: 'row' }, [
           el('label', { class: 'field' }, [el('span', { class: 'label', text: '目的' }), purpose]),
           el('label', { class: 'field' }, [el('span', { class: 'label', text: '業種' }), industry]),
-          el('label', { class: 'field' }, [el('span', { class: 'label', text: '尺・本数' }), len])
+          el('label', { class: 'field' }, [el('span', { class: 'label', text: '尺・本数' }), len]),
+          el('label', { class: 'field' }, [el('span', { class: 'label', text: '年' }), year])
         ]),
+        el('label', { class: 'field' }, [el('span', { class: 'label', text: 'ほかのスタッフ（クレジット） ' }, el('span', { class: 'muted', text: '（500文字まで）' })), credits,
+          el('span', { class: 'hint', text: '作品の全画面の表示で「ほかのスタッフ」として出ます。名前を出してよい人だけ書いてください。' })]),
         el('label', { class: 'field' }, [el('span', { class: 'label', text: '取引先名の出し方' }), disp]),
         nameField
       ]);
@@ -61,7 +67,9 @@
             industry: industry.value || null,
             length_label: len.value.trim() || null,
             client_display: d,
-            client_name: d === 'named' ? n : null
+            client_name: d === 'named' ? n : null,
+            work_year: year.value === '' ? null : Number(year.value),
+            credits: credits.value.trim() || null
           };
         }
       };
@@ -131,7 +139,7 @@
     function reload() {
       return Promise.all([
         sb.from('portfolios')
-          .select('id,title,description,provider,video_id,video_url,thumbnail_url,visibility,sort_order,created_at,rights_confirmed_at,release_on,takedown_hold,role,purpose,industry,length_label,client_display,client_name,pinned,portfolio_tags(tag),stock_items(id)')
+          .select('id,title,description,provider,video_id,video_url,thumbnail_url,visibility,sort_order,created_at,rights_confirmed_at,release_on,takedown_hold,role,purpose,industry,length_label,client_display,client_name,pinned,work_year,credits,is_showreel,portfolio_tags(tag),stock_items(id)')
           .eq('creator_id', creator.id).order('sort_order').order('created_at', { ascending: false }),
         sb.rpc('my_takedown_requests'),
         sb.from('share_links')
@@ -239,6 +247,7 @@
       sb.from('portfolios').insert({
         creator_id: creator.id,
         role: det.role, purpose: det.purpose, industry: det.industry, length_label: det.length_label,
+        work_year: det.work_year, credits: det.credits,
         client_display: det.client_display, client_name: det.client_name,
         title: title,
         description: EM.$('#description').value.trim() || null,
@@ -331,6 +340,7 @@
           el('div', null, [
             el('h3', { class: 'pf-title', text: p.title }),
             p.pinned ? el('p', { class: 'small' }, el('span', { class: 'tag tag--accent', text: '代表作（プロフィールの先頭と商談モードに出ます）' })) : null,
+            p.is_showreel ? el('p', { class: 'small' }, el('span', { class: 'tag tag--accent', text: 'ショーリール（プロフィールの「▶ SHOWREEL」で流れます）' })) : null,
             el('p', { class: 'small muted', text: visLabel(p.visibility) + ' / ' + EM.date(p.created_at) }),
             statusRow(p),
             inStock(p) ? el('p', { class: 'small' }, el('span', { class: 'tag tag--accent', text: 'ストックページで使用中' })) : null,
@@ -344,6 +354,16 @@
                 text: p.pinned ? '代表作の固定を外す' : '代表作に固定',
                 title: '代表作は4つまで。プロフィールの作品の先頭と、商談モードの「代表作」に出ます',
                 onclick: function () { togglePin(p); } }),
+              el('button', { class: 'btn btn--sm' + (p.is_showreel ? ' btn--primary' : ''), type: 'button',
+                text: p.is_showreel ? 'ショーリールを外す' : 'ショーリールにする',
+                title: 'プロフィールの上の「▶ SHOWREEL」ボタンで、この作品が全画面で流れます（1本だけ）',
+                onclick: function () {
+                  if (!p.is_showreel && p.visibility !== 'public') { EM.notice(msg, 'ショーリールにできるのは、公開（プロフィールに表示）の作品だけです。', 'error'); return; }
+                  sb.from('portfolios').update({ is_showreel: !p.is_showreel }).eq('id', p.id).then(function (r) {
+                    if (r.error) { EM.notice(msg, EM.errorText(r.error), 'error'); return; }
+                    EM.notice(msg, ''); EM.toast(p.is_showreel ? 'ショーリールを外しました' : 'ショーリールにしました'); reload();
+                  });
+                } }),
               visSelect(p),
               releaseButton(p),
               thumbButton(p),

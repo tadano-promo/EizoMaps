@@ -16,7 +16,9 @@
     var sb = EM.sb();
     var el = EM.el;
     var listView = EM.$('#listView'), mapView = EM.$('#mapView'), count = EM.$('#resultCount');
-    var state = { q: '', genres: [], area: '', view: 'list' };
+    var state = { q: '', genres: [], area: '', view: 'list', moods: [], inds: [] };
+    var MOODS = ['シネマティック', 'ドキュメンタリー', 'ポップ', 'クール', 'やさしい', 'ユニーク', 'シンプル', '上品', 'エネルギッシュ', 'かわいい'];
+    var indsOf = {};  // クリエイターごとの、公開している作品の業種
     var all = [], genres = [], ratings = {}, completed = {};
     // 空き状況の絞り込み。busyIds が null のときは絞り込みをしていない状態。
     var busyIds = null;
@@ -38,19 +40,22 @@
     Promise.all([
       sb.from('genres').select('id,slug,name_ja,sort_order').order('sort_order'),
       sb.from('creators')
-        .select('id,user_id,handle,display_name,headline,area_pref,area_city,years_of_experience,response_time_hours,avatar_url,updated_at,creator_genres(genre_id)')
+        .select('id,user_id,handle,display_name,headline,area_pref,area_city,years_of_experience,response_time_hours,avatar_url,updated_at,moods,creator_genres(genre_id)')
         .eq('is_published', true)
         .order('updated_at', { ascending: false })
         .limit(300),
       sb.from('creator_rating_stats').select('user_id,avg_score,rated_count'),
-      sb.from('creator_project_stats').select('creator_id,completed_count')
+      sb.from('creator_project_stats').select('creator_id,completed_count'),
+      sb.from('portfolios').select('creator_id,industry').eq('visibility', 'public').not('industry', 'is', null).limit(5000)
     ]).then(function (res) {
       if (res[0].data) genres = res[0].data;
       if (res[1].error) { renderEmpty(EM.errorText(res[1].error)); return; }
       all = res[1].data || [];
       (res[2].data || []).forEach(function (r) { ratings[r.user_id] = r; });
       (res[3].data || []).forEach(function (r) { completed[r.creator_id] = r.completed_count; });
+      (res[4] && res[4].data || []).forEach(function (r) { if (r.industry) (indsOf[r.creator_id] = indsOf[r.creator_id] || {})[r.industry] = true; });
       buildGenreChips();
+      buildExtraChips();
       render();
     }).catch(function (e) { renderEmpty(EM.errorText(e)); });
 
@@ -76,6 +81,30 @@
       });
     }
 
+    // 得意な雰囲気・作品の業種（goodportfolioさん・TYOさんの参考）
+    function buildExtraChips() {
+      function build(boxId, list, key) {
+        var box = EM.$(boxId);
+        if (!box) return;
+        EM.clear(box);
+        list.forEach(function (v) {
+          var b = el('button', { class: 'chip', type: 'button', 'aria-pressed': 'false', text: v, onclick: function () {
+            var i = state[key].indexOf(v);
+            if (i === -1) state[key].push(v); else state[key].splice(i, 1);
+            b.setAttribute('aria-pressed', i === -1 ? 'true' : 'false');
+            render();
+          } });
+          box.appendChild(b);
+        });
+        box.closest('.filter-row').hidden = !list.length;
+      }
+      var usedMoods = MOODS.filter(function (m) { return all.some(function (c) { return (c.moods || []).indexOf(m) >= 0; }); });
+      var indSet = {};
+      Object.keys(indsOf).forEach(function (k) { Object.keys(indsOf[k]).forEach(function (i) { indSet[i] = true; }); });
+      build('#moodChips', usedMoods, 'moods');
+      build('#indChips', Object.keys(indSet).sort(), 'inds');
+    }
+
     // 絞り込みはすべてブラウザ側で行う（検索語をDBのフィルタ式に混ぜないため）
     function filtered() {
       var q = state.q.trim().toLowerCase();
@@ -86,6 +115,8 @@
           for (var i = 0; i < state.genres.length; i++) if (ids.indexOf(state.genres[i]) === -1) return false;
         }
         if (busyIds && busyIds[c.id]) return false;
+        if (state.moods.length) { for (var m = 0; m < state.moods.length; m++) if ((c.moods || []).indexOf(state.moods[m]) === -1) return false; }
+        if (state.inds.length && !state.inds.some(function (i) { return indsOf[c.id] && indsOf[c.id][i]; })) return false;
         if (q) {
           var hay = [c.display_name, c.headline, c.area_pref, c.area_city].join(' ').toLowerCase();
           var gnames = (c.creator_genres || []).map(function (x) {
@@ -255,11 +286,11 @@
     EM.$('#viewList').addEventListener('click', function () { state.view = 'list'; render(); });
     EM.$('#viewMap').addEventListener('click', function () { state.view = 'map'; render(); });
     EM.$('#clearBtn').addEventListener('click', function () {
-      state = { q: '', genres: [], area: '', view: state.view };
+      state = { q: '', genres: [], area: '', view: state.view, moods: [], inds: [] };
       busyIds = null;
       EM.$('#q').value = ''; areaSelect.value = '';
       EM.$('#freeFrom').value = ''; EM.$('#freeTo').value = ''; EM.$('#freeNote').textContent = '';
-      EM.$$('#genreChips .chip').forEach(function (b) { b.setAttribute('aria-pressed', 'false'); });
+      EM.$$('#genreChips .chip, #moodChips .chip, #indChips .chip').forEach(function (b) { b.setAttribute('aria-pressed', 'false'); });
       render();
     });
   });

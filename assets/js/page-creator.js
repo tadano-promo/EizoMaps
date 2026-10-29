@@ -31,11 +31,11 @@
     function loadAll() {
     Promise.all([
       sb.from('creators')
-        .select('id,user_id,handle,display_name,headline,bio,area_pref,area_city,years_of_experience,response_time_hours,avatar_url,website_url,contact_pref,contact_dm_url,updated_at,share_availability,service_area,travel_ok,equipment,business_type,invoice_registered,creator_genres(genre_id)')
+        .select('id,user_id,handle,display_name,headline,bio,area_pref,area_city,years_of_experience,response_time_hours,avatar_url,website_url,contact_pref,contact_dm_url,updated_at,share_availability,service_area,travel_ok,equipment,business_type,invoice_registered,moods,creator_genres(genre_id)')
         .eq('id', id).maybeSingle(),
       sb.from('genres').select('id,name_ja'),
       sb.from('portfolios')
-        .select('id,title,description,provider,video_id,video_url,thumbnail_url,sort_order,created_at,release_on,takedown_hold,role,purpose,industry,length_label,client_display,client_name,pinned,portfolio_tags(tag)')
+        .select('id,title,description,provider,video_id,video_url,thumbnail_url,sort_order,created_at,release_on,takedown_hold,role,purpose,industry,length_label,client_display,client_name,pinned,work_year,credits,is_showreel,portfolio_tags(tag)')
         .eq('creator_id', id).eq('visibility', 'public')
         .order('sort_order').order('created_at', { ascending: false }),
       sb.from('creator_project_stats').select('completed_count').eq('creator_id', id).maybeSingle(),
@@ -64,6 +64,9 @@
       if (c.handle && history.replaceState) history.replaceState(null, '', '/@' + c.handle);
       // 「?view=pitch」付きで開いたときは、そのまま商談モードで開く（評価・空き状況は届きしだい描き直す）
       if (EM.param('view') === 'pitch') openPitch();
+      // 「?w=作品の番号」付きで開いたときは、その作品を全画面で開く（作品ごとのリンクを送れる）
+      var wq = EM.param('w');
+      if (wq) { var wi = S.works.map(function (x) { return x.id; }).indexOf(wq); if (wi >= 0) openWork(wi); }
     }).catch(function (e) { EM.notice(msg, EM.errorText(e), 'error'); });
     }
 
@@ -159,6 +162,16 @@
         });
         if (row.childNodes.length) more.appendChild(row);
       }
+      // このページをシェア（goodportfolioさんの参考）
+      var pageUrl = location.origin + (c.handle ? '/@' + c.handle : '/creators/detail.html?id=' + encodeURIComponent(c.id));
+      more.appendChild(el('div', { class: 'share-row-pf' }, [
+        el('span', { class: 'small muted', text: 'このページをシェア' }),
+        el('a', { class: 'btn btn--sm', target: '_blank', rel: 'noopener noreferrer',
+          href: 'https://x.com/intent/post?text=' + encodeURIComponent(c.display_name + ' のプロフィール｜Eizo Maps') + '&url=' + encodeURIComponent(pageUrl), text: 'X で共有' }),
+        el('button', { class: 'btn btn--sm', type: 'button', text: 'URLをコピー', onclick: function () {
+          (navigator.clipboard ? navigator.clipboard.writeText(pageUrl) : Promise.reject()).then(function () { EM.toast('URLをコピーしました'); }, function () { prompt('このURLをコピーしてください', pageUrl); });
+        } })
+      ]));
 
       // 依頼の受け取り方に合わせて導線を出し分ける
       var pref = c.contact_pref || 'form';
@@ -183,6 +196,9 @@
       actions.appendChild(dmBtn);
       EM.getUser().then(function (u) { if (u && u.id === c.user_id) dmBtn.hidden = true; });
       actions.appendChild(el('button', { class: 'btn btn--ghost', type: 'button', text: '商談で見せる', title: '画面共有用に、要点だけを大きく表示します', onclick: openPitch }));
+      // ショーリール（作品の1本を本人が選ぶ）。作品が届いてから出す
+      actions.insertBefore(el('button', { class: 'btn btn--reel', type: 'button', id: 'reelBtn', hidden: true, text: '▶ SHOWREEL',
+        onclick: function () { var i = S.works.map(function (x) { return x.is_showreel; }).indexOf(true); if (i >= 0) openWork(i); } }), actions.firstChild);
       if (pref === 'dm' && dm) {
         box.appendChild(el('p', { class: 'small muted',
           text: c.display_name + ' さんは SNS の DM での連絡を希望しています。' }));
@@ -206,8 +222,14 @@
         ])
       ]);
       document.body.appendChild(bar);
+      // パソコンでは右下にいつも丸い「相談する」（TYOさんの参考）。スマホは下の帯
+      var oldFab = EM.$('#askFab');
+      if (oldFab) oldFab.parentNode.removeChild(oldFab);
+      var fab = el('a', { class: 'ask-fab', id: 'askFab', href: '/messages/?to=' + encodeURIComponent(c.id), 'aria-label': c.display_name + ' さんに相談する' }, [
+        el('span', { class: 'ask-fab__main', text: '相談する' }), el('span', { class: 'ask-fab__sub', text: 'メッセージ' })]);
+      document.body.appendChild(fab);
       EM.getUser().then(function (u) {
-        if (u && u.id === c.user_id) { bar.parentNode && bar.parentNode.removeChild(bar); return; }  // 自分のページでは出さない
+        if (u && u.id === c.user_id) { bar.parentNode && bar.parentNode.removeChild(bar); fab.parentNode && fab.parentNode.removeChild(fab); return; }  // 自分のページでは出さない
         var target = EM.$('#profile .form-actions');
         if (!target || !('IntersectionObserver' in window)) return;
         new IntersectionObserver(function (es) {
@@ -357,6 +379,8 @@
       // 代表作（固定した作品）を先頭に。ほかは並べた順のまま
       items = items.filter(function (p) { return p.pinned; }).concat(items.filter(function (p) { return !p.pinned; }));
       S.works = items;
+      var reel = EM.$('#reelBtn');
+      if (reel) reel.hidden = !items.some(function (x) { return x.is_showreel; });
       var tabBox = EM.$('#workTabs');
       if (tabBox) { EM.clear(tabBox); tabBox.hidden = true; }
       if (!items.length) { grid.appendChild(el('div', { class: 'empty', text: '公開されている作品はまだありません。' })); return; }
@@ -369,25 +393,42 @@
         ks.forEach(function (k) { count[k] = (count[k] || 0) + 1; });
       });
       var keys = Object.keys(count).sort(function (a, b) { return count[b] - count[a]; }).slice(0, 10);
-      if (tabBox && keys.length >= 2) {
-        tabBox.hidden = false;
-        ['すべて'].concat(keys).forEach(function (k, i) {
-          tabBox.appendChild(el('button', { type: 'button', class: 'work-tab', 'aria-pressed': i === 0 ? 'true' : 'false',
-            text: k + (i ? '（' + count[k] + '）' : '（' + items.length + '）'),
+      // 業種（食品・自動車など）でも絞り込める。発注する側は業種で探すことが多いため（TYOさんの参考）
+      var indCount = {}, indOf = {};
+      items.forEach(function (p) { if (p.industry) { indOf[p.id] = p.industry; indCount[p.industry] = (indCount[p.industry] || 0) + 1; } });
+      var inds = Object.keys(indCount).sort(function (a, b) { return indCount[b] - indCount[a]; });
+      var filt = { tag: null, ind: null };
+      function applyFilter() {
+        EM.$$('[data-work]', grid).forEach(function (card) {
+          var id = card.getAttribute('data-work');
+          card.hidden = (filt.tag && (keyOf[id] || []).indexOf(filt.tag) < 0) || (filt.ind && indOf[id] !== filt.ind);
+        });
+      }
+      function chipRow(label, list, cnt, key) {
+        var row = el('div', { class: 'work-tabs__row', role: 'group', 'aria-label': label });
+        if (label) row.appendChild(el('span', { class: 'work-tabs__label small muted', text: label }));
+        [null].concat(list).forEach(function (k) {
+          row.appendChild(el('button', { type: 'button', class: 'work-tab', 'aria-pressed': k === null ? 'true' : 'false',
+            text: (k === null ? 'すべて' : k) + '（' + (k === null ? items.length : cnt[k]) + '）',
             onclick: function () {
-              EM.$$('.work-tab', tabBox).forEach(function (b) { b.setAttribute('aria-pressed', 'false'); });
+              EM.$$('.work-tab', row).forEach(function (b) { b.setAttribute('aria-pressed', 'false'); });
               this.setAttribute('aria-pressed', 'true');
-              EM.$$('[data-work]', grid).forEach(function (card) {
-                card.hidden = i !== 0 && (keyOf[card.getAttribute('data-work')] || []).indexOf(k) < 0;
-              });
+              filt[key] = k; applyFilter();
             } }));
         });
+        return row;
+      }
+      if (tabBox && (keys.length >= 2 || inds.length >= 2)) {
+        tabBox.hidden = false;
+        if (keys.length >= 2) tabBox.appendChild(chipRow(inds.length >= 2 ? 'ジャンル' : '', keys, count, 'tag'));
+        if (inds.length >= 2) tabBox.appendChild(chipRow('業種', inds, indCount, 'ind'));
       }
       items.forEach(function (p) {
         var tags = el('div', { class: 'tags' });
         (p.portfolio_tags || []).forEach(function (t) { tags.appendChild(el('span', { class: 'tag', text: t.tag })); });
+        var idx = items.indexOf(p);
         grid.appendChild(el('article', { class: 'card work-card', 'data-work': p.id }, [
-          EM.workMedia(p),
+          EM.workCover(p, function () { openWork(idx); }),
           p.pinned ? el('span', { class: 'tag tag--accent work-pin', text: '代表作' }) : null,
           el('h3', { class: 'pf-title', text: p.title }),
           workMeta(p),
@@ -529,6 +570,7 @@
       if (area || c.travel_ok != null) {
         rows.push(['対応エリア', [area, c.travel_ok === true ? '出張できます' : c.travel_ok === false ? '出張はしていません' : ''].filter(Boolean).join('／')]);
       }
+      if (c.moods && c.moods.length) rows.push(['得意な雰囲気', c.moods.join('・')]);
       if (c.equipment) rows.push(['主な機材', c.equipment]);
       if (c.business_type) rows.push(['事業の形', BUSINESS[c.business_type] || '']);
       if (c.invoice_registered != null) rows.push(['インボイス', c.invoice_registered ? '適格請求書発行事業者（登録あり）' : '登録なし']);
@@ -606,7 +648,7 @@
       ]);
 
       var page = el('div', { class: 'pitch-page' });
-      page.appendChild(el('header', { class: 'pitch-hero' }, [
+      page.appendChild(el('header', { class: 'pitch-hero', 'data-label': 'PROFILE' }, [
         EM.avatar(c.avatar_url, c.display_name, true),
         el('div', null, [
           el('h1', { class: 'pitch-name', text: c.display_name }),
@@ -623,19 +665,29 @@
         var g = el('div', { class: 'pitch-works' });
         feat.forEach(function (p) {
           g.appendChild(el('article', { class: 'pitch-work' }, [
-            EM.workMedia(p),
+            EM.workCover(p, function () { openWork(feat.indexOf(p), feat); }),
             el('h3', { text: p.title }),
             workMeta(p)
           ]));
         });
-        page.appendChild(el('section', { class: 'pitch-sec' }, [el('h2', { text: '代表作' }), g,
-          S.works.length > feat.length ? el('p', { class: 'small muted', text: 'ほかに ' + (S.works.length - feat.length) + ' 作品あります（プロフィールで見られます）' }) : null]));
+        page.appendChild(el('section', { class: 'pitch-sec', 'data-label': 'SELECTED' }, [el('h2', { text: '代表作' }), g]));
+      }
+      // 作品の壁：すき間なしの4列で、全部の作品を並べる（dadabさんの参考）
+      if (S.works.length > feat.length) {
+        var wall = el('div', { class: 'pitch-wall' });
+        S.works.forEach(function (p, i) {
+          wall.appendChild(el('div', { class: 'pitch-wall__item', title: p.title || '' }, [
+            EM.workCover(p, function () { openWork(i); }),
+            el('span', { class: 'pitch-wall__title', text: p.title || '' })
+          ]));
+        });
+        page.appendChild(el('section', { class: 'pitch-sec pitch-sec--wall', 'data-label': 'WORKS' }, [el('h2', { text: '作品（' + S.works.length + '本）' }), wall]));
       }
 
       if (S.packages.length) {
         var pg = el('div', { class: 'pitch-pkgs' });
         S.packages.forEach(function (k) { pg.appendChild(packageCard(k)); });
-        page.appendChild(el('section', { class: 'pitch-sec' }, [el('h2', { text: '料金の目安' }), pg,
+        page.appendChild(el('section', { class: 'pitch-sec', 'data-label': 'PRICE' }, [el('h2', { text: '料金の目安' }), pg,
           el('p', { class: 'small muted', text: '内容によって変わります。正式な金額はお見積もりでお伝えします。' })]));
       }
 
@@ -643,7 +695,7 @@
       if (rows.length) {
         var dl = el('dl', { class: 'info-list info-list--big' });
         rows.forEach(function (r) { dl.appendChild(el('dt', { text: r[0] })); dl.appendChild(el('dd', { class: 'pre', text: r[1] })); });
-        page.appendChild(el('section', { class: 'pitch-sec' }, [el('h2', { text: '基本情報' }), dl]));
+        page.appendChild(el('section', { class: 'pitch-sec', 'data-label': 'INFO' }, [el('h2', { text: '基本情報' }), dl]));
       }
 
       if (S.reviews.length) {
@@ -655,7 +707,7 @@
             el('p', { class: 'small muted', text: (v.reviewer_role === 'client' ? 'クライアント' : 'クリエイター') + '／' + EM.date(v.published_at) + '／' + (v.source === 'external' ? 'Eizo Maps外の取引（自己申告）' : 'Eizo Maps での取引') })
           ]));
         });
-        page.appendChild(el('section', { class: 'pitch-sec' }, [el('h2', { text: '評価' }), rl,
+        page.appendChild(el('section', { class: 'pitch-sec', 'data-label': 'REVIEWS' }, [el('h2', { text: '評価' }), rl,
           el('p', { class: 'small muted', text: '評価は、実際に取引した人だけが書けます。投稿者の名前は出ません。' })]));
       }
 
@@ -663,7 +715,7 @@
       if (window.qrcode) {
         try { var q = window.qrcode(0, 'M'); q.addData(url); q.make(); qr = el('img', { class: 'pitch-qr', src: q.createDataURL(6, 2), alt: 'プロフィールのQRコード', width: 180, height: 180 }); } catch (e) { qr = null; }
       }
-      page.appendChild(el('section', { class: 'pitch-sec pitch-contact' }, [
+      page.appendChild(el('section', { class: 'pitch-sec pitch-contact', 'data-label': 'CONTACT' }, [
         qr,
         el('div', null, [
           el('h2', { text: 'ご連絡はこちら' }),
@@ -674,17 +726,29 @@
 
       var bar = el('div', { class: 'pitch-bar' }, [
         el('span', { class: 'small muted', text: '商談モード（画面共有用）' }),
+        el('button', { class: 'btn btn--sm', type: 'button', text: 'PDFで持ち帰る', title: '印刷の画面で「PDFに保存」を選ぶと、この内容をPDFにできます', onclick: function () { window.print(); } }),
         el('button', { class: 'btn btn--sm', type: 'button', text: '全画面', onclick: function () { if (wrap.requestFullscreen) wrap.requestFullscreen().catch(function () {}); } }),
         el('button', { class: 'btn btn--sm btn--primary', type: 'button', text: '閉じる（Esc）', onclick: closePitch })
       ]);
-      var wrap = el('div', { id: 'pitch', class: 'pitch', role: 'dialog', 'aria-modal': 'true', 'aria-label': c.display_name + ' の商談モード' }, [bar, page]);
+      // 右端に、いま見ている場所を縦書きで（dadabさんの参考）
+      var rail = el('div', { class: 'pitch-rail', 'aria-hidden': 'true', text: 'PROFILE' });
+      var wrap = el('div', { id: 'pitch', class: 'pitch', role: 'dialog', 'aria-modal': 'true', 'aria-label': c.display_name + ' の商談モード' }, [bar, page, rail]);
       document.body.appendChild(wrap);
+      // 画面の真ん中より上に来ている最後の区切りの名前を出す
+      var marks = EM.$$('[data-label]', page);
+      function updateRail() {
+        var mid = wrap.clientHeight / 2, label = marks.length ? marks[0].getAttribute('data-label') : '';
+        marks.forEach(function (n) { if (n.getBoundingClientRect().top <= mid) label = n.getAttribute('data-label'); });
+        rail.textContent = label;
+      }
+      wrap.addEventListener('scroll', updateRail, { passive: true });
+      updateRail();
       document.body.classList.add('is-pitch');
       wrap.scrollTop = 0;
       if (history.replaceState) history.replaceState(null, '', basePath() + (basePath().indexOf('?') < 0 ? '?' : '&') + 'view=pitch');
       document.addEventListener('keydown', onKey);
     }
-    function onKey(e) { if (e.key === 'Escape' && !document.fullscreenElement) closePitch(); }
+    function onKey(e) { if (e.key === 'Escape' && !document.fullscreenElement && !document.body.classList.contains('is-player')) closePitch(); }
     function closePitch() {
       var w = EM.$('#pitch');
       if (document.fullscreenElement && document.exitFullscreen) document.exitFullscreen().catch(function () {});
@@ -693,6 +757,18 @@
       document.removeEventListener('keydown', onKey);
       if (history.replaceState) history.replaceState(null, '', basePath());
     }
+    // 作品を全画面で開く
+    function openWork(i, list) {
+      list = list || S.works;
+      var inPitch = !!EM.$('#pitch');
+      EM.openPlayer(list, i, {
+        creatorName: S.c.display_name,
+        askHref: '/messages/?to=' + encodeURIComponent(S.c.id),
+        onShow: function (p) { if (!inPitch && history.replaceState) history.replaceState(null, '', basePath() + (basePath().indexOf('?') < 0 ? '?' : '&') + 'w=' + encodeURIComponent(p.id)); },
+        onClose: function () { if (!inPitch && history.replaceState) history.replaceState(null, '', basePath()); }
+      });
+    }
+
     function basePath() { var c = S.c; return c.handle ? '/@' + c.handle : '/creators/detail.html?id=' + encodeURIComponent(c.id); }
     // 商談モードを開いている間に評価・空き状況が届いたら、描き直す
     function refreshPitch() { var w = EM.$('#pitch'); if (w) { var y = w.scrollTop; openPitch(); EM.$('#pitch').scrollTop = y; } }

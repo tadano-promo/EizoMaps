@@ -39,6 +39,8 @@
         EM.$('#businessType').value  = creator.business_type || '';
         EM.$('#invoiceRegistered').value = creator.invoice_registered === true ? 'yes' : creator.invoice_registered === false ? 'no' : '';
         EM.$('#equipment').value     = creator.equipment || '';
+        moods = (creator.moods || []).slice();
+        renderMoods();
         loadPackages();
         EM.$('#isPublished').checked = !!creator.is_published;
         selected = (creator.creator_genres || []).map(function (x) { return x.genre_id; });
@@ -352,6 +354,7 @@
           business_type: EM.$('#businessType').value || null,
           invoice_registered: yesNo(EM.$('#invoiceRegistered').value),
           equipment: EM.$('#equipment').value.trim() || null,
+          moods: moods.slice(0, 3),
           avatar_url: (creator && creator.avatar_url) || null,
           is_published: EM.$('#isPublished').checked
         };
@@ -385,6 +388,27 @@
         throw err;
       });
     }
+
+    // 得意な雰囲気（3つまで）
+    var MOODS = ['シネマティック', 'ドキュメンタリー', 'ポップ', 'クール', 'やさしい', 'ユニーク', 'シンプル', '上品', 'エネルギッシュ', 'かわいい'];
+    var moods = [];
+    function renderMoods() {
+      var box = EM.$('#moodChips');
+      if (!box) return;
+      EM.clear(box);
+      MOODS.forEach(function (m) {
+        var on = moods.indexOf(m) >= 0;
+        box.appendChild(el('button', { class: 'chip', type: 'button', 'aria-pressed': on ? 'true' : 'false', text: m, onclick: function () {
+          var i = moods.indexOf(m);
+          if (i >= 0) moods.splice(i, 1);
+          else { if (moods.length >= 3) { EM.toast('得意な雰囲気は3つまでです'); return; } moods.push(m); }
+          profileDirty = true;
+          if (bar && bar.markDirty) bar.markDirty();
+          renderMoods();
+        } }));
+      });
+    }
+    renderMoods();
 
     function yesNo(v) { return v === 'yes' ? true : v === 'no' ? false : null; }
 
