@@ -278,22 +278,28 @@
         for (var i = 0; i < 60; i++) {
           (function (d) {
             var key = ymd(d);
+            // 日付を入れる。月の1日（と最初の日）は「11/1」のように月も出す。土曜は青、日曜・祝日は赤
+            var hol = EM.jpHoliday ? EM.jpHoliday(d) : '';
+            var wk = hol || d.getDay() === 0 ? ' is-sun' : d.getDay() === 6 ? ' is-sat' : '';
+            var label = (i === 0 || d.getDate() === 1) ? (d.getMonth() + 1) + '/' + d.getDate() : String(d.getDate());
+            var desc = (d.getMonth() + 1) + '月' + d.getDate() + '日（' + WD[d.getDay()] + '）' + (hol ? hol : '') + (busy[key] ? '：予定あり' : '：空いています');
             strip.appendChild(el('button', {
               type: 'button',
-              class: 'avail__day' + (busy[key] ? ' is-busy' : ''),
-              title: key + (busy[key] ? '：予定あり' : '：空いています'),
-              'aria-label': key + (busy[key] ? ' 予定あり' : ' 空いています'),
+              class: 'avail__day' + wk + (busy[key] ? ' is-busy' : '') + (label.length > 2 ? ' is-month' : ''),
+              title: desc,
+              'aria-label': desc,
+              text: label,
               onclick: function () {
                 EM.$$('.avail__day.is-picked', strip).forEach(function (b) { b.classList.remove('is-picked'); });
                 this.classList.add('is-picked');
                 show(key, d);
               }
             }));
-          })(new Date(from.getFullYear(), from.getMonth(), from.getDate() + i));
+          })(new Date(from.getFullYear(), from.getMonth(), from.getDate() + i), i);
         }
         detail.textContent = loggedIn ? '色つきの日を押すと、予定のある時間が見られます。' : 'ログインすると、色つきの日を押して予定のある時間が見られます。';
         EM.$('#profileMore').appendChild(el('div', { class: 'avail-box' }, [
-          el('p', { class: 'small muted', text: '今後60日の空き状況（色つきが予定のある日）' }),
+          el('p', { class: 'small muted', text: '今後60日の空き状況（オレンジが予定のある日。青は土曜、赤は日曜・祝日）' }),
           strip,
           detail
         ]));

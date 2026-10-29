@@ -187,6 +187,47 @@
     return sb.auth.signOut().then(function () { location.href = '/'; });
   };
 
+  /* ---------- 日本の祝日（計算で出す。振替休日・国民の休日も含む） ----------
+     EM.jpHoliday(new Date(2026, 10, 3)) → '文化の日'／祝日でなければ ''
+     春分の日・秋分の日は計算の式によるもの（正式には前の年に国が発表する） */
+  var holidayCache = {};
+  function nthMonday(y, m, n) { var d = new Date(y, m, 1); var first = (8 - d.getDay()) % 7 + 1; return first + (n - 1) * 7; }
+  function baseHolidays(y) {
+    var h = {};
+    function put(m, d, name) { h[(m + 1) + '-' + d] = name; }
+    put(0, 1, '元日'); put(1, 11, '建国記念の日'); put(1, 23, '天皇誕生日'); put(3, 29, '昭和の日');
+    put(4, 3, '憲法記念日'); put(4, 4, 'みどりの日'); put(4, 5, 'こどもの日'); put(7, 11, '山の日');
+    put(10, 3, '文化の日'); put(10, 23, '勤労感謝の日');
+    put(0, nthMonday(y, 0, 2), '成人の日'); put(6, nthMonday(y, 6, 3), '海の日');
+    put(8, nthMonday(y, 8, 3), '敬老の日'); put(9, nthMonday(y, 9, 2), 'スポーツの日');
+    put(2, Math.floor(20.8431 + 0.242194 * (y - 1980) - Math.floor((y - 1980) / 4)), '春分の日');
+    put(8, Math.floor(23.2488 + 0.242194 * (y - 1980) - Math.floor((y - 1980) / 4)), '秋分の日');
+    return h;
+  }
+  function holidaysOf(y) {
+    if (holidayCache[y]) return holidayCache[y];
+    var h = baseHolidays(y), out = {};
+    Object.keys(h).forEach(function (k) { out[k] = h[k]; });
+    var keyOf = function (d) { return (d.getMonth() + 1) + '-' + d.getDate(); };
+    // 国民の休日（祝日にはさまれた平日）
+    for (var t = new Date(y, 0, 2); t.getFullYear() === y; t.setDate(t.getDate() + 1)) {
+      var prev = new Date(t), next = new Date(t);
+      prev.setDate(t.getDate() - 1); next.setDate(t.getDate() + 1);
+      if (!out[keyOf(t)] && t.getDay() !== 0 && h[keyOf(prev)] && h[keyOf(next)] && prev.getFullYear() === y && next.getFullYear() === y) out[keyOf(t)] = '国民の休日';
+    }
+    // 振替休日（祝日が日曜なら、その後のいちばん近い祝日でない日）
+    Object.keys(h).forEach(function (k) {
+      var p = k.split('-'), d = new Date(y, +p[0] - 1, +p[1]);
+      if (d.getDay() !== 0) return;
+      var n = new Date(d);
+      do { n.setDate(n.getDate() + 1); } while (out[keyOf(n)] && n.getFullYear() === y);
+      if (n.getFullYear() === y) out[keyOf(n)] = '振替休日';
+    });
+    holidayCache[y] = out;
+    return out;
+  }
+  EM.jpHoliday = function (d) { return holidaysOf(d.getFullYear())[(d.getMonth() + 1) + '-' + d.getDate()] || ''; };
+
   /* ---------- URL パラメータ ---------- */
   EM.param = function (name) { return new URLSearchParams(location.search).get(name); };
 

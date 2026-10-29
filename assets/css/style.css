@@ -763,6 +763,17 @@ a.vcal__day.is-today:hover .vcal__dnum { color: #0a0a0f; }
   border: 1px solid var(--border); background: var(--surface2);
 }
 .avail__day.is-busy { background: var(--accent2); border-color: var(--accent2); }
+/* 日付入り（2026-10-30）：土曜は青、日曜・祝日は赤。予定のある日はオレンジ */
+:root { --sat: #6aa8ff; --sun: #ff6b81; }
+.avail { gap: 4px; }
+.avail .avail__day { width: 30px; height: 30px; font-family: var(--font-mono); font-size: 11px; line-height: 1; color: var(--text); position: relative; }
+.avail .avail__day.is-month { width: 40px; font-size: 10px; }
+.avail .avail__day.is-sat { color: var(--sat); }
+.avail .avail__day.is-sun { color: var(--sun); }
+.avail .avail__day.is-busy { color: #0a0a0f; font-weight: 700; }
+.avail .avail__day.is-busy.is-sat { box-shadow: inset 0 -3px 0 var(--sat); }
+.avail .avail__day.is-busy.is-sun { box-shadow: inset 0 -3px 0 var(--sun); }
+@media (max-width: 560px) { .avail .avail__day { width: 28px; height: 28px; } .avail .avail__day.is-month { width: 36px; } }
 
 .avail-box { margin-top: 18px; }
 
