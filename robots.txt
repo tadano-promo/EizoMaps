@@ -9,5 +9,6 @@ Disallow: /p/
 Disallow: /s/
 Disallow: /admin/
 Disallow: /schedule/
+Disallow: /messages/
 
 Sitemap: https://eizo-maps.com/sitemap.xml

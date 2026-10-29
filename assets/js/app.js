@@ -478,6 +478,7 @@
   ];
   var NAV_USER = [
     ['/mypage/', 'マイページ'],
+    ['/messages/', 'メッセージ'],
     ['/mypage/portfolio.html', 'ポートフォリオ管理'],
     ['/mypage/stock.html', 'ストックページ'],
     ['/schedule/', 'スケジュール'],
@@ -728,6 +729,15 @@
       var ul = el('ul');
       if (u) {
         NAV_USER.forEach(function (n) { ul.appendChild(el('li', null, el('a', { href: n[0], text: n[1] }))); });
+        // まだ読んでいないメッセージがあれば、メニューとマイページのボタンに数を出す
+        var sbm = EM.sb();
+        if (sbm) sbm.rpc('dm_unread_count').then(function (r) {
+          var n = r && !r.error ? Number(r.data) || 0 : 0;
+          if (!n) return;
+          var a = ul.querySelector('a[href="/messages/"]');
+          if (a) a.appendChild(el('span', { class: 'nav-badge', text: String(n), 'aria-label': '未読 ' + n + '件' }));
+          if (hl) hl.appendChild(el('span', { class: 'nav-badge', text: String(n), 'aria-label': '未読のメッセージ ' + n + '件' }));
+        });
         var staffSlot = el('li');
         ul.appendChild(staffSlot);
         EM.roles().then(function (roles) {

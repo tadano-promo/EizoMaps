@@ -129,6 +129,10 @@ for (const c of creators) {
     ? `<span class="rating"><span class="score">${avg.toFixed(1)}</span><span class="stars">${stars(avg)}</span><span class="count">${myReviews.length}件の評価</span></span>`
     : '<span class="small muted">評価はまだありません</span>'}</div>
 ${tags.length ? `<div class="tags">${tags.map((t) => `<span class="tag tag--accent">${esc(t)}</span>`).join('')}</div>` : ''}
+<div class="form-actions"><a class="btn btn--primary" href="/request/?creator_id=${esc(c.id)}" rel="nofollow">依頼する</a><a class="btn" href="/messages/?to=${esc(c.id)}" rel="nofollow">メッセージを送る</a></div>`;
+
+  // 作品と料金の下に置く「プロフィール」（自己紹介・数字・基本情報・SNS）
+  const more = `<hr class="divider"><p class="eyebrow">Profile</p><h2>プロフィール</h2>
 <div class="row profile-stats">
   <div class="stat"><span class="v">${completed}</span><span class="k">Completed</span></div>
   ${c.years_of_experience != null ? `<div class="stat"><span class="v">${esc(c.years_of_experience)}y</span><span class="k">Career</span></div>` : ''}
@@ -136,8 +140,7 @@ ${tags.length ? `<div class="tags">${tags.map((t) => `<span class="tag tag--acce
 </div>
 ${c.bio ? `<p class="profile-bio">${esc(c.bio)}</p>` : ''}
 ${infoRows(c).length ? `<dl class="info-list">${infoRows(c).map((r) => `<dt>${esc(r[0])}</dt><dd class="pre">${esc(r[1])}</dd>`).join('')}</dl>` : ''}
-${myLinks.length ? `<div class="chips stock-links">${myLinks.map((l) => `<a class="chip" href="${esc(l.url)}" target="_blank" rel="noopener noreferrer nofollow">${esc(l.label || PLATFORM[l.platform] || 'Link')}</a>`).join('')}</div>` : ''}
-<div class="form-actions"><a class="btn btn--primary" href="/request/?creator_id=${esc(c.id)}" rel="nofollow">依頼する</a><a class="btn" href="/contact/">お問い合わせ</a></div>`;
+${myLinks.length ? `<div class="chips stock-links">${myLinks.map((l) => `<a class="chip" href="${esc(l.url)}" target="_blank" rel="noopener noreferrer nofollow">${esc(l.label || PLATFORM[l.platform] || 'Link')}</a>`).join('')}</div>` : ''}`;
 
   const worksHtml = myWorks.length
     ? myWorks.map((w) => `<article class="card"><div class="body"><h3>${esc(w.title || '作品')}</h3>${workMetaHtml(w)}${w.description ? `<p class="small">${esc(w.description)}</p>` : ''}${safeUrl(w.video_url) ? `<p class="small"><a href="${esc(w.video_url)}" target="_blank" rel="noopener noreferrer nofollow">作品を見る（${esc(PLATFORM[w.provider] || '外部サイト')}）</a></p>` : ''}</div></article>`).join('\n')
@@ -197,6 +200,7 @@ ${myLinks.length ? `<div class="chips stock-links">${myLinks.map((l) => `<a clas
     }).join('')}</div>`)
     .replace('<section id="portfolioSection" hidden>', '<section id="portfolioSection">')
     .replace('<div class="grid grid--3" id="portfolioGrid"></div>', `<div class="grid grid--3" id="portfolioGrid">${worksHtml}</div>`)
+    .replace('<section id="profileMore" hidden></section>', `<section id="profileMore">${more}</section>`)
     .replace('<section id="reviewSection" hidden>', '<section id="reviewSection">')
     .replace('<div id="reviewList"></div>', `<div id="reviewList">${reviewsHtml}</div>`);
 

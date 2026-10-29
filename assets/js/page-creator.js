@@ -121,11 +121,18 @@
       ]));
       box.appendChild(el('div', { class: 'row', id: 'ratingRow' }));
       box.appendChild(tags);
-      box.appendChild(stats);
-      if (c.bio) box.appendChild(el('p', { class: 'profile-bio', text: c.bio }));
+      // 作品をいちばん先に見せるため、自己紹介・数字・基本情報は作品と料金の下（#profileMore）に置く
+      var more = EM.$('#profileMore');
+      EM.clear(more);
+      more.hidden = false;
+      more.appendChild(el('hr', { class: 'divider' }));
+      more.appendChild(el('p', { class: 'eyebrow', text: 'Profile' }));
+      more.appendChild(el('h2', { text: 'プロフィール' }));
+      more.appendChild(stats);
+      if (c.bio) more.appendChild(el('p', { class: 'profile-bio', text: c.bio }));
       var info = infoList(c);
-      if (info) box.appendChild(info);
-      if (site) box.appendChild(el('p', null, el('a', { class: 'btn btn--sm', href: site, rel: 'noopener noreferrer nofollow', target: '_blank', text: 'ウェブサイト' })));
+      if (info) more.appendChild(info);
+      if (site) more.appendChild(el('p', null, el('a', { class: 'btn btn--sm', href: site, rel: 'noopener noreferrer nofollow', target: '_blank', text: 'ウェブサイト' })));
 
       // SNS などの外部リンク
       if ((links || []).length) {
@@ -138,7 +145,7 @@
             text: l.label || EM.platformLabel(l.platform)
           }));
         });
-        if (row.childNodes.length) box.appendChild(row);
+        if (row.childNodes.length) more.appendChild(row);
       }
 
       // 依頼の受け取り方に合わせて導線を出し分ける
@@ -159,7 +166,10 @@
         }));
       }
       actions.appendChild(el('span', { id: 'followSlot' }));
-      actions.appendChild(el('a', { class: 'btn', href: '/contact/', text: 'お問い合わせ' }));
+      // このクリエイター本人に届くメッセージ（Eizo Maps 運営へのお問い合わせはフッターから）
+      var dmBtn = el('a', { class: 'btn', href: '/messages/?to=' + encodeURIComponent(c.id), text: 'メッセージを送る', title: c.display_name + ' さんに直接メッセージを送れます（ログインが必要です）' });
+      actions.appendChild(dmBtn);
+      EM.getUser().then(function (u) { if (u && u.id === c.user_id) dmBtn.hidden = true; });
       actions.appendChild(el('button', { class: 'btn btn--ghost', type: 'button', text: '商談で見せる', title: '画面共有用に、要点だけを大きく表示します', onclick: openPitch }));
       if (pref === 'dm' && dm) {
         box.appendChild(el('p', { class: 'small muted',
@@ -282,7 +292,7 @@
           })(new Date(from.getFullYear(), from.getMonth(), from.getDate() + i));
         }
         detail.textContent = loggedIn ? '色つきの日を押すと、予定のある時間が見られます。' : 'ログインすると、色つきの日を押して予定のある時間が見られます。';
-        box.appendChild(el('div', { class: 'avail-box' }, [
+        EM.$('#profileMore').appendChild(el('div', { class: 'avail-box' }, [
           el('p', { class: 'small muted', text: '今後60日の空き状況（色つきが予定のある日）' }),
           strip,
           detail
