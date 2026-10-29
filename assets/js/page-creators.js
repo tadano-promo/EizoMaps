@@ -38,7 +38,7 @@
     Promise.all([
       sb.from('genres').select('id,slug,name_ja,sort_order').order('sort_order'),
       sb.from('creators')
-        .select('id,user_id,display_name,headline,area_pref,area_city,years_of_experience,response_time_hours,avatar_url,updated_at,creator_genres(genre_id)')
+        .select('id,user_id,handle,display_name,headline,area_pref,area_city,years_of_experience,response_time_hours,avatar_url,updated_at,creator_genres(genre_id)')
         .eq('is_published', true)
         .order('updated_at', { ascending: false })
         .limit(300),
@@ -142,7 +142,7 @@
       if (c.response_time_hours !== null && c.response_time_hours !== undefined) meta.push('返信目安' + c.response_time_hours + '時間');
       if (completed[c.id]) meta.push('完了' + completed[c.id] + '件');
 
-      return el('a', { class: 'card creator-card', href: '/creators/detail.html?id=' + encodeURIComponent(c.id) }, [
+      return el('a', { class: 'card creator-card', href: c.handle ? '/@' + c.handle : '/creators/detail.html?id=' + encodeURIComponent(c.id) }, [
         EM.avatar(c.avatar_url, c.display_name),
         el('div', { class: 'body' }, [
           el('p', { class: 'name', text: c.display_name }),

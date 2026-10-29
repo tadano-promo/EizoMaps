@@ -6,6 +6,9 @@ on:
   push:
     branches: [main]
   workflow_dispatch:
+  # 評価やプロフィールの変更を、検索エンジン・AI 向けのページにも反映するため、1時間ごとに作り直す
+  schedule:
+    - cron: '17 * * * *'
 
 permissions:
   contents: read
@@ -60,6 +63,14 @@ jobs:
 
           if [ "$fail" -ne 0 ]; then exit 1; fi
           echo 'OK: 管理者用の鍵は含まれていません'
+
+      # 公開中のクリエイターごとに、評価・コメント・作品を書き込んだページ（/@ハンドル）を作り、
+      # サイトの地図にも足す。データが取れないときはここで止まり、前回の公開がそのまま残る。
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+      - name: Prerender creator pages
+        run: node .github/prerender/prerender.mjs .
 
       # 更新したのに古い画面が出続けないよう、
       # 各ページが読み込む JS / CSS の後ろに「版の印（?v=コミット番号）」を付ける。

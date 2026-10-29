@@ -4,7 +4,9 @@
   document.addEventListener('DOMContentLoaded', function () {
     var sb = EM.sb(), el = EM.el;
     var msg = EM.$('#pageMsg'), box = EM.$('#profile');
-    var id = EM.param('id');
+    // 書き出し済みのページ（/@ハンドル）には、クリエイターの番号が埋め込まれている
+    var pre = document.querySelector('meta[name="em-creator-id"]');
+    var id = EM.param('id') || (pre && pre.content) || null;
     var handle = String(EM.param('h') || '').replace(/^@/, '').toLowerCase();
 
     if (!sb) { return; }  // 未設定の案内はヘッダー直下に共通表示される
