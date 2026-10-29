@@ -35,7 +35,7 @@
         .eq('id', id).maybeSingle(),
       sb.from('genres').select('id,name_ja'),
       sb.from('portfolios')
-        .select('id,title,description,provider,video_id,video_url,thumbnail_url,sort_order,created_at,release_on,takedown_hold,role,purpose,industry,length_label,client_display,client_name,portfolio_tags(tag)')
+        .select('id,title,description,provider,video_id,video_url,thumbnail_url,sort_order,created_at,release_on,takedown_hold,role,purpose,industry,length_label,client_display,client_name,pinned,portfolio_tags(tag)')
         .eq('creator_id', id).eq('visibility', 'public')
         .order('sort_order').order('created_at', { ascending: false }),
       sb.from('creator_project_stats').select('completed_count').eq('creator_id', id).maybeSingle(),
@@ -116,11 +116,23 @@
           el('p', { id: 'availBadge', hidden: true }),
           el('p', { class: 'lead', text: c.headline || '' }),
           el('p', { class: 'small muted', text: [c.area_pref, c.area_city].filter(Boolean).join(' ') }),
-          c.updated_at ? el('p', { class: 'small muted', text: 'プロフィール更新 ' + EM.date(c.updated_at) }) : null
         ])
       ]));
-      box.appendChild(el('div', { class: 'row', id: 'ratingRow' }));
-      box.appendChild(tags);
+      // 評価の平均と職種を1行に
+      box.appendChild(el('div', { class: 'head-meta' }, [el('div', { class: 'row', id: 'ratingRow' }), tags]));
+      // 自己紹介は2行だけ見せて「さらに表示」で全部（作品を最初の画面に入れるため）
+      if (c.bio) {
+        var bioP = el('p', { class: 'profile-bio is-clamped', id: 'bioText', text: c.bio });
+        var bioBtn = el('button', { class: 'link-btn small', type: 'button', text: 'さらに表示', 'aria-controls': 'bioText', 'aria-expanded': 'false',
+          onclick: function () {
+            var open = bioP.classList.toggle('is-clamped') === false;
+            bioBtn.textContent = open ? 'たたむ' : 'さらに表示';
+            bioBtn.setAttribute('aria-expanded', open ? 'true' : 'false');
+          } });
+        box.appendChild(el('div', { class: 'bio-box' }, [bioP, bioBtn]));
+        // 2行に収まる短い紹介なら、ボタンは出さない
+        setTimeout(function () { if (bioP.scrollHeight <= bioP.clientHeight + 2) bioBtn.hidden = true; }, 0);
+      }
       // 作品をいちばん先に見せるため、自己紹介・数字・基本情報は作品と料金の下（#profileMore）に置く
       var more = EM.$('#profileMore');
       EM.clear(more);
@@ -128,8 +140,8 @@
       more.appendChild(el('hr', { class: 'divider' }));
       more.appendChild(el('p', { class: 'eyebrow', text: 'Profile' }));
       more.appendChild(el('h2', { text: 'プロフィール' }));
+      if (c.updated_at) more.appendChild(el('p', { class: 'small muted', text: 'プロフィール更新 ' + EM.date(c.updated_at) }));
       more.appendChild(stats);
-      if (c.bio) more.appendChild(el('p', { class: 'profile-bio', text: c.bio }));
       var info = infoList(c);
       if (info) more.appendChild(info);
       if (site) more.appendChild(el('p', null, el('a', { class: 'btn btn--sm', href: site, rel: 'noopener noreferrer nofollow', target: '_blank', text: 'ウェブサイト' })));
@@ -176,6 +188,34 @@
           text: c.display_name + ' さんは SNS の DM での連絡を希望しています。' }));
       }
       box.appendChild(actions);
+      mountStickyBar(c, pref, dm);
+    }
+
+    /* スクロールして上のボタンが見えなくなったら、画面の下に「○○さんに相談する」を出す */
+    function mountStickyBar(c, pref, dm) {
+      var old = EM.$('#stickyAsk');
+      if (old) old.parentNode.removeChild(old);
+      var btns = [];
+      if (pref === 'form' || pref === 'both') btns.push(el('a', { class: 'btn btn--primary btn--sm', href: '/request/?creator_id=' + encodeURIComponent(c.id), text: '依頼する' }));
+      if ((pref === 'dm' || pref === 'both') && dm) btns.push(el('a', { class: 'btn btn--sm', href: dm, target: '_blank', rel: 'noopener noreferrer nofollow', text: 'SNS の DM' }));
+      btns.push(el('a', { class: 'btn btn--sm', href: '/messages/?to=' + encodeURIComponent(c.id), text: 'メッセージを送る' }));
+      var bar = el('div', { class: 'sticky-ask', id: 'stickyAsk', 'aria-hidden': 'true' }, [
+        el('div', { class: 'wrap sticky-ask__inner' }, [
+          el('p', { class: 'sticky-ask__text' }, [el('strong', { text: c.display_name }), document.createTextNode(' さんに相談する')]),
+          el('div', { class: 'sticky-ask__btns' }, btns)
+        ])
+      ]);
+      document.body.appendChild(bar);
+      EM.getUser().then(function (u) {
+        if (u && u.id === c.user_id) { bar.parentNode && bar.parentNode.removeChild(bar); return; }  // 自分のページでは出さない
+        var target = EM.$('#profile .form-actions');
+        if (!target || !('IntersectionObserver' in window)) return;
+        new IntersectionObserver(function (es) {
+          var hidden = es[0].isIntersecting || es[0].boundingClientRect.top > 0;
+          bar.classList.toggle('is-shown', !hidden);
+          bar.setAttribute('aria-hidden', hidden ? 'true' : 'false');
+        }).observe(target);
+      });
     }
 
     /* フォロー。ログインしている人にだけ出す。
@@ -314,13 +354,41 @@
       // 本人が自分のページを見たときも、解禁前・一時非公開の作品はほかの人と同じく出さない
       var today = new Date(Date.now() + 9 * 3600000).toISOString().slice(0, 10);
       items = items.filter(function (p) { return !p.takedown_hold && !(p.release_on && p.release_on > today); });
+      // 代表作（固定した作品）を先頭に。ほかは並べた順のまま
+      items = items.filter(function (p) { return p.pinned; }).concat(items.filter(function (p) { return !p.pinned; }));
       S.works = items;
+      var tabBox = EM.$('#workTabs');
+      if (tabBox) { EM.clear(tabBox); tabBox.hidden = true; }
       if (!items.length) { grid.appendChild(el('div', { class: 'empty', text: '公開されている作品はまだありません。' })); return; }
+      // ジャンルのタブ：本人が付けたタグ（なければ作品の目的）から、多い順に10個まで
+      var count = {}, keyOf = {};
+      var useTags = items.some(function (p) { return (p.portfolio_tags || []).length; });
+      items.forEach(function (p) {
+        var ks = useTags ? (p.portfolio_tags || []).map(function (t) { return t.tag; }) : (p.purpose ? [p.purpose] : []);
+        keyOf[p.id] = ks;
+        ks.forEach(function (k) { count[k] = (count[k] || 0) + 1; });
+      });
+      var keys = Object.keys(count).sort(function (a, b) { return count[b] - count[a]; }).slice(0, 10);
+      if (tabBox && keys.length >= 2) {
+        tabBox.hidden = false;
+        ['すべて'].concat(keys).forEach(function (k, i) {
+          tabBox.appendChild(el('button', { type: 'button', class: 'work-tab', 'aria-pressed': i === 0 ? 'true' : 'false',
+            text: k + (i ? '（' + count[k] + '）' : '（' + items.length + '）'),
+            onclick: function () {
+              EM.$$('.work-tab', tabBox).forEach(function (b) { b.setAttribute('aria-pressed', 'false'); });
+              this.setAttribute('aria-pressed', 'true');
+              EM.$$('[data-work]', grid).forEach(function (card) {
+                card.hidden = i !== 0 && (keyOf[card.getAttribute('data-work')] || []).indexOf(k) < 0;
+              });
+            } }));
+        });
+      }
       items.forEach(function (p) {
         var tags = el('div', { class: 'tags' });
         (p.portfolio_tags || []).forEach(function (t) { tags.appendChild(el('span', { class: 'tag', text: t.tag })); });
-        grid.appendChild(el('article', { class: 'card' }, [
+        grid.appendChild(el('article', { class: 'card work-card', 'data-work': p.id }, [
           EM.workMedia(p),
+          p.pinned ? el('span', { class: 'tag tag--accent work-pin', text: '代表作' }) : null,
           el('h3', { class: 'pf-title', text: p.title }),
           workMeta(p),
           p.description ? el('p', { class: 'small muted', text: p.description }) : null,
@@ -549,7 +617,8 @@
       ]));
       page.appendChild(nums);
 
-      var feat = S.works.slice(0, 3);
+      var pins = S.works.filter(function (p) { return p.pinned; });
+      var feat = pins.length ? pins.slice(0, 4) : S.works.slice(0, 3);
       if (feat.length) {
         var g = el('div', { class: 'pitch-works' });
         feat.forEach(function (p) {
@@ -560,7 +629,7 @@
           ]));
         });
         page.appendChild(el('section', { class: 'pitch-sec' }, [el('h2', { text: '代表作' }), g,
-          S.works.length > 3 ? el('p', { class: 'small muted', text: 'ほかに ' + (S.works.length - 3) + ' 作品あります（プロフィールで見られます）' }) : null]));
+          S.works.length > feat.length ? el('p', { class: 'small muted', text: 'ほかに ' + (S.works.length - feat.length) + ' 作品あります（プロフィールで見られます）' }) : null]));
       }
 
       if (S.packages.length) {

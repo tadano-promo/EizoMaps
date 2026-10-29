@@ -58,7 +58,7 @@ const gmap = Object.fromEntries(genres.map((g) => [g.id, g.name_ja]));
 let works = [], reviews = [], stats = [], links = [], packages = [];
 if (creators.length) {
   const ids = creators.map((c) => c.id), uids = creators.map((c) => c.user_id);
-  works = await get(`portfolios?select=creator_id,title,description,provider,video_url,release_on,takedown_hold,sort_order,created_at,role,purpose,industry,length_label,client_display,client_name&visibility=eq.public&creator_id=${inList(ids)}&order=sort_order,created_at.desc`);
+  works = await get(`portfolios?select=creator_id,title,description,provider,video_url,release_on,takedown_hold,sort_order,created_at,role,purpose,industry,length_label,client_display,client_name,pinned&visibility=eq.public&creator_id=${inList(ids)}&order=sort_order,created_at.desc`);
   reviews = await get(`public_reviews?select=reviewee_id,score,comment,reviewer_role,published_at,source,objected,objection_kept&reviewee_id=${inList(uids)}&order=published_at.desc`);
   stats = await get(`creator_project_stats?select=creator_id,completed_count&creator_id=${inList(ids)}`);
   packages = await get(`creator_packages?select=creator_id,title,description,price_yen,price_from,delivery_days,revisions,sort_order,created_at&creator_id=${inList(ids)}&order=sort_order,created_at`);
@@ -98,7 +98,8 @@ const mark = (v) => `<div class="tags review-marks"><span class="tag">${v.source
     : v.objection_kept ? '<span class="tag tag--warn">本人から異議申し立てあり・運営の確認により掲載継続</span>' : ''}</div>`;
 
 for (const c of creators) {
-  const myWorks = works.filter((w) => w.creator_id === c.id && !w.takedown_hold && !(w.release_on && w.release_on > todayJst));
+  const myWorks0 = works.filter((w) => w.creator_id === c.id && !w.takedown_hold && !(w.release_on && w.release_on > todayJst));
+  const myWorks = myWorks0.filter((w) => w.pinned).concat(myWorks0.filter((w) => !w.pinned));
   const myReviews = reviews.filter((r) => r.reviewee_id === c.user_id).slice(0, 50);
   const myPkgs = packages.filter((k) => k.creator_id === c.id);
   const myLinks = links.filter((l) => l.creator_id === c.id).map((l) => ({ ...l, url: safeUrl(l.url) })).filter((l) => l.url);
@@ -122,28 +123,27 @@ for (const c of creators) {
     ${c.handle ? `<p class="profile-handle mono">@${esc(c.handle)}</p>` : ''}
     <p class="lead">${esc(c.headline || '')}</p>
     ${area ? `<p class="small muted">${esc(area)}</p>` : ''}
-    ${c.updated_at ? `<p class="small muted">プロフィール更新 ${jpDate(c.updated_at)}</p>` : ''}
   </div>
 </div>
-<div class="row" id="ratingRow">${avg !== null
+<div class="head-meta"><div class="row" id="ratingRow">${avg !== null
     ? `<span class="rating"><span class="score">${avg.toFixed(1)}</span><span class="stars">${stars(avg)}</span><span class="count">${myReviews.length}件の評価</span></span>`
     : '<span class="small muted">評価はまだありません</span>'}</div>
-${tags.length ? `<div class="tags">${tags.map((t) => `<span class="tag tag--accent">${esc(t)}</span>`).join('')}</div>` : ''}
+${tags.length ? `<div class="tags">${tags.map((t) => `<span class="tag tag--accent">${esc(t)}</span>`).join('')}</div>` : ''}</div>
+${c.bio ? `<div class="bio-box"><p class="profile-bio is-clamped" id="bioText">${esc(c.bio)}</p></div>` : ''}
 <div class="form-actions"><a class="btn btn--primary" href="/request/?creator_id=${esc(c.id)}" rel="nofollow">依頼する</a><a class="btn" href="/messages/?to=${esc(c.id)}" rel="nofollow">メッセージを送る</a></div>`;
 
   // 作品と料金の下に置く「プロフィール」（自己紹介・数字・基本情報・SNS）
-  const more = `<hr class="divider"><p class="eyebrow">Profile</p><h2>プロフィール</h2>
+  const more = `<hr class="divider"><p class="eyebrow">Profile</p><h2>プロフィール</h2>${c.updated_at ? `<p class="small muted">プロフィール更新 ${jpDate(c.updated_at)}</p>` : ''}
 <div class="row profile-stats">
   <div class="stat"><span class="v">${completed}</span><span class="k">Completed</span></div>
   ${c.years_of_experience != null ? `<div class="stat"><span class="v">${esc(c.years_of_experience)}y</span><span class="k">Career</span></div>` : ''}
   ${c.response_time_hours != null ? `<div class="stat"><span class="v">${esc(c.response_time_hours)}h</span><span class="k">Reply</span></div>` : ''}
 </div>
-${c.bio ? `<p class="profile-bio">${esc(c.bio)}</p>` : ''}
 ${infoRows(c).length ? `<dl class="info-list">${infoRows(c).map((r) => `<dt>${esc(r[0])}</dt><dd class="pre">${esc(r[1])}</dd>`).join('')}</dl>` : ''}
 ${myLinks.length ? `<div class="chips stock-links">${myLinks.map((l) => `<a class="chip" href="${esc(l.url)}" target="_blank" rel="noopener noreferrer nofollow">${esc(l.label || PLATFORM[l.platform] || 'Link')}</a>`).join('')}</div>` : ''}`;
 
   const worksHtml = myWorks.length
-    ? myWorks.map((w) => `<article class="card"><div class="body"><h3>${esc(w.title || '作品')}</h3>${workMetaHtml(w)}${w.description ? `<p class="small">${esc(w.description)}</p>` : ''}${safeUrl(w.video_url) ? `<p class="small"><a href="${esc(w.video_url)}" target="_blank" rel="noopener noreferrer nofollow">作品を見る（${esc(PLATFORM[w.provider] || '外部サイト')}）</a></p>` : ''}</div></article>`).join('\n')
+    ? myWorks.map((w) => `<article class="card work-card"><div class="body">${w.pinned ? '<span class="tag tag--accent work-pin">代表作</span>' : ''}<h3>${esc(w.title || '作品')}</h3>${workMetaHtml(w)}${w.description ? `<p class="small">${esc(w.description)}</p>` : ''}${safeUrl(w.video_url) ? `<p class="small"><a href="${esc(w.video_url)}" target="_blank" rel="noopener noreferrer nofollow">作品を見る（${esc(PLATFORM[w.provider] || '外部サイト')}）</a></p>` : ''}</div></article>`).join('\n')
     : '<div class="empty">公開されている作品はまだありません。</div>';
 
   const reviewsHtml = myReviews.length
@@ -199,7 +199,7 @@ ${myLinks.length ? `<div class="chips stock-links">${myLinks.map((l) => `<a clas
       return `<article class="card pkg"><p class="pkg__title">${esc(k.title)}</p><p class="pkg__price"><span class="pkg__yen">${esc(yen(k.price_yen))}</span><span class="small muted">（税込）${k.price_from ? '〜' : ''}</span></p>${sub ? `<p class="small muted">${esc(sub)}</p>` : ''}${k.description ? `<p class="small pre">${esc(k.description)}</p>` : ''}</article>`;
     }).join('')}</div>`)
     .replace('<section id="portfolioSection" hidden>', '<section id="portfolioSection">')
-    .replace('<div class="grid grid--3" id="portfolioGrid"></div>', `<div class="grid grid--3" id="portfolioGrid">${worksHtml}</div>`)
+    .replace('<div class="grid works-grid" id="portfolioGrid"></div>', `<div class="grid works-grid" id="portfolioGrid">${worksHtml}</div>`)
     .replace('<section id="profileMore" hidden></section>', `<section id="profileMore">${more}</section>`)
     .replace('<section id="reviewSection" hidden>', '<section id="reviewSection">')
     .replace('<div id="reviewList"></div>', `<div id="reviewList">${reviewsHtml}</div>`);

@@ -131,7 +131,7 @@
     function reload() {
       return Promise.all([
         sb.from('portfolios')
-          .select('id,title,description,provider,video_id,video_url,thumbnail_url,visibility,sort_order,created_at,rights_confirmed_at,release_on,takedown_hold,role,purpose,industry,length_label,client_display,client_name,portfolio_tags(tag),stock_items(id)')
+          .select('id,title,description,provider,video_id,video_url,thumbnail_url,visibility,sort_order,created_at,rights_confirmed_at,release_on,takedown_hold,role,purpose,industry,length_label,client_display,client_name,pinned,portfolio_tags(tag),stock_items(id)')
           .eq('creator_id', creator.id).order('sort_order').order('created_at', { ascending: false }),
         sb.rpc('my_takedown_requests'),
         sb.from('share_links')
@@ -330,6 +330,7 @@
           thumb,
           el('div', null, [
             el('h3', { class: 'pf-title', text: p.title }),
+            p.pinned ? el('p', { class: 'small' }, el('span', { class: 'tag tag--accent', text: '代表作（プロフィールの先頭と商談モードに出ます）' })) : null,
             el('p', { class: 'small muted', text: visLabel(p.visibility) + ' / ' + EM.date(p.created_at) }),
             statusRow(p),
             inStock(p) ? el('p', { class: 'small' }, el('span', { class: 'tag tag--accent', text: 'ストックページで使用中' })) : null,
@@ -339,6 +340,10 @@
             el('div', { class: 'pf-actions' }, [
               el('button', { class: 'btn btn--sm', type: 'button', text: '↑', 'aria-label': '上へ移動', disabled: idx === 0, onclick: function () { move(idx, -1); } }),
               el('button', { class: 'btn btn--sm', type: 'button', text: '↓', 'aria-label': '下へ移動', disabled: idx === items.length - 1, onclick: function () { move(idx, 1); } }),
+              el('button', { class: 'btn btn--sm' + (p.pinned ? ' btn--primary' : ''), type: 'button',
+                text: p.pinned ? '代表作の固定を外す' : '代表作に固定',
+                title: '代表作は4つまで。プロフィールの作品の先頭と、商談モードの「代表作」に出ます',
+                onclick: function () { togglePin(p); } }),
               visSelect(p),
               releaseButton(p),
               thumbButton(p),
@@ -410,6 +415,14 @@
         box.appendChild(ta); box.appendChild(btn);
       }
       return box;
+    }
+
+    function togglePin(p) {
+      if (!p.pinned && p.visibility !== 'public') { EM.notice(msg, '代表作に固定できるのは、公開（プロフィールに表示）の作品だけです。', 'error'); return; }
+      sb.from('portfolios').update({ pinned: !p.pinned }).eq('id', p.id).then(function (r) {
+        if (r.error) { EM.notice(msg, EM.errorText(r.error), 'error'); return; }
+        EM.notice(msg, ''); EM.toast(p.pinned ? '固定を外しました' : '代表作に固定しました'); reload();
+      });
     }
 
     function move(idx, dir) {
