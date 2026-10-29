@@ -34,6 +34,12 @@
         EM.$('#years').value         = creator.years_of_experience != null ? creator.years_of_experience : '';
         EM.$('#responseHours').value = creator.response_time_hours != null ? creator.response_time_hours : '';
         EM.$('#websiteUrl').value    = creator.website_url || '';
+        EM.$('#serviceArea').value   = creator.service_area || '';
+        EM.$('#travelOk').value      = creator.travel_ok === true ? 'yes' : creator.travel_ok === false ? 'no' : '';
+        EM.$('#businessType').value  = creator.business_type || '';
+        EM.$('#invoiceRegistered').value = creator.invoice_registered === true ? 'yes' : creator.invoice_registered === false ? 'no' : '';
+        EM.$('#equipment').value     = creator.equipment || '';
+        loadPackages();
         EM.$('#isPublished').checked = !!creator.is_published;
         selected = (creator.creator_genres || []).map(function (x) { return x.genre_id; });
         var link = EM.$('#viewPublicLink');
@@ -341,6 +347,11 @@
           years_of_experience: EM.$('#years').value === '' ? null : Number(EM.$('#years').value),
           response_time_hours: EM.$('#responseHours').value === '' ? null : Number(EM.$('#responseHours').value),
           website_url: site || null,
+          service_area: EM.$('#serviceArea').value.trim() || null,
+          travel_ok: yesNo(EM.$('#travelOk').value),
+          business_type: EM.$('#businessType').value || null,
+          invoice_registered: yesNo(EM.$('#invoiceRegistered').value),
+          equipment: EM.$('#equipment').value.trim() || null,
           avatar_url: (creator && creator.avatar_url) || null,
           is_published: EM.$('#isPublished').checked
         };
@@ -354,6 +365,7 @@
         creator = Object.assign({}, r.data);
         savedAt = creator.updated_at;
         if (EM.$('#handleEditor').hidden) initHandle();
+        if (EM.$('#packagesBox').hidden) loadPackages();
         return syncGenres(creator.id);
       }).then(function () {
         var link = EM.$('#viewPublicLink');
@@ -372,6 +384,109 @@
         EM.notice(msg, EM.errorText(err), 'error');
         throw err;
       });
+    }
+
+    function yesNo(v) { return v === 'yes' ? true : v === 'no' ? false : null; }
+
+    /* ---------- 料金の目安（6つまで。押したらすぐ保存） ---------- */
+    var pkgs = [], pkgEditing = null;
+    function loadPackages() {
+      if (!creator || !creator.id) return;
+      EM.$('#packagesBox').hidden = false;
+      sb.from('creator_packages').select('*').eq('creator_id', creator.id).order('sort_order').order('created_at').then(function (r) {
+        if (r.error) { EM.notice(msg, EM.errorText(r.error), 'error'); return; }
+        pkgs = r.data || [];
+        renderPkgs();
+      });
+    }
+    function renderPkgs() {
+      var list = EM.$('#pkgList');
+      EM.clear(list);
+      if (!pkgs.length) list.appendChild(el('p', { class: 'small muted', text: 'まだありません。' }));
+      pkgs.forEach(function (k, i) {
+        var sub = [Number(k.price_yen).toLocaleString('ja-JP') + '円（税込）' + (k.price_from ? '〜' : '')];
+        if (k.delivery_days) sub.push('納品 ' + k.delivery_days + '日');
+        if (k.revisions != null) sub.push('修正 ' + k.revisions + '回まで');
+        list.appendChild(el('div', { class: 'card row pkg-row' }, [
+          el('div', { class: 'pkg-row__text' }, [
+            el('p', { class: 'pf-title', text: k.title }),
+            el('p', { class: 'small muted', text: sub.join('／') }),
+            k.description ? el('p', { class: 'small pre', text: k.description }) : null
+          ]),
+          el('div', { class: 'pf-actions' }, [
+            el('button', { class: 'btn btn--sm', type: 'button', text: '↑', 'aria-label': '上へ', disabled: i === 0, onclick: function () { movePkg(i, -1); } }),
+            el('button', { class: 'btn btn--sm', type: 'button', text: '↓', 'aria-label': '下へ', disabled: i === pkgs.length - 1, onclick: function () { movePkg(i, 1); } }),
+            el('button', { class: 'btn btn--sm', type: 'button', text: '直す', onclick: function () { editPkg(k); } }),
+            el('button', { class: 'btn btn--sm btn--danger', type: 'button', text: '消す', onclick: function () { removePkg(k); } })
+          ])
+        ]));
+      });
+      var full = pkgs.length >= 6 && !pkgEditing;
+      EM.$('#pkgForm').hidden = full;
+    }
+    function editPkg(k) {
+      pkgEditing = k;
+      EM.$('#pkgFormTitle').textContent = '「' + k.title + '」を直す';
+      EM.$('#pkgTitle').value = k.title;
+      EM.$('#pkgPrice').value = k.price_yen;
+      EM.$('#pkgFrom').value = k.price_from ? 'from' : 'fixed';
+      EM.$('#pkgDays').value = k.delivery_days != null ? k.delivery_days : '';
+      EM.$('#pkgRevisions').value = k.revisions != null ? k.revisions : '';
+      EM.$('#pkgDesc').value = k.description || '';
+      EM.$('#pkgSave').textContent = '保存する';
+      EM.$('#pkgCancel').hidden = false;
+      EM.$('#pkgForm').hidden = false;
+      EM.$('#pkgTitle').focus();
+    }
+    function resetPkgForm() {
+      pkgEditing = null;
+      EM.$('#pkgForm').reset();
+      EM.$('#pkgFormTitle').textContent = '料金の目安を足す';
+      EM.$('#pkgSave').textContent = '足す';
+      EM.$('#pkgCancel').hidden = true;
+    }
+    EM.$('#pkgCancel').addEventListener('click', function () { resetPkgForm(); renderPkgs(); });
+    EM.$('#pkgForm').addEventListener('submit', function (e) {
+      e.preventDefault();
+      var title = EM.$('#pkgTitle').value.trim();
+      var price = EM.$('#pkgPrice').value;
+      if (!title) { EM.notice(msg, '料金の目安の名前を入れてください。', 'error'); return; }
+      if (price === '' || Number(price) < 0) { EM.notice(msg, '金額（税込）を入れてください。', 'error'); return; }
+      var row = {
+        title: title,
+        price_yen: Math.round(Number(price)),
+        price_from: EM.$('#pkgFrom').value === 'from',
+        delivery_days: EM.$('#pkgDays').value === '' ? null : Number(EM.$('#pkgDays').value),
+        revisions: EM.$('#pkgRevisions').value === '' ? null : Number(EM.$('#pkgRevisions').value),
+        description: EM.$('#pkgDesc').value.trim() || null
+      };
+      var q = pkgEditing
+        ? sb.from('creator_packages').update(row).eq('id', pkgEditing.id)
+        : sb.from('creator_packages').insert(Object.assign({ creator_id: creator.id, sort_order: pkgs.length }, row));
+      q.then(function (r) {
+        if (r.error) { EM.notice(msg, EM.errorText(r.error), 'error'); return; }
+        EM.notice(msg, '');
+        EM.toast(pkgEditing ? '料金の目安を直しました' : '料金の目安を足しました');
+        resetPkgForm();
+        loadPackages();
+      });
+    });
+    function removePkg(k) {
+      if (!confirm('「' + k.title + '」を消しますか？')) return;
+      sb.from('creator_packages').delete().eq('id', k.id).then(function (r) {
+        if (r.error) { EM.notice(msg, EM.errorText(r.error), 'error'); return; }
+        EM.toast('消しました');
+        if (pkgEditing && pkgEditing.id === k.id) resetPkgForm();
+        loadPackages();
+      });
+    }
+    function movePkg(i, dir) {
+      var j = i + dir;
+      if (j < 0 || j >= pkgs.length) return;
+      Promise.all([
+        sb.from('creator_packages').update({ sort_order: j }).eq('id', pkgs[i].id),
+        sb.from('creator_packages').update({ sort_order: i }).eq('id', pkgs[j].id)
+      ]).then(loadPackages);
     }
 
     function syncGenres(creatorId) {

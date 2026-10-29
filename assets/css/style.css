@@ -1577,3 +1577,65 @@ a.setsum__sub:hover { color: var(--accent); }
 .feat-links__row:nth-child(3) .feat-links__thumbs i:nth-child(2) { background-image: url(/assets/img/feat/sample6.png); }
 .feat-links__row:nth-child(4) .feat-links__thumbs i:nth-child(1) { background-image: url(/assets/img/feat/sample5.png); }
 .feat-links__row:nth-child(4) .feat-links__thumbs i:nth-child(2) { background-image: url(/assets/img/feat/sample2.png); }
+
+/* ---------- 営業で見せるプロフィール（受付状況・基本情報・作品の担当・料金の目安） ---------- */
+.avail-badge { display: inline-flex; align-items: center; gap: 8px; margin: 6px 0 0; padding: 4px 12px; border-radius: 999px; border: 1px solid var(--border); font-size: 13px; }
+.avail-badge::before { content: ''; width: 8px; height: 8px; border-radius: 50%; background: var(--muted); }
+.avail-badge.is-open { border-color: #3ddc84; color: #3ddc84; }
+.avail-badge.is-open::before { background: #3ddc84; }
+.avail-badge.is-later { border-color: var(--accent); color: var(--accent); }
+.avail-badge.is-later::before { background: var(--accent); }
+.avail-badge.is-full { color: var(--muted); }
+
+.info-list { display: grid; grid-template-columns: max-content 1fr; gap: 8px 20px; margin: 18px 0; font-size: 14px; }
+.info-list dt { color: var(--muted); }
+.info-list dd { margin: 0; }
+@media (max-width: 560px) { .info-list { grid-template-columns: 1fr; gap: 2px; } .info-list dd { margin-bottom: 8px; } }
+
+.work-meta { list-style: none; margin: 6px 0 8px; padding: 0; display: flex; flex-wrap: wrap; gap: 4px 12px; font-size: 12px; color: var(--muted); }
+.work-meta li { overflow-wrap: anywhere; }
+
+.pkg { display: flex; flex-direction: column; gap: 6px; }
+.pkg__title { margin: 0; font-weight: 700; }
+.pkg__price { margin: 0; }
+.pkg__yen { font-family: var(--font-disp); font-size: 30px; letter-spacing: .02em; color: var(--accent); margin-right: 4px; }
+
+/* ---------- 商談モード（画面共有用） ---------- */
+body.is-pitch { overflow: hidden; }
+.pitch { position: fixed; inset: 0; z-index: 1000; overflow-y: auto; background: var(--bg); color: var(--text); }
+.pitch-bar { position: sticky; top: 0; z-index: 2; display: flex; align-items: center; justify-content: flex-end; gap: 10px; padding: 10px 16px; background: rgba(10,10,15,.92); border-bottom: 1px solid var(--border); }
+.pitch-bar > span { margin-right: auto; }
+.pitch-page { max-width: 1100px; margin: 0 auto; padding: 40px 24px 80px; }
+.pitch-hero { display: flex; gap: 28px; align-items: center; }
+.pitch-hero .avatar { width: 128px; height: 128px; flex: none; }
+.pitch-name { font-size: clamp(36px, 5vw, 64px); line-height: 1.1; margin: 0 0 8px; }
+.pitch-headline { font-size: clamp(18px, 2.2vw, 26px); margin: 0 0 12px; }
+.pitch-nums { display: flex; flex-wrap: wrap; gap: 16px 48px; margin: 36px 0 8px; padding: 24px 0; border-top: 1px solid var(--border); border-bottom: 1px solid var(--border); }
+.pitch-num .v { display: block; font-family: var(--font-disp); font-size: clamp(36px, 4.5vw, 56px); line-height: 1; color: var(--accent); }
+.pitch-num .k { font-size: 14px; color: var(--muted); }
+.pitch-sec { margin-top: 48px; }
+.pitch-sec h2 { font-size: clamp(22px, 2.6vw, 30px); margin: 0 0 16px; }
+.pitch-works { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 20px; }
+.pitch-work h3 { font-size: 18px; margin: 10px 0 0; }
+.pitch-pkgs { display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 16px; }
+.info-list--big { font-size: 17px; }
+.pitch-reviews { display: grid; gap: 16px; }
+.pitch-review { margin: 0; padding: 18px 20px; border: 1px solid var(--border); border-radius: var(--radius); background: var(--surface); }
+.pitch-review p { margin: 0 0 8px; font-size: 16px; line-height: 1.7; }
+.pitch-review .stars { color: var(--accent); }
+.pitch-contact { display: flex; gap: 28px; align-items: center; padding: 24px; border: 1px solid var(--border); border-radius: var(--radius); background: var(--surface); }
+.pitch-qr { background: #fff; border-radius: 8px; padding: 6px; image-rendering: pixelated; }
+.pitch-url { font-size: clamp(18px, 2.4vw, 26px); color: var(--accent); margin: 0 0 6px; overflow-wrap: anywhere; }
+@media (max-width: 760px) {
+  .pitch-hero { flex-direction: column; align-items: flex-start; }
+  .pitch-works { grid-template-columns: 1fr; }
+  .pitch-contact { flex-direction: column; align-items: flex-start; }
+}
+.sales-fields { border: 1px solid var(--border); border-radius: var(--radius); padding: 14px 16px; margin: 6px 0; }
+.sales-fields legend { padding: 0 6px; }
+.pkg-row { justify-content: space-between; align-items: flex-start; gap: 12px; }
+.pkg-row__text { min-width: 0; flex: 1; }
+.pkg-row__text p { margin: 0 0 4px; }
+.work-detail { border: 1px solid var(--border); border-radius: var(--radius-s); padding: 10px 14px; }
+.work-detail summary { cursor: pointer; font-size: 14px; }
+.work-detail[open] summary { margin-bottom: 10px; }

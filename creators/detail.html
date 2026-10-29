@@ -20,6 +20,7 @@
 <script src="/assets/js/config.js" defer></script>
 <script src="/assets/js/app.js" defer></script>
 <script src="/assets/js/video.js" defer></script>
+<script src="/assets/js/vendor/qrcode.js" defer></script>
 <script src="/assets/js/page-creator.js" defer></script>
 </head>
 <body>
@@ -27,6 +28,13 @@
   <div class="wrap">
     <div class="notice" id="pageMsg" hidden></div>
     <div id="profile"></div>
+    <section id="packageSection" hidden>
+      <hr class="divider">
+      <p class="eyebrow">Price</p>
+      <h2>料金の目安</h2>
+      <div class="grid grid--3" id="packageGrid"></div>
+      <p class="small muted">金額は税込です。内容によって変わるので、正式な金額はお見積もりでお伝えします。</p>
+    </section>
     <section id="portfolioSection" hidden>
       <hr class="divider">
       <p class="eyebrow">Portfolio</p>

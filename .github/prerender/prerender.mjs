@@ -51,22 +51,46 @@ const PLATFORM = { youtube: 'YouTube', vimeo: 'Vimeo', tiktok: 'TikTok', x: 'X',
 
 const todayJst = new Date(Date.now() + 9 * 3600000).toISOString().slice(0, 10);
 
-const creators = await get('creators?select=id,user_id,handle,display_name,headline,bio,area_pref,area_city,years_of_experience,response_time_hours,avatar_url,website_url,updated_at,creator_genres(genre_id)&is_published=eq.true&approved=eq.true&suspended=eq.false&order=created_at');
+const creators = await get('creators?select=id,user_id,handle,display_name,headline,bio,area_pref,area_city,years_of_experience,response_time_hours,avatar_url,website_url,updated_at,service_area,travel_ok,equipment,business_type,invoice_registered,creator_genres(genre_id)&is_published=eq.true&approved=eq.true&suspended=eq.false&order=created_at');
 const genres = await get('genres?select=id,name_ja');
 const gmap = Object.fromEntries(genres.map((g) => [g.id, g.name_ja]));
 
-let works = [], reviews = [], stats = [], links = [];
+let works = [], reviews = [], stats = [], links = [], packages = [];
 if (creators.length) {
   const ids = creators.map((c) => c.id), uids = creators.map((c) => c.user_id);
-  works = await get(`portfolios?select=creator_id,title,description,provider,video_url,release_on,takedown_hold,sort_order,created_at&visibility=eq.public&creator_id=${inList(ids)}&order=sort_order,created_at.desc`);
+  works = await get(`portfolios?select=creator_id,title,description,provider,video_url,release_on,takedown_hold,sort_order,created_at,role,purpose,industry,length_label,client_display,client_name&visibility=eq.public&creator_id=${inList(ids)}&order=sort_order,created_at.desc`);
   reviews = await get(`public_reviews?select=reviewee_id,score,comment,reviewer_role,published_at,source,objected,objection_kept&reviewee_id=${inList(uids)}&order=published_at.desc`);
   stats = await get(`creator_project_stats?select=creator_id,completed_count&creator_id=${inList(ids)}`);
+  packages = await get(`creator_packages?select=creator_id,title,description,price_yen,price_from,delivery_days,revisions,sort_order,created_at&creator_id=${inList(ids)}&order=sort_order,created_at`);
   links = await get(`creator_links?select=creator_id,platform,url,label,sort_order,created_at&creator_id=${inList(ids)}&order=sort_order,created_at`);
 }
 
 const template = readFileSync(`${ROOT}/creators/detail.html`, 'utf8');
 const sitemapUrls = [];
 let written = 0;
+
+// 作品の「担当・目的・業種・尺・取引先」
+const workMetaHtml = (w) => {
+  const parts = [];
+  if (w.role) parts.push('担当：' + w.role);
+  if (w.purpose) parts.push('目的：' + w.purpose);
+  if (w.industry) parts.push('業種：' + w.industry);
+  if (w.length_label) parts.push('尺：' + w.length_label);
+  if (w.client_display === 'named' && w.client_name) parts.push('取引先：' + w.client_name);
+  else if (w.client_display === 'industry' && w.industry) parts.push('取引先：' + w.industry + 'の企業（社名は非公開）');
+  return parts.length ? `<ul class="work-meta">${parts.map((t) => `<li>${esc(t)}</li>`).join('')}</ul>` : '';
+};
+const BUSINESS = { individual: '個人（フリーランス）', corporation: '法人' };
+const infoRows = (c) => {
+  const rows = [];
+  const area = c.service_area || [c.area_pref, c.area_city].filter(Boolean).join(' ');
+  if (area || c.travel_ok != null) rows.push(['対応エリア', [area, c.travel_ok === true ? '出張できます' : c.travel_ok === false ? '出張はしていません' : ''].filter(Boolean).join('／')]);
+  if (c.equipment) rows.push(['主な機材', c.equipment]);
+  if (c.business_type) rows.push(['事業の形', BUSINESS[c.business_type] || '']);
+  if (c.invoice_registered != null) rows.push(['インボイス', c.invoice_registered ? '適格請求書発行事業者（登録あり）' : '登録なし']);
+  return rows;
+};
+const yen = (n) => Number(n).toLocaleString('ja-JP') + '円';
 
 // 評価に付ける印（取引の種類・異議申し立て）
 const mark = (v) => `<div class="tags review-marks"><span class="tag">${v.source === 'external' ? 'Eizo Maps外の取引（自己申告）' : 'Eizo Maps での取引'}</span>${
@@ -76,6 +100,7 @@ const mark = (v) => `<div class="tags review-marks"><span class="tag">${v.source
 for (const c of creators) {
   const myWorks = works.filter((w) => w.creator_id === c.id && !w.takedown_hold && !(w.release_on && w.release_on > todayJst));
   const myReviews = reviews.filter((r) => r.reviewee_id === c.user_id).slice(0, 50);
+  const myPkgs = packages.filter((k) => k.creator_id === c.id);
   const myLinks = links.filter((l) => l.creator_id === c.id).map((l) => ({ ...l, url: safeUrl(l.url) })).filter((l) => l.url);
   const completed = (stats.find((s) => s.creator_id === c.id) || {}).completed_count || 0;
   const tags = (c.creator_genres || []).map((g) => gmap[g.genre_id]).filter(Boolean);
@@ -110,11 +135,12 @@ ${tags.length ? `<div class="tags">${tags.map((t) => `<span class="tag tag--acce
   ${c.response_time_hours != null ? `<div class="stat"><span class="v">${esc(c.response_time_hours)}h</span><span class="k">Reply</span></div>` : ''}
 </div>
 ${c.bio ? `<p class="profile-bio">${esc(c.bio)}</p>` : ''}
+${infoRows(c).length ? `<dl class="info-list">${infoRows(c).map((r) => `<dt>${esc(r[0])}</dt><dd class="pre">${esc(r[1])}</dd>`).join('')}</dl>` : ''}
 ${myLinks.length ? `<div class="chips stock-links">${myLinks.map((l) => `<a class="chip" href="${esc(l.url)}" target="_blank" rel="noopener noreferrer nofollow">${esc(l.label || PLATFORM[l.platform] || 'Link')}</a>`).join('')}</div>` : ''}
 <div class="form-actions"><a class="btn btn--primary" href="/request/?creator_id=${esc(c.id)}" rel="nofollow">依頼する</a><a class="btn" href="/contact/">お問い合わせ</a></div>`;
 
   const worksHtml = myWorks.length
-    ? myWorks.map((w) => `<article class="card"><div class="body"><h3>${esc(w.title || '作品')}</h3>${w.description ? `<p class="small">${esc(w.description)}</p>` : ''}${safeUrl(w.video_url) ? `<p class="small"><a href="${esc(w.video_url)}" target="_blank" rel="noopener noreferrer nofollow">作品を見る（${esc(PLATFORM[w.provider] || '外部サイト')}）</a></p>` : ''}</div></article>`).join('\n')
+    ? myWorks.map((w) => `<article class="card"><div class="body"><h3>${esc(w.title || '作品')}</h3>${workMetaHtml(w)}${w.description ? `<p class="small">${esc(w.description)}</p>` : ''}${safeUrl(w.video_url) ? `<p class="small"><a href="${esc(w.video_url)}" target="_blank" rel="noopener noreferrer nofollow">作品を見る（${esc(PLATFORM[w.provider] || '外部サイト')}）</a></p>` : ''}</div></article>`).join('\n')
     : '<div class="empty">公開されている作品はまだありません。</div>';
 
   const reviewsHtml = myReviews.length
@@ -132,6 +158,8 @@ ${myLinks.length ? `<div class="chips stock-links">${myLinks.map((l) => `<a clas
     ...(safeUrl(c.avatar_url) ? { image: c.avatar_url } : {}),
     ...(c.area_pref ? { homeLocation: { '@type': 'Place', name: area } } : {}),
     ...(tags.length ? { knowsAbout: tags } : {}),
+    ...(myPkgs.length ? { makesOffer: myPkgs.map((k) => ({ '@type': 'Offer', name: k.title, ...(k.description ? { description: k.description } : {}),
+      priceSpecification: { '@type': 'PriceSpecification', price: k.price_yen, priceCurrency: 'JPY', valueAddedTaxIncluded: true, ...(k.price_from ? { minPrice: k.price_yen } : {}) } })) } : {}),
     ...([safeUrl(c.website_url), ...myLinks.map((l) => l.url)].filter(Boolean).length
       ? { sameAs: [safeUrl(c.website_url), ...myLinks.map((l) => l.url)].filter(Boolean) } : {}),
   };
@@ -162,6 +190,11 @@ ${myLinks.length ? `<div class="chips stock-links">${myLinks.map((l) => `<a clas
     .replace(/<meta property="og:type" content="[^"]*">/, '<meta property="og:type" content="profile">')
     .replace('</head>', `<script type="application/ld+json">${jsonLd(ld)}</script>\n</head>`)
     .replace('<div id="profile"></div>', `<div id="profile">${profile}</div>`)
+    .replace('<section id="packageSection" hidden>', myPkgs.length ? '<section id="packageSection">' : '<section id="packageSection" hidden>')
+    .replace('<div class="grid grid--3" id="packageGrid"></div>', `<div class="grid grid--3" id="packageGrid">${myPkgs.map((k) => {
+      const sub = [k.delivery_days ? `納品の目安 ${k.delivery_days}日` : '', k.revisions != null ? `修正 ${k.revisions}回まで` : ''].filter(Boolean).join('／');
+      return `<article class="card pkg"><p class="pkg__title">${esc(k.title)}</p><p class="pkg__price"><span class="pkg__yen">${esc(yen(k.price_yen))}</span><span class="small muted">（税込）${k.price_from ? '〜' : ''}</span></p>${sub ? `<p class="small muted">${esc(sub)}</p>` : ''}${k.description ? `<p class="small pre">${esc(k.description)}</p>` : ''}</article>`;
+    }).join('')}</div>`)
     .replace('<section id="portfolioSection" hidden>', '<section id="portfolioSection">')
     .replace('<div class="grid grid--3" id="portfolioGrid"></div>', `<div class="grid grid--3" id="portfolioGrid">${worksHtml}</div>`)
     .replace('<section id="reviewSection" hidden>', '<section id="reviewSection">')

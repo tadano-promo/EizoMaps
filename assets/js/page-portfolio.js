@@ -14,6 +14,93 @@
       ['link_only',  '限定リンクのみ'],
       ['stock_only', 'パスワードページだけ']
     ];
+    /* ---------- クライアントに見せる情報（担当・目的・業種・尺・取引先） ---------- */
+    var PURPOSES = ['広告・CM', '会社・ブランド紹介', '採用', '商品・サービス紹介', 'SNS用', 'イベント', '研修・マニュアル', 'MV・エンタメ', 'ドキュメンタリー', 'その他'];
+    var INDUSTRIES = ['食品・飲料', '化粧品・美容', '自動車', '保険・金融', 'テーマパーク・レジャー', '飲食', 'IT・通信', '不動産・住宅', '医療・介護', '教育', '人材', '小売・EC', '行政・自治体', 'エンタメ・音楽', 'ファッション', '製造・BtoB', 'その他'];
+    function selectOf(list, value, aria) {
+      var s = el('select', { 'aria-label': aria }, [el('option', { value: '', text: '未設定' })]);
+      list.forEach(function (v) { s.appendChild(el('option', { value: v, text: v, selected: v === value })); });
+      return s;
+    }
+    function detailEditor(p) {
+      p = p || {};
+      var role = el('input', { type: 'text', maxlength: 100, value: p.role || '', placeholder: '例：撮影・カラー（企画・編集は制作会社さん）' });
+      var purpose = selectOf(PURPOSES, p.purpose, '目的');
+      var industry = selectOf(INDUSTRIES, p.industry, '業種');
+      var len = el('input', { type: 'text', maxlength: 30, value: p.length_label || '', placeholder: '例：90秒＋縦型15秒×3本' });
+      var disp = el('select', { 'aria-label': '取引先名の出し方' }, [
+        el('option', { value: 'hidden', text: '出さない' }),
+        el('option', { value: 'industry', text: '業種だけ出す（例：食品・飲料の企業）' }),
+        el('option', { value: 'named', text: '社名を出す（掲載の許可がある場合だけ）' })
+      ]);
+      disp.value = p.client_display || 'hidden';
+      var name = el('input', { type: 'text', maxlength: 60, value: p.client_name || '', placeholder: '例：株式会社〇〇' });
+      var nameField = el('label', { class: 'field' }, [el('span', { class: 'label', text: '取引先の社名' }), name,
+        el('span', { class: 'hint', text: '社名を出してよいと言われている場合だけ入れてください。「出さない」「業種だけ」にすると、入れた社名は保存されません。' })]);
+      function sync() { nameField.hidden = disp.value !== 'named'; }
+      disp.addEventListener('change', sync); sync();
+      var node = el('div', { class: 'stack' }, [
+        el('label', { class: 'field' }, [el('span', { class: 'label', text: 'あなたの担当 ' }, el('span', { class: 'muted', text: '（100文字まで）' })), role]),
+        el('div', { class: 'row' }, [
+          el('label', { class: 'field' }, [el('span', { class: 'label', text: '目的' }), purpose]),
+          el('label', { class: 'field' }, [el('span', { class: 'label', text: '業種' }), industry]),
+          el('label', { class: 'field' }, [el('span', { class: 'label', text: '尺・本数' }), len])
+        ]),
+        el('label', { class: 'field' }, [el('span', { class: 'label', text: '取引先名の出し方' }), disp]),
+        nameField
+      ]);
+      return {
+        node: node,
+        value: function () {
+          var d = disp.value, n = name.value.trim();
+          if (d === 'named' && !n) throw new Error('取引先の社名を入れるか、出し方を「出さない」「業種だけ」にしてください。');
+          if (d === 'industry' && !industry.value) throw new Error('「業種だけ出す」にするときは、業種を選んでください。');
+          return {
+            role: role.value.trim() || null,
+            purpose: purpose.value || null,
+            industry: industry.value || null,
+            length_label: len.value.trim() || null,
+            client_display: d,
+            client_name: d === 'named' ? n : null
+          };
+        }
+      };
+    }
+    var addDet = detailEditor({});
+    (function () { var box = EM.$('#addDetailFields'); if (box) box.appendChild(addDet.node); })();
+    function resetAddDetail() {
+      var box = EM.$('#addDetailFields');
+      if (!box) return;
+      EM.clear(box); addDet = detailEditor({}); box.appendChild(addDet.node);
+      EM.$('#addDetail').open = false;
+    }
+    function detailSummary(p) {
+      var parts = [];
+      if (p.role) parts.push('担当：' + p.role);
+      if (p.purpose) parts.push(p.purpose);
+      if (p.industry) parts.push(p.industry);
+      if (p.length_label) parts.push(p.length_label);
+      if (p.client_display === 'named' && p.client_name) parts.push('取引先：' + p.client_name);
+      else if (p.client_display === 'industry') parts.push('取引先：業種だけ');
+      return parts.join('／');
+    }
+    function detailBox(p) {
+      var ed = detailEditor(p);
+      var sum = detailSummary(p);
+      return el('details', { class: 'work-detail' }, [
+        el('summary', { text: sum ? 'クライアントに見せる情報：' + sum : 'クライアントに見せる情報（担当・目的・業種など）を入れる' }),
+        ed.node,
+        el('div', { class: 'form-actions' }, el('button', { class: 'btn btn--sm btn--primary', type: 'button', text: '保存する', onclick: function () {
+          var v;
+          try { v = ed.value(); } catch (e) { EM.notice(msg, e.message, 'error'); return; }
+          sb.from('portfolios').update(v).eq('id', p.id).then(function (r) {
+            if (r.error) EM.notice(msg, EM.errorText(r.error), 'error');
+            else { EM.notice(msg, ''); EM.toast('保存しました'); reload(); }
+          });
+        } }))
+      ]);
+    }
+
     function visLabel(v) {
       for (var i = 0; i < VIS.length; i++) if (VIS[i][0] === v) return VIS[i][1];
       return v;
@@ -44,7 +131,7 @@
     function reload() {
       return Promise.all([
         sb.from('portfolios')
-          .select('id,title,description,provider,video_id,video_url,thumbnail_url,visibility,sort_order,created_at,rights_confirmed_at,release_on,takedown_hold,portfolio_tags(tag),stock_items(id)')
+          .select('id,title,description,provider,video_id,video_url,thumbnail_url,visibility,sort_order,created_at,rights_confirmed_at,release_on,takedown_hold,role,purpose,industry,length_label,client_display,client_name,portfolio_tags(tag),stock_items(id)')
           .eq('creator_id', creator.id).order('sort_order').order('created_at', { ascending: false }),
         sb.rpc('my_takedown_requests'),
         sb.from('share_links')
@@ -144,11 +231,15 @@
       var tf = EM.$('#thumbFile').files && EM.$('#thumbFile').files[0];
       if (tf && checkImage(tf)) { EM.notice(msg, checkImage(tf), 'error'); return; }
 
+      var det;
+      try { det = addDet.value(); } catch (err) { EM.notice(msg, err.message, 'error'); return; }
       var btn = EM.$('#addBtn');
       btn.setAttribute('aria-busy', 'true');
 
       sb.from('portfolios').insert({
         creator_id: creator.id,
+        role: det.role, purpose: det.purpose, industry: det.industry, length_label: det.length_label,
+        client_display: det.client_display, client_name: det.client_name,
         title: title,
         description: EM.$('#description').value.trim() || null,
         provider: parsed.provider,
@@ -172,6 +263,7 @@
       }).then(function () {
         btn.removeAttribute('aria-busy');
         EM.$('#addForm').reset();
+        resetAddDetail();
         EM.$('#previewBox').hidden = true;
         EM.$('#thumbFile').value = ''; onThumbPicked();
         parsed = null; pickedTags = [];
@@ -243,6 +335,7 @@
             inStock(p) ? el('p', { class: 'small' }, el('span', { class: 'tag tag--accent', text: 'ストックページで使用中' })) : null,
             p.description ? el('p', { class: 'small', text: p.description }) : null,
             tags,
+            detailBox(p),
             el('div', { class: 'pf-actions' }, [
               el('button', { class: 'btn btn--sm', type: 'button', text: '↑', 'aria-label': '上へ移動', disabled: idx === 0, onclick: function () { move(idx, -1); } }),
               el('button', { class: 'btn btn--sm', type: 'button', text: '↓', 'aria-label': '下へ移動', disabled: idx === items.length - 1, onclick: function () { move(idx, 1); } }),

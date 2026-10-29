@@ -134,6 +134,34 @@
           <input type="url" id="websiteUrl" maxlength="500" placeholder="https://">
         </label>
 
+        <fieldset class="field sales-fields">
+          <legend class="label">クライアントに見せる基本情報 <span class="muted">（任意）</span></legend>
+          <p class="hint">プロフィールと「商談で見せる」画面に出ます。空のままの項目は出ません。</p>
+          <label class="field">
+            <span class="label">対応エリア <span class="muted">（100文字まで）</span></span>
+            <input type="text" id="serviceArea" maxlength="100" placeholder="例：東京から関東一円（地方はご相談ください）">
+          </label>
+          <div class="row">
+            <label class="field">
+              <span class="label">出張</span>
+              <select id="travelOk"><option value="">未設定</option><option value="yes">出張できる</option><option value="no">出張はしていない</option></select>
+            </label>
+            <label class="field">
+              <span class="label">事業の形</span>
+              <select id="businessType"><option value="">未設定</option><option value="individual">個人（フリーランス）</option><option value="corporation">法人</option></select>
+            </label>
+            <label class="field">
+              <span class="label">インボイス</span>
+              <select id="invoiceRegistered"><option value="">未設定</option><option value="yes">登録あり</option><option value="no">登録なし</option></select>
+            </label>
+          </div>
+          <p class="hint">インボイスは「登録あり／なし」だけを表示します。登録番号は入力も表示もしません（番号から本名が調べられるため。番号は契約のときに相手へ直接伝えてください）。</p>
+          <label class="field">
+            <span class="label">主な機材 <span class="muted">（400文字まで）</span></span>
+            <textarea id="equipment" maxlength="400" rows="3" placeholder="例：FX6・FX3／ジンバル RS4 Pro／照明一式（Aputure 600d ほか）／ワイヤレスマイク"></textarea>
+          </label>
+        </fieldset>
+
         <label class="checkbox">
           <input type="checkbox" id="isPublished">
           <span>プロフィールを公開する（検索結果に表示されます）</span>
@@ -144,6 +172,47 @@
         </div>
       </form>
 
+      <hr class="divider">
+      <section id="packagesBox" hidden>
+        <h2 id="packages">料金の目安</h2>
+        <p class="small muted">「SNS縦型3本セット」のように、よく頼まれる内容と金額の目安を6つまで載せられます。金額は税込で入れてください。プロフィールと「商談で見せる」画面に出ます。</p>
+        <div class="stack" id="pkgList"></div>
+        <form id="pkgForm" class="card stack" novalidate>
+          <p class="small"><strong id="pkgFormTitle">料金の目安を足す</strong></p>
+          <label class="field">
+            <span class="label">名前 <span class="muted">（必須・40文字まで）</span></span>
+            <input type="text" id="pkgTitle" maxlength="40" placeholder="例：SNS縦型3本セット（撮影半日＋編集）">
+          </label>
+          <div class="row">
+            <label class="field">
+              <span class="label">金額（税込・円） <span class="muted">（必須）</span></span>
+              <input type="number" id="pkgPrice" min="0" max="100000000" step="1000" placeholder="例：88000">
+            </label>
+            <label class="field">
+              <span class="label">表示</span>
+              <select id="pkgFrom"><option value="from">〜（ここから）</option><option value="fixed">この金額</option></select>
+            </label>
+          </div>
+          <div class="row">
+            <label class="field">
+              <span class="label">納品の目安（日）</span>
+              <input type="number" id="pkgDays" min="1" max="365" step="1" placeholder="例：10">
+            </label>
+            <label class="field">
+              <span class="label">修正の回数</span>
+              <input type="number" id="pkgRevisions" min="0" max="20" step="1" placeholder="例：2">
+            </label>
+          </div>
+          <label class="field">
+            <span class="label">中身 <span class="muted">（300文字まで）</span></span>
+            <textarea id="pkgDesc" maxlength="300" rows="3" placeholder="例：構成案・撮影半日・編集・BGM・字幕まで。縦型15秒×3本。"></textarea>
+          </label>
+          <div class="form-actions">
+            <button class="btn btn--primary" type="submit" id="pkgSave">足す</button>
+            <button class="btn btn--ghost" type="button" id="pkgCancel" hidden>やめる</button>
+          </div>
+        </form>
+      </section>
       <hr class="divider">
       <h2 id="reviews">評価</h2>
       <div class="notice" id="reviewMsg" hidden></div>
