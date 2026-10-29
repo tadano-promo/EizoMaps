@@ -21,6 +21,10 @@
   m = path.match(/^\/creators\/([0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})\/?$/i);
   if (m) { location.replace('/creators/detail.html?id=' + encodeURIComponent(m[1])); return; }
 
+  // 依頼した会社の評価（書き出し前の新しい会社など）
+  m = path.match(/^\/companies\/([0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})\/?$/i);
+  if (m) { location.replace('/companies/detail.html?id=' + encodeURIComponent(m[1])); return; }
+
   document.addEventListener('DOMContentLoaded', function () {
     var n = document.getElementById('notFoundMsg');
     if (n) n.textContent = 'お探しのページ（' + path + '）は見つかりませんでした。';

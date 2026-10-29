@@ -68,6 +68,11 @@ const template = readFileSync(`${ROOT}/creators/detail.html`, 'utf8');
 const sitemapUrls = [];
 let written = 0;
 
+// 評価に付ける印（取引の種類・異議申し立て）
+const mark = (v) => `<div class="tags review-marks"><span class="tag">${v.source === 'external' ? 'Eizo Maps外の取引（自己申告）' : 'Eizo Maps での取引'}</span>${
+  v.objected ? '<span class="tag tag--warn">本人から異議申し立てあり（運営が確認中）</span>'
+    : v.objection_kept ? '<span class="tag tag--warn">本人から異議申し立てあり・運営の確認により掲載継続</span>' : ''}</div>`;
+
 for (const c of creators) {
   const myWorks = works.filter((w) => w.creator_id === c.id && !w.takedown_hold && !(w.release_on && w.release_on > todayJst));
   const myReviews = reviews.filter((r) => r.reviewee_id === c.user_id).slice(0, 50);
@@ -112,9 +117,6 @@ ${myLinks.length ? `<div class="chips stock-links">${myLinks.map((l) => `<a clas
     ? myWorks.map((w) => `<article class="card"><div class="body"><h3>${esc(w.title || '作品')}</h3>${w.description ? `<p class="small">${esc(w.description)}</p>` : ''}${safeUrl(w.video_url) ? `<p class="small"><a href="${esc(w.video_url)}" target="_blank" rel="noopener noreferrer nofollow">作品を見る（${esc(PLATFORM[w.provider] || '外部サイト')}）</a></p>` : ''}</div></article>`).join('\n')
     : '<div class="empty">公開されている作品はまだありません。</div>';
 
-  const mark = (v) => `<div class="tags review-marks"><span class="tag">${v.source === 'external' ? 'Eizo Maps外の取引（自己申告）' : 'Eizo Maps での取引'}</span>${
-    v.objected ? '<span class="tag tag--warn">本人から異議申し立てあり（運営が確認中）</span>'
-      : v.objection_kept ? '<span class="tag tag--warn">本人から異議申し立てあり・運営の確認により掲載継続</span>' : ''}</div>`;
   const reviewsHtml = myReviews.length
     ? myReviews.map((v) => `<div class="review-item"><div class="review-head"><span class="rating"><span class="stars">${stars(v.score)}</span><span class="count">${Number(v.score).toFixed(1)}</span></span><span class="small muted">${v.reviewer_role === 'client' ? 'クライアント' : 'クリエイター'} / ${jpDate(v.published_at)}</span></div>${mark(v)}<p class="small">${esc(v.comment)}</p></div>`).join('\n')
     : '<div class="empty">まだ評価はありません。</div>';
@@ -174,9 +176,58 @@ ${myLinks.length ? `<div class="chips stock-links">${myLinks.map((l) => `<a clas
   sitemapUrls.push(`  <url><loc>${url}</loc>${last ? `<lastmod>${isoDay(last)}</lastmod>` : ''}<changefreq>weekly</changefreq><priority>0.8</priority></url>`);
 }
 
-// サイトの地図に、クリエイターのページを足す
+// ---- 依頼した会社の評価（会社名を入れていて、クリエイターからの評価が1件以上ある会社だけ）
+const rpc = async (fn, body = {}) => {
+  const r = await fetch(`${URL_}/rest/v1/rpc/${fn}`, {
+    method: 'POST', headers: { apikey: KEY, Authorization: `Bearer ${KEY}`, 'Content-Type': 'application/json' }, body: JSON.stringify(body),
+  });
+  if (!r.ok) throw new Error(`${fn}: ${r.status} ${await r.text()}`);
+  return r.json();
+};
+const companies = await rpc('public_companies');
+const cTemplate = readFileSync(`${ROOT}/companies/detail.html`, 'utf8');
+const cListTemplate = readFileSync(`${ROOT}/companies/index.html`, 'utf8');
+let cWritten = 0;
+for (const row of companies) {
+  const d = await rpc('public_company', { p_client_id: row.id });
+  if (!d) continue;
+  const rs = d.reviews || [];
+  const avg = rs.length ? rs.reduce((a, b) => a + Number(b.score), 0) / rs.length : 0;
+  const url = `${SITE}/companies/${d.id}`;
+  const title = `${d.company}の評価 — Eizo Maps`;
+  const desc = clip(`${d.company}${d.area_pref ? '（' + d.area_pref + '）' : ''}が、Eizo Maps で一緒に仕事をした映像クリエイターから受けた評価：${avg.toFixed(1)}（${rs.length}件）。${rs[0] ? rs[0].comment : ''}`, 150);
+  const head = `<p class="eyebrow">Client</p><h1>${esc(d.company)}</h1>${d.area_pref ? `<p class="small muted">${esc(d.area_pref)}</p>` : ''}<div class="row" id="ratingRow"><span class="rating"><span class="score">${avg.toFixed(1)}</span><span class="stars">${stars(avg)}</span><span class="count">${rs.length}件の評価</span></span></div>`;
+  const items = rs.map((v) => `<div class="review-item"><div class="review-head"><span class="rating"><span class="stars">${stars(v.score)}</span><span class="count">${Number(v.score).toFixed(1)}</span></span><span class="small muted">クリエイター / ${jpDate(v.published_at)}</span></div>${mark(v)}<p class="small">${esc(v.comment)}</p></div>`).join('\n');
+  const ld = {
+    '@context': 'https://schema.org', '@type': 'WebPage', url, name: title,
+    about: { '@type': 'Organization', name: d.company, ...(d.area_pref ? { address: { '@type': 'PostalAddress', addressRegion: d.area_pref, addressCountry: 'JP' } } : {}) },
+    hasPart: rs.map((v) => ({ '@type': 'Comment', text: `評価 ${Number(v.score).toFixed(1)}／5：${v.comment}`, dateCreated: v.published_at, author: { '@type': 'Person', name: 'クリエイター（匿名）' } })),
+  };
+  const html = cTemplate
+    .replace(/<meta name="robots"[^>]*>\n?/, '')
+    .replace(/<title>[^<]*<\/title>/, `<title>${esc(title)}</title>`)
+    .replace(/<meta name="description" content="[^"]*">/, `<meta name="description" content="${esc(desc)}">\n<link rel="canonical" href="${esc(url)}">\n<meta name="em-company-id" content="${esc(d.id)}">`)
+    .replace(/<meta property="og:title" content="[^"]*">/, `<meta property="og:title" content="${esc(title)}">`)
+    .replace(/<meta property="og:description" content="[^"]*">/, `<meta property="og:description" content="${esc(desc)}">\n<meta property="og:url" content="${esc(url)}">`)
+    .replace('</head>', `<script type="application/ld+json">${jsonLd(ld)}</script>\n</head>`)
+    .replace('<div id="company"></div>', `<div id="company">${head}</div>`)
+    .replace('<section id="reviewSection" hidden>', '<section id="reviewSection">')
+    .replace('<div id="reviewList"></div>', `<div id="reviewList">${items}</div>`);
+  if (!html.includes('em-company-id') || !html.includes('id="reviewList"><')) throw new Error('companies/detail.html の形が変わっていて書き出せません');
+  writeFileSync(`${ROOT}/companies/${d.id}.html`, html);
+  cWritten++;
+  sitemapUrls.push(`  <url><loc>${url}</loc><lastmod>${isoDay(row.last_review_at)}</lastmod><changefreq>weekly</changefreq><priority>0.6</priority></url>`);
+}
+// 一覧ページにも、最初から会社の名前と評価を書き込んでおく
+const cards = companies.length
+  ? `<div class="grid grid--3">${companies.map((c) => `<a class="card creator-card" href="/companies/${esc(c.id)}"><div class="body"><p class="name">${esc(c.company)}</p>${c.area_pref ? `<p class="small muted">${esc(c.area_pref)}</p>` : ''}<span class="rating"><span class="stars">${stars(c.avg_score)}</span><span class="count">${Number(c.avg_score).toFixed(1)}（${c.rated_count}件）</span></span></div></a>`).join('')}</div>`
+  : '<div class="empty">まだ評価の付いた会社はありません。</div>';
+writeFileSync(`${ROOT}/companies/index.html`, cListTemplate.replace('<div id="companyList"></div>', `<div id="companyList">${cards}</div>`));
+sitemapUrls.unshift('  <url><loc>https://eizo-maps.com/companies/</loc><changefreq>daily</changefreq><priority>0.6</priority></url>');
+
+// サイトの地図に、クリエイターと会社のページを足す
 const smPath = `${ROOT}/sitemap.xml`;
 const sm = readFileSync(smPath, 'utf8');
 if (sitemapUrls.length) writeFileSync(smPath, sm.replace('</urlset>', sitemapUrls.join('\n') + '\n</urlset>'));
 
-console.log(`書き出したクリエイターのページ：${written}件（評価 ${reviews.length}件）`);
+console.log(`書き出したクリエイターのページ：${written}件（評価 ${reviews.length}件）／会社のページ：${cWritten}件`);
