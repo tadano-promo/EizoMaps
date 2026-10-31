@@ -31,7 +31,8 @@
     <div class="notice">
       <p class="small"><strong>このページは、Eizo Maps に載っている作品について、権利者や関係者の方が掲載の取り下げを求めるためのものです。</strong></p>
       <p class="small">例：放送・公開の前の作品が載っている／守秘義務（NDA）のある作品が許可なく載っている／ご自身が出演している映像が許可なく載っている／他人の作品が自分の実績として載っている</p>
-      <p class="small"><strong>申し立てを受け付けると、その作品はすぐに一時非公開になります。</strong>運営が、作品を載せた方の言い分とあわせて確認し、<strong>受け付けてから1週間以内に</strong>掲載を続けるかどうかを判断します。ログインは不要です。</p>
+      <p class="small"><strong>送ったあと、ご入力のメールアドレスに確認のメールが届きます。メールのリンクを開いた時点で受け付けとなり、その作品はすぐに一時非公開になります。</strong>（ログインは不要です。Eizo Maps にログイン中で、そのアカウントのアドレスのまま送った場合は、確認メールなしですぐ受け付けます）</p>
+      <p class="small">運営が、作品を載せた方の言い分とあわせて<strong>人の目で</strong>確認し、<strong>受け付けてから7日以内に</strong>掲載を続けるかどうかを判断します。判断の結果と理由は、ご入力のメールアドレスにお知らせします。くわしくは <a href="/help/#takedown">ヘルプ「作品の削除の申し立て」</a> をご覧ください。</p>
     </div>
 
     <div class="card" id="workBox" hidden></div>
@@ -49,6 +50,7 @@
       <label class="field">
         <span class="label">メールアドレス <span class="muted">（必須・運営からの確認に使います）</span></span>
         <input type="email" id="tdEmail" maxlength="200" required autocomplete="email">
+        <span class="hint" id="tdEmailHint">このアドレスに確認のメールが届きます。受け取れるアドレスを入れてください。</span>
       </label>
       <label class="field">
         <span class="label">作品とのご関係 <span class="muted">（必須）</span></span>
@@ -79,16 +81,31 @@
       </label>
       <label class="rights-check">
         <input type="checkbox" id="tdAgree" required>
-        <span class="small">この申し立ての内容が事実であることを確認しました。<span class="muted">事実と違う申し立てで作品を非公開にさせた場合、責任を問われることがあります。</span></span>
+        <span class="small">この申し立ての内容が事実であることを確認しました。<span class="muted">事実と違う申し立てで作品を非公開にさせた場合、責任を問われることがあります。申し立ての記録（送った日時・メールアドレス・アカウント・接続元など）は運営が保管します。くり返し事実と違う申し立てがあった場合は、受付を止めることがあります。</span></span>
       </label>
       <div class="form-actions">
         <button class="btn btn--primary" type="submit" id="tdSubmit">申し立てを送る</button>
       </div>
     </form>
 
+    <div id="tdSent" hidden>
+      <div class="notice notice--ok"><strong>確認のメールを送りました（まだ受け付けは完了していません）。</strong></div>
+      <div class="card stack">
+        <p class="small">送り先：<strong id="tdSentTo"></strong></p>
+        <p class="small"><strong>24時間以内に</strong>メールのリンクを開いてください。開いた時点で受け付けとなり、作品はすぐに一時非公開になります。</p>
+        <p class="small muted">メールは「Eizo Maps」から届きます（ログイン用のリンクが入ったメールです）。見当たらないときは、迷惑メールのフォルダもご確認ください。届かない・お急ぎの場合は info@eizo-maps.com までご連絡ください。</p>
+      </div>
+    </div>
+
     <div id="tdDone" hidden>
-      <div class="notice notice--ok">申し立てを受け付けました。作品は一時非公開にしました。運営が確認のうえ、ご入力のメールアドレスにご連絡します。</div>
-      <p class="small muted">お急ぎの場合や、追加でお伝えしたいことがある場合は info@eizo-maps.com までご連絡ください。</p>
+      <div class="notice notice--ok" id="tdDoneTitle">申し立てを受け付けました。作品は一時非公開にしました。</div>
+      <div class="card stack">
+        <p class="small"><strong>このあとの流れ</strong></p>
+        <p class="small">1. 作品を載せた方のページに、申し立てがあったことと理由を表示します（お名前・メールアドレスはお伝えしません）。</p>
+        <p class="small">2. 運営が、作品を載せた方の言い分とあわせて人の目で確認します。必要なときは、ご入力のメールアドレスに運営からおたずねします。</p>
+        <p class="small">3. <strong>受け付けてから7日以内に</strong>判断し、結果と理由をご入力のメールアドレスにお知らせします。</p>
+      </div>
+      <p class="small muted">追加でお伝えしたいことがある場合や、申し立てを取り下げたい場合は info@eizo-maps.com までご連絡ください。</p>
     </div>
   </div>
 </main>

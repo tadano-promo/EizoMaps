@@ -779,6 +779,20 @@
           if (a) a.appendChild(el('span', { class: 'nav-badge', text: String(n), 'aria-label': '未読 ' + n + '件' }));
           if (hl) hl.appendChild(el('span', { class: 'nav-badge', text: String(n), 'aria-label': '未読のメッセージ ' + n + '件' }));
         });
+        // 自分の作品に削除の申し立てが届いていたら、どの画面でも上に知らせる（10/31 タキさん）
+        if (sbm && location.pathname.indexOf('/mypage/portfolio') !== 0) sbm.rpc('my_takedown_requests').then(function (r) {
+          var open = (r && !r.error && r.data || []).filter(function (t) { return t.status === 'open'; });
+          var main = document.querySelector('main');
+          if (!open.length || !main) return;
+          var due = open.map(function (t) { return t.due_on; }).filter(Boolean).sort()[0];
+          var dp = due ? String(due).split('-') : null;
+          main.insertBefore(el('div', { class: 'wrap' }, el('div', { class: 'notice notice--warn', role: 'status' }, [
+            el('strong', { text: 'あなたの作品に削除の申し立てが ' + open.length + '件 届いています。' }),
+            document.createTextNode(' その作品は運営が判断するまで一時非公開です' + (dp ? '（判断の目安：' + (+dp[1]) + '/' + (+dp[2]) + ' まで）' : '') + '。言い分があれば '),
+            el('a', { href: '/mypage/portfolio.html', text: 'ポートフォリオ管理' }),
+            document.createTextNode(' から書いてください。')
+          ])), main.firstChild);
+        });
         var staffSlot = el('li');
         ul.appendChild(staffSlot);
         EM.roles().then(function (roles) {

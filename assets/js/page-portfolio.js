@@ -390,6 +390,10 @@
       takedowns.filter(function (t) { return t.portfolio_id === p.id && t.status === 'open'; }).forEach(function (t) {
         box.appendChild(takedownBox(t));
       });
+      // 判断の結果（30日以内のもの）。理由と、納得できないときの見直しの頼み方
+      takedowns.filter(function (t) {
+        return t.portfolio_id === p.id && t.status !== 'open' && t.decided_at && (Date.now() - new Date(t.decided_at).getTime()) < 30 * 86400000;
+      }).forEach(function (t) { box.appendChild(takedownResult(t)); });
       return box.childNodes.length ? box : null;
     }
 
@@ -419,7 +423,8 @@
       box.appendChild(el('p', { class: 'small' }, [el('strong', { text: '削除の申し立てが届いています' })]));
       box.appendChild(el('p', { class: 'small', text: '申し立てた人：' + (RELATION[t.relation] || t.relation) + (t.requester_org ? '（' + t.requester_org + '）' : '') + ' ／ 理由：' + (REASON[t.reason] || t.reason) }));
       box.appendChild(el('p', { class: 'small pre', text: t.detail }));
-      box.appendChild(el('p', { class: 'small muted', text: '運営が確認するまで、この作品はあなた以外に見えません。許可を得ている・事実と違うなどの場合は、下に言い分を書いてください。運営が両方を見て判断します。' }));
+      box.appendChild(el('p', { class: 'small muted', text: '運営が確認するまで、この作品はあなた以外に見えません。許可を得ている・事実と違うなどの場合は、下に言い分を書いてください。運営が両方を人の目で見て判断します。' }));
+      if (t.due_on) box.appendChild(el('p', { class: 'small' }, [el('strong', { text: '判断の目安：' + fmtDay(t.due_on) + ' まで' }), document.createTextNode('（届いた日 ' + EM.date(t.created_at) + '）')]));
       if (t.creator_response) {
         box.appendChild(el('p', { class: 'small' }, [el('span', { class: 'muted', text: 'あなたの言い分：' }), document.createTextNode(t.creator_response)]));
       } else {
@@ -434,6 +439,21 @@
         } });
         box.appendChild(ta); box.appendChild(btn);
       }
+      return box;
+    }
+
+    function takedownResult(t) {
+      var upheld = t.status === 'upheld';
+      var box = el('div', { class: 'notice ' + (upheld ? 'notice--warn' : 'notice--ok') + ' takedown-box' });
+      box.appendChild(el('p', { class: 'small' }, [el('strong', { text: upheld
+        ? '削除の申し立てを運営が認めました（この作品は非公開のままです）'
+        : '削除の申し立ては認められませんでした（作品は公開に戻りました）' })]));
+      if (t.decided_note) box.appendChild(el('p', { class: 'small pre', text: '理由：' + t.decided_note }));
+      if (upheld) box.appendChild(el('p', { class: 'small muted' }, [
+        document.createTextNode('判断に納得できないときは、理由を添えて '),
+        el('a', { href: '/contact/', text: 'お問い合わせ' }),
+        document.createTextNode(' から見直しを求められます。最初とは別の目で見直します。')
+      ]));
       return box;
     }
 
