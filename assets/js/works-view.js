@@ -6,6 +6,10 @@
   'use strict';
   var el = EM.el;
 
+  // 作品の媒体（040）。大きな分け方 → 媒体
+  EM.MEDIA = [["広告", ["TVCM", "WebCM", "ブランデッドムービー", "屋外・サイネージ", "グラフィック撮影"]], ["映画", ["劇場映画", "短編・自主映画", "ドキュメンタリー映画"]], ["ドラマ", ["地上波ドラマ", "配信ドラマ", "縦型ショートドラマ"]], ["テレビ番組", ["バラエティ", "情報番組", "報道・ニュース", "ドキュメンタリー番組", "歌番組", "スポーツ中継"]], ["音楽", ["MV", "ライブ映像", "ライブ配信"]], ["配信・SNS", ["YouTube番組", "生配信", "SNS縦型ショート"]], ["企業", ["企業VP", "採用動画", "研修・マニュアル", "イベント・セミナー収録", "店舗紹介"]], ["アニメ", ["TVアニメ", "劇場アニメ", "配信アニメ", "OVA", "アニメCM・PR"]], ["ゲーム・VTuber", ["ゲーム映像", "VTuber"]], ["そのほか", ["舞台・演劇", "プロジェクションマッピング", "ウェディング・記念映像", "メイキング", "その他"]]];
+  EM.mediaGroup = function (v) { for (var i = 0; i < EM.MEDIA.length; i++) if (EM.MEDIA[i][1].indexOf(v) !== -1) return EM.MEDIA[i][0]; return null; };
+
   function coverImage(p) {
     if (EM.safeUrl(p.thumbnail_url)) return p.thumbnail_url;
     if (p.provider === 'youtube' && /^[A-Za-z0-9_-]{6,20}$/.test(String(p.video_id || ''))) return 'https://i.ytimg.com/vi/' + p.video_id + '/hqdefault.jpg';
@@ -40,6 +44,7 @@
   EM.workFacts = function (p) {
     var rows = [];
     if (p.work_year) rows.push(['年', String(p.work_year)]);
+    if (p.media) rows.push(['媒体', p.media]);
     if (p.purpose) rows.push(['目的', p.purpose]);
     if (p.industry) rows.push(['業種', p.industry]);
     if (p.length_label) rows.push(['尺・本数', p.length_label]);

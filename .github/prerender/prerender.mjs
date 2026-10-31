@@ -58,7 +58,7 @@ const gmap = Object.fromEntries(genres.map((g) => [g.id, g.name_ja]));
 let works = [], reviews = [], stats = [], links = [], packages = [];
 if (creators.length) {
   const ids = creators.map((c) => c.id), uids = creators.map((c) => c.user_id);
-  works = await get(`portfolios?select=creator_id,title,description,provider,video_url,release_on,takedown_hold,sort_order,created_at,role,purpose,industry,length_label,client_display,client_name,pinned,work_year,credits&visibility=eq.public&creator_id=${inList(ids)}&order=sort_order,created_at.desc`);
+  works = await get(`portfolios?select=creator_id,title,description,provider,video_url,release_on,takedown_hold,sort_order,created_at,role,media,purpose,industry,length_label,client_display,client_name,pinned,work_year,credits&visibility=eq.public&creator_id=${inList(ids)}&order=sort_order,created_at.desc`);
   reviews = await get(`public_reviews?select=reviewee_id,score,comment,reviewer_role,published_at,source,objected,objection_kept&reviewee_id=${inList(uids)}&order=published_at.desc`);
   stats = await get(`creator_project_stats?select=creator_id,completed_count&creator_id=${inList(ids)}`);
   packages = await get(`creator_packages?select=creator_id,title,description,price_yen,price_from,delivery_days,revisions,sort_order,created_at&creator_id=${inList(ids)}&order=sort_order,created_at`);
@@ -74,6 +74,7 @@ const workMetaHtml = (w) => {
   const parts = [];
   if (w.work_year) parts.push(w.work_year + '年');
   if (w.role) parts.push('担当：' + w.role);
+  if (w.media) parts.push('媒体：' + w.media);
   if (w.purpose) parts.push('目的：' + w.purpose);
   if (w.industry) parts.push('業種：' + w.industry);
   if (w.length_label) parts.push('尺：' + w.length_label);

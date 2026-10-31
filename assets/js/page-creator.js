@@ -35,7 +35,7 @@
         .eq('id', id).maybeSingle(),
       sb.from('genres').select('id,name_ja'),
       sb.from('portfolios')
-        .select('id,title,description,provider,video_id,video_url,thumbnail_url,sort_order,created_at,release_on,takedown_hold,role,purpose,industry,length_label,client_display,client_name,pinned,work_year,credits,is_showreel,portfolio_tags(tag)')
+        .select('id,title,description,provider,video_id,video_url,thumbnail_url,sort_order,created_at,release_on,takedown_hold,role,media,purpose,industry,length_label,client_display,client_name,pinned,work_year,credits,is_showreel,portfolio_tags(tag)')
         .eq('creator_id', id).eq('visibility', 'public')
         .order('sort_order').order('created_at', { ascending: false }),
       sb.from('creator_project_stats').select('completed_count').eq('creator_id', id).maybeSingle(),
@@ -398,11 +398,15 @@
       var indCount = {}, indOf = {};
       items.forEach(function (p) { if (p.industry) { indOf[p.id] = p.industry; indCount[p.industry] = (indCount[p.industry] || 0) + 1; } });
       var inds = Object.keys(indCount).sort(function (a, b) { return indCount[b] - indCount[a]; });
-      var filt = { tag: null, ind: null };
+      // 媒体（広告・映画・ドラマ・テレビ番組…の大きな分け方）でも絞り込める（040）
+      var medCount = {}, medOf = {};
+      items.forEach(function (p) { var g = p.media && EM.mediaGroup ? EM.mediaGroup(p.media) : null; if (g) { medOf[p.id] = g; medCount[g] = (medCount[g] || 0) + 1; } });
+      var meds = (EM.MEDIA || []).map(function (g) { return g[0]; }).filter(function (g) { return medCount[g]; });
+      var filt = { tag: null, ind: null, med: null };
       function applyFilter() {
         EM.$$('[data-work]', grid).forEach(function (card) {
           var id = card.getAttribute('data-work');
-          card.hidden = (filt.tag && (keyOf[id] || []).indexOf(filt.tag) < 0) || (filt.ind && indOf[id] !== filt.ind);
+          card.hidden = (filt.tag && (keyOf[id] || []).indexOf(filt.tag) < 0) || (filt.ind && indOf[id] !== filt.ind) || (filt.med && medOf[id] !== filt.med);
         });
       }
       function chipRow(label, list, cnt, key) {
@@ -419,9 +423,11 @@
         });
         return row;
       }
-      if (tabBox && (keys.length >= 2 || inds.length >= 2)) {
+      if (tabBox && (keys.length >= 2 || inds.length >= 2 || meds.length >= 2)) {
         tabBox.hidden = false;
-        if (keys.length >= 2) tabBox.appendChild(chipRow(inds.length >= 2 ? 'ジャンル' : '', keys, count, 'tag'));
+        var many = (keys.length >= 2) + (inds.length >= 2) + (meds.length >= 2) > 1;
+        if (meds.length >= 2) tabBox.appendChild(chipRow(many ? '媒体' : '', meds, medCount, 'med'));
+        if (keys.length >= 2) tabBox.appendChild(chipRow(many ? 'ジャンル' : '', keys, count, 'tag'));
         if (inds.length >= 2) tabBox.appendChild(chipRow('業種', inds, indCount, 'ind'));
       }
       items.forEach(function (p) {
@@ -589,6 +595,7 @@
     function workMetaText(p) {
       var parts = [];
       if (p.role) parts.push('担当：' + p.role);
+      if (p.media) parts.push('媒体：' + p.media);
       if (p.purpose) parts.push('目的：' + p.purpose);
       if (p.industry) parts.push('業種：' + p.industry);
       if (p.length_label) parts.push('尺：' + p.length_label);

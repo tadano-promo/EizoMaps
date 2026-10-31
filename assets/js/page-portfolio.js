@@ -27,6 +27,11 @@
       var role = el('input', { type: 'text', maxlength: 100, value: p.role || '', placeholder: '例：撮影・カラー（企画・編集は制作会社さん）' });
       var purpose = selectOf(PURPOSES, p.purpose, '目的');
       var industry = selectOf(INDUSTRIES, p.industry, '業種');
+      // 媒体（TVCM・映画・ドラマ・バラエティ・MV・企業VP など）。大きな分け方ごとにまとめて出す
+      var media = el('select', { 'aria-label': '媒体' }, [el('option', { value: '', text: '未設定' })]);
+      (EM.MEDIA || []).forEach(function (g) {
+        media.appendChild(el('optgroup', { label: g[0] }, g[1].map(function (v) { return el('option', { value: v, text: v, selected: v === p.media }); })));
+      });
       var len = el('input', { type: 'text', maxlength: 30, value: p.length_label || '', placeholder: '例：90秒＋縦型15秒×3本' });
       var year = el('input', { type: 'number', min: 1950, max: 2100, step: 1, value: p.work_year || '', placeholder: '例：2026' });
       var credits = el('textarea', { rows: 2, maxlength: 500, placeholder: '例：代理店：〇〇／制作会社：〇〇／監督：〇〇／撮影：〇〇' });
@@ -45,6 +50,7 @@
       var node = el('div', { class: 'stack' }, [
         el('label', { class: 'field' }, [el('span', { class: 'label', text: 'あなたの担当 ' }, el('span', { class: 'muted', text: '（100文字まで）' })), role]),
         el('div', { class: 'row' }, [
+          el('label', { class: 'field' }, [el('span', { class: 'label', text: '媒体' }), media]),
           el('label', { class: 'field' }, [el('span', { class: 'label', text: '目的' }), purpose]),
           el('label', { class: 'field' }, [el('span', { class: 'label', text: '業種' }), industry]),
           el('label', { class: 'field' }, [el('span', { class: 'label', text: '尺・本数' }), len]),
@@ -63,6 +69,7 @@
           if (d === 'industry' && !industry.value) throw new Error('「業種だけ出す」にするときは、業種を選んでください。');
           return {
             role: role.value.trim() || null,
+            media: media.value || null,
             purpose: purpose.value || null,
             industry: industry.value || null,
             length_label: len.value.trim() || null,
@@ -85,6 +92,7 @@
     function detailSummary(p) {
       var parts = [];
       if (p.role) parts.push('担当：' + p.role);
+      if (p.media) parts.push(p.media);
       if (p.purpose) parts.push(p.purpose);
       if (p.industry) parts.push(p.industry);
       if (p.length_label) parts.push(p.length_label);
@@ -96,7 +104,7 @@
       var ed = detailEditor(p);
       var sum = detailSummary(p);
       return el('details', { class: 'work-detail' }, [
-        el('summary', { text: sum ? 'クライアントに見せる情報：' + sum : 'クライアントに見せる情報（担当・目的・業種など）を入れる' }),
+        el('summary', { text: sum ? 'クライアントに見せる情報：' + sum : 'クライアントに見せる情報（担当・媒体・目的・業種など）を入れる' }),
         ed.node,
         el('div', { class: 'form-actions' }, el('button', { class: 'btn btn--sm btn--primary', type: 'button', text: '保存する', onclick: function () {
           var v;
@@ -139,7 +147,7 @@
     function reload() {
       return Promise.all([
         sb.from('portfolios')
-          .select('id,title,description,provider,video_id,video_url,thumbnail_url,visibility,sort_order,created_at,rights_confirmed_at,release_on,takedown_hold,role,purpose,industry,length_label,client_display,client_name,pinned,work_year,credits,is_showreel,portfolio_tags(tag),stock_items(id)')
+          .select('id,title,description,provider,video_id,video_url,thumbnail_url,visibility,sort_order,created_at,rights_confirmed_at,release_on,takedown_hold,role,media,purpose,industry,length_label,client_display,client_name,pinned,work_year,credits,is_showreel,portfolio_tags(tag),stock_items(id)')
           .eq('creator_id', creator.id).order('sort_order').order('created_at', { ascending: false }),
         sb.rpc('my_takedown_requests'),
         sb.from('share_links')
@@ -246,7 +254,7 @@
 
       sb.from('portfolios').insert({
         creator_id: creator.id,
-        role: det.role, purpose: det.purpose, industry: det.industry, length_label: det.length_label,
+        role: det.role, media: det.media, purpose: det.purpose, industry: det.industry, length_label: det.length_label,
         work_year: det.work_year, credits: det.credits,
         client_display: det.client_display, client_name: det.client_name,
         title: title,

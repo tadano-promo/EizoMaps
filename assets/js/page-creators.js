@@ -16,9 +16,10 @@
     var sb = EM.sb();
     var el = EM.el;
     var listView = EM.$('#listView'), mapView = EM.$('#mapView'), count = EM.$('#resultCount');
-    var state = { q: '', genres: [], area: '', view: 'list', moods: [], inds: [] };
+    var state = { q: '', genres: [], area: '', view: 'list', moods: [], inds: [], meds: [] };
     var MOODS = ['シネマティック', 'ドキュメンタリー', 'ポップ', 'クール', 'やさしい', 'ユニーク', 'シンプル', '上品', 'エネルギッシュ', 'かわいい'];
     var indsOf = {};  // クリエイターごとの、公開している作品の業種
+    var medsOf = {};  // クリエイターごとの、公開している作品の媒体（大きな分け方）
     var all = [], genres = [], ratings = {}, completed = {};
     // 空き状況の絞り込み。busyIds が null のときは絞り込みをしていない状態。
     var busyIds = null;
@@ -46,14 +47,18 @@
         .limit(300),
       sb.from('creator_rating_stats').select('user_id,avg_score,rated_count'),
       sb.from('creator_project_stats').select('creator_id,completed_count'),
-      sb.from('portfolios').select('creator_id,industry').eq('visibility', 'public').not('industry', 'is', null).limit(5000)
+      sb.from('portfolios').select('creator_id,industry,media').eq('visibility', 'public').or('industry.not.is.null,media.not.is.null').limit(5000)
     ]).then(function (res) {
       if (res[0].data) genres = res[0].data;
       if (res[1].error) { renderEmpty(EM.errorText(res[1].error)); return; }
       all = res[1].data || [];
       (res[2].data || []).forEach(function (r) { ratings[r.user_id] = r; });
       (res[3].data || []).forEach(function (r) { completed[r.creator_id] = r.completed_count; });
-      (res[4] && res[4].data || []).forEach(function (r) { if (r.industry) (indsOf[r.creator_id] = indsOf[r.creator_id] || {})[r.industry] = true; });
+      (res[4] && res[4].data || []).forEach(function (r) {
+        if (r.industry) (indsOf[r.creator_id] = indsOf[r.creator_id] || {})[r.industry] = true;
+        var g = r.media && EM.mediaGroup ? EM.mediaGroup(r.media) : null;
+        if (g) (medsOf[r.creator_id] = medsOf[r.creator_id] || {})[g] = true;
+      });
       buildGenreChips();
       buildExtraChips();
       render();
@@ -92,6 +97,10 @@
       Object.keys(indsOf).forEach(function (k) { Object.keys(indsOf[k]).forEach(function (i) { indSet[i] = true; }); });
       build('#moodChips', usedMoods, 'moods');
       build('#indChips', Object.keys(indSet).sort(), 'inds');
+      // 作品の媒体（広告・映画・ドラマ…）。使われているものだけ、決まった順で出す
+      var medSet = {};
+      Object.keys(medsOf).forEach(function (k) { Object.keys(medsOf[k]).forEach(function (i) { medSet[i] = true; }); });
+      build('#medChips', (EM.MEDIA || []).map(function (g) { return g[0]; }).filter(function (g) { return medSet[g]; }), 'meds');
     }
 
     // 絞り込みはすべてブラウザ側で行う（検索語をDBのフィルタ式に混ぜないため）
@@ -106,6 +115,7 @@
         if (busyIds && busyIds[c.id]) return false;
         if (state.moods.length) { for (var m = 0; m < state.moods.length; m++) if ((c.moods || []).indexOf(state.moods[m]) === -1) return false; }
         if (state.inds.length && !state.inds.some(function (i) { return indsOf[c.id] && indsOf[c.id][i]; })) return false;
+        if (state.meds.length && !state.meds.some(function (i) { return medsOf[c.id] && medsOf[c.id][i]; })) return false;
         if (q) {
           var hay = [c.display_name, c.headline, c.area_pref, c.area_city].join(' ').toLowerCase();
           // 職種は別の呼び方でも当たる（例：「ライトマン」で照明技師の人）
@@ -276,11 +286,11 @@
     EM.$('#viewList').addEventListener('click', function () { state.view = 'list'; render(); });
     EM.$('#viewMap').addEventListener('click', function () { state.view = 'map'; render(); });
     EM.$('#clearBtn').addEventListener('click', function () {
-      state = { q: '', genres: [], area: '', view: state.view, moods: [], inds: [] };
+      state = { q: '', genres: [], area: '', view: state.view, moods: [], inds: [], meds: [] };
       busyIds = null;
       EM.$('#q').value = ''; areaSelect.value = '';
       EM.$('#freeFrom').value = ''; EM.$('#freeTo').value = ''; EM.$('#freeNote').textContent = '';
-      EM.$$('#moodChips .chip, #indChips .chip').forEach(function (b) { b.setAttribute('aria-pressed', 'false'); });
+      EM.$$('#moodChips .chip, #indChips .chip, #medChips .chip').forEach(function (b) { b.setAttribute('aria-pressed', 'false'); });
       buildGenreChips();
       render();
     });
