@@ -1858,3 +1858,5 @@ body.has-sheet { overflow: hidden; }
 .stock-received__row.is-off { opacity: .6; }
 .stock-received__title { margin: 0; font-weight: 700; }
 .stock-received__row .small { margin: 2px 0 0; }
+
+.notice__act { margin: 10px 0 0; }

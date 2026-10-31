@@ -793,6 +793,18 @@
             document.createTextNode(' から書いてください。')
           ])), main.firstChild);
         });
+        // 鍵付きページのパスワードを前のしくみで保存している人に、設定し直しをお願いする（10/31 タキさん）
+        //   新しいしくみでは本人が「見る」で確かめられる。同じパスワードを入れ直せば、前に渡した相手もそのまま開ける
+        if (sbm && location.pathname.indexOf('/mypage/stock') !== 0) sbm.rpc('my_stock_pw_viewable').then(function (r) {
+          var old = (r && !r.error && r.data || []).filter(function (x) { return !x.viewable; });
+          var main = document.querySelector('main');
+          if (!old.length || !main) return;
+          main.insertBefore(el('div', { class: 'wrap' }, el('div', { class: 'notice notice--warn', role: 'status' }, [
+            el('strong', { text: '誠に申し訳ございません。Eizo Maps のアップデートに伴い、鍵付きページのパスワードの再設定をお願いします（' + old.length + 'ページ）。' }),
+            document.createTextNode(' 設定し直すと、パスワードをいつでも「見る」で確かめられるようになります。今と同じパスワードを入れ直しても大丈夫です（その場合、前にパスワードを渡した相手もそのまま開けます）。'),
+            el('p', { class: 'notice__act' }, el('a', { class: 'btn btn--sm btn--primary', href: '/mypage/stock.html?p=' + old[0].page_id, text: 'パスワードを設定し直す' }))
+          ])), main.firstChild);
+        });
         var staffSlot = el('li');
         ul.appendChild(staffSlot);
         EM.roles().then(function (roles) {

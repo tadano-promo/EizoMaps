@@ -175,6 +175,11 @@
       return sb.rpc('my_stock_pw_viewable').then(function (r) {
         var row = ((r && r.data) || []).filter(function (x) { return x.page_id === page.id; })[0];
         pwViewable = !!(row && row.viewable);
+        // 前のしくみで保存したパスワード：設定し直しをお願いする
+        if (!pwViewable && page.password_updated_at) {
+          EM.notice(EM.$('#pwState'), '誠に申し訳ございません。アップデートに伴い、このページのパスワードの再設定をお願いします。設定し直すと「見る」で確かめられるようになります。今と同じパスワードを入れ直しても大丈夫です（前に渡した相手もそのまま開けます）。', 'error');
+          EM.$('#pwState').className = 'notice notice--warn small';
+        }
       });
     }
     function hidePw() {
