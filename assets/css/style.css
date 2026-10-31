@@ -1800,3 +1800,61 @@ body.is-pitch .ask-fab, body.is-player .ask-fab, body.is-player .sticky-ask { di
 .work-cover .badge { position: absolute; left: 8px; bottom: 8px; top: auto; right: auto; padding: 2px 7px; border-radius: 4px; background: rgba(10,10,15,.75); border: 1px solid var(--border); color: var(--text); font-family: var(--font-mono); font-size: 10px; letter-spacing: .04em; line-height: 1.5; max-width: calc(100% - 16px); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .pitch-wall .work-cover .badge { display: none; }
 .work-cover.no-img .badge { display: none; }
+
+/* ---------- 鍵付きページ：5つまで・取り寄せと受け渡し（037） ---------- */
+.stock-tabs { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; margin: 18px 0 4px; }
+.stock-tab { display: inline-flex; align-items: center; gap: 8px; text-decoration: none; max-width: 100%; }
+.stock-tab > span:first-child { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 16em; }
+.stock-tab__state { font-size: 11px; opacity: .75; }
+.stock-tab--new { border-style: dashed; }
+.stock-tabs__full { margin: 0; }
+.stock-warn { border: 1px solid #ff8b6b; background: rgba(255, 139, 107, .06); border-radius: var(--radius); padding: 14px 16px; margin: 20px 0 6px; }
+.stock-warn__head { display: flex; justify-content: space-between; align-items: center; gap: 12px; }
+.stock-warn p, .stock-warn ul { margin: 8px 0 0; font-size: 14px; line-height: 1.8; }
+.stock-warn ul { padding-left: 1.3em; }
+.stock-shares { border: 1px solid var(--border); border-radius: var(--radius); padding: 10px 14px; margin: 8px 0 12px; background: var(--surface); }
+.stock-shares p { margin: 0 0 4px; }
+.stock-shares__list { margin: 0; padding-left: 1.2em; line-height: 1.8; }
+.pw-reveal { letter-spacing: .08em; margin-left: 6px; word-break: break-all; }
+.pw-row-inline { display: inline-flex; flex-wrap: wrap; align-items: center; gap: 6px; }
+.pw-row-inline .pw-reveal { margin-left: 0; }
+
+/* プロフィールの「非公開の作品があります」 */
+.stock-cards { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 10px; margin-top: 12px; }
+.stock-card { display: flex; align-items: center; gap: 12px; padding: 12px 14px; border: 1px solid var(--border); border-radius: var(--radius); background: var(--surface); }
+.stock-card__lock { font-size: 20px; }
+.stock-card__text { display: flex; flex-direction: column; gap: 2px; flex: 1; min-width: 0; }
+.stock-card__title { font-weight: 700; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+/* 重ねて開く小さな画面 */
+.em-sheet { position: fixed; inset: 0; z-index: 400; background: rgba(0, 0, 0, .7); display: flex; align-items: center; justify-content: center; padding: 16px; }
+.em-sheet__box { width: min(560px, 100%); max-height: calc(100vh - 32px); overflow: auto; background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 18px 20px 20px; }
+.em-sheet__head { display: flex; justify-content: space-between; align-items: center; gap: 12px; margin-bottom: 10px; }
+.em-sheet__title { font-size: 18px; margin: 0; }
+.em-sheet__close { background: none; border: 0; color: var(--text); font-size: 24px; line-height: 1; cursor: pointer; padding: 4px 8px; }
+.em-sheet__body > * + * { margin-top: 12px; }
+body.has-sheet { overflow: hidden; }
+.stock-check { display: flex; gap: 10px; align-items: flex-start; }
+.stock-give__row { border: 1px solid var(--border); border-radius: var(--radius-s); padding: 10px 12px; }
+.stock-give__row.is-off { opacity: .55; }
+.stock-give__pw { margin: 8px 0 0 28px; display: grid; gap: 6px; }
+.stock-confirm { border: 1px solid var(--accent); border-radius: var(--radius); padding: 14px 16px; }
+.stock-confirm__to { margin: 0; font-weight: 700; }
+.stock-confirm__list { margin: 8px 0; padding-left: 1.2em; font-size: 17px; line-height: 1.8; }
+
+/* メッセージの中のカード */
+.dm-card { display: grid; gap: 8px; }
+.dm-card__title { margin: 0; font-weight: 700; }
+.dm-card__pages { margin: 0; padding-left: 1.2em; line-height: 1.9; }
+.dm-card__pages .tag { margin-left: 8px; }
+.dm-card__give { border-top: 1px solid var(--border); padding-top: 8px; }
+.dm-card__give p { margin: 4px 0; }
+.dm-card__pt { font-weight: 700; }
+.dm-msg--card { max-width: min(560px, 100%); }
+.stock-received { border: 1px solid var(--border); border-radius: var(--radius); padding: 10px 14px; margin: 0 0 16px; background: var(--surface); }
+.stock-received summary { cursor: pointer; font-weight: 700; }
+.stock-received__row { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 10px; align-items: center; padding: 10px 0; border-top: 1px solid var(--border); }
+.stock-received__row:first-of-type { margin-top: 10px; }
+.stock-received__row.is-off { opacity: .6; }
+.stock-received__title { margin: 0; font-weight: 700; }
+.stock-received__row .small { margin: 2px 0 0; }

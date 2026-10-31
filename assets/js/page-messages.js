@@ -13,6 +13,7 @@
     EM.requireUser().then(function (u) {
       if (!u) return;
       me = u;
+      if (EM.stockShare) EM.stockShare.received(EM.$('#receivedBox'));
       return loadThreads().then(function () {
         var to = EM.param('to'), t = EM.param('t');
         if (t) { var hit = find(t); if (hit) return openThread(hit); }
@@ -102,12 +103,21 @@
       threadBox.appendChild(head(x.other_name, x.other_handle, x.i_am === 'creator' ? 'あなた（クリエイター）宛てのメッセージです' : null));
       var log = el('div', { class: 'dm-log' });
       threadBox.appendChild(log);
-      return sb.from('dm_messages').select('id,sender_id,body,created_at').eq('thread_id', x.id).order('created_at').limit(500).then(function (r) {
+      // 鍵付きページの取り寄せの状態（返事待ち・渡し済み・見送り）
+      var reqQ = sb.from('stock_requests').select('id,page_id,message_id,status').eq('thread_id', x.id);
+      var reload = function () { loadThreads().then(function () { var hit = find(x.id); openThread(hit || x); }); };
+      return Promise.all([
+        sb.from('dm_messages').select('id,sender_id,body,created_at,kind,meta').eq('thread_id', x.id).order('created_at').limit(500),
+        reqQ
+      ]).then(function (res) {
+        var r = res[0];
         if (r.error) { EM.notice(msg, EM.errorText(r.error), 'error'); return; }
+        var ctx = { thread: x, me: me, requests: (res[1] && res[1].data) || [], reload: reload };
         (r.data || []).forEach(function (m) {
           var mine = m.sender_id === me.id;
-          log.appendChild(el('div', { class: 'dm-msg' + (mine ? ' is-mine' : '') }, [
-            el('p', { class: 'dm-msg__body pre', text: m.body }),
+          var isCard = m.kind && m.kind !== 'text' && EM.stockShare;
+          log.appendChild(el('div', { class: 'dm-msg' + (mine ? ' is-mine' : '') + (isCard ? ' dm-msg--card' : '') }, [
+            isCard ? EM.stockShare.card(m, ctx) : el('p', { class: 'dm-msg__body pre', text: m.body }),
             el('p', { class: 'small muted', text: (mine ? 'あなた' : x.other_name) + '・' + EM.datetime(m.created_at) })
           ]));
         });
@@ -123,10 +133,14 @@
             btn.removeAttribute('aria-busy');
             if (r2.error) { EM.notice(msg, EM.errorText(r2.error), 'error'); return; }
             EM.notice(msg, '');
-            loadThreads().then(function () { var hit = find(x.id); openThread(hit || x); });
+            reload();
           });
         } });
         var tools = [btn];
+        if (x.i_am === 'creator' && EM.stockShare) {
+          tools.push(el('button', { class: 'btn btn--sm', type: 'button', text: '🔒 鍵付きページを渡す',
+            onclick: function () { EM.stockShare.openGive(ctx, []); } }));
+        }
         if (x.i_am === 'creator') {
           tools.push(el('button', { class: 'btn btn--sm btn--ghost', type: 'button',
             text: x.blocked ? 'この人からまた受け取る' : 'この人から受け取らない',

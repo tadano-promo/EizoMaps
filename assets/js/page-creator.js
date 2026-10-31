@@ -60,6 +60,7 @@
       mountReviewForm(c);
       mountFollow(c);
       mountAvailability(c);
+      if (EM.stockShare) EM.stockShare.profile(c);   // 非公開の作品があります（鍵付きページの取り寄せ）
       // ハンドルが決まっている人は、アドレスバーも @ハンドル の形にそろえる
       if (c.handle && history.replaceState) history.replaceState(null, '', '/@' + c.handle);
       // 「?view=pitch」付きで開いたときは、そのまま商談モードで開く（評価・空き状況は届きしだい描き直す）

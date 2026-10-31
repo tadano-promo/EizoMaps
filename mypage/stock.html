@@ -27,9 +27,12 @@
   <div class="wrap">
     <div class="doc">
       <p class="eyebrow">Stock page</p>
-      <h1>ストックページ</h1>
-      <p class="lead">パスワードを知っている人だけが開けるページです。動画・資料・リンクをまとめて、相手に URL とパスワードだけ渡せます。</p>
+      <h1>ストックページ（鍵付きページ）</h1>
+      <p class="lead">パスワードを知っている人だけが開けるページです。動画・資料・リンクをまとめて、相手に URL とパスワードだけ渡せます。1人5つまで作れます。</p>
       <div class="notice" id="pageMsg" hidden></div>
+
+      <!-- 自分のページの切りかえ（5つまで） -->
+      <div class="stock-tabs" id="pageTabs" hidden></div>
 
       <!-- まだページが無いとき -->
       <section id="createSection" hidden>
@@ -47,12 +50,30 @@
           </label>
           <div class="form-actions">
             <button class="btn btn--primary" type="submit" id="createBtn">このページを作る</button>
+            <button class="btn btn--ghost" type="button" id="createCancelBtn" hidden>やめる</button>
           </div>
         </form>
       </section>
 
       <!-- ページがあるとき -->
       <section id="editSection" hidden>
+
+        <!-- 使い回すときの注意（2026-10-31 翠くんと決めた文） -->
+        <div class="stock-warn" id="reuseWarn">
+          <div class="stock-warn__head">
+            <strong>🔒 鍵付きページを使い回すときの注意</strong>
+            <button class="link-btn small" type="button" id="reuseWarnToggle" aria-expanded="true" aria-controls="reuseWarnBody">閉じる</button>
+          </div>
+          <div id="reuseWarnBody">
+            <p>例：IT企業Aさん向けにページを作って渡したけれど、決まらなかった。そこで同じページの作品を入れ替えて、競合のIT企業Bさんに渡した。</p>
+            <p>このとき、パスワードがそのままだと、Aさんにも Bさん向けの中身が見えてしまいます。Aさんの社内向けの映像や、発表前の新サービスの映像のように守秘義務のある作品が入っていたら、それだけで大きなトラブルになります。</p>
+            <p><strong>別の会社に渡すときは、次のどちらかをしてください。</strong></p>
+            <ul>
+              <li>新しい鍵付きページを作る（おすすめ）</li>
+              <li>パスワードを変える（前に渡した人は、もう開けなくなります）</li>
+            </ul>
+          </div>
+        </div>
 
         <hr class="divider">
         <h2>公開の設定</h2>
@@ -91,13 +112,17 @@
         <hr class="divider">
         <h2>パスワード</h2>
         <p class="small muted" id="pwState"></p>
+        <div class="stock-shares" id="sharesBox" hidden></div>
         <!-- 設定したあとは「設定済み」だけをすっきり見せる（変えるときだけ入力欄を開く） -->
         <div class="setsum" id="pwSummary" hidden>
           <div class="setsum__main">
-            <p class="setsum__value"><span class="setsum__ok">✓</span> 設定済み</p>
+            <p class="setsum__value"><span class="setsum__ok">✓</span> 設定済み <span class="mono pw-reveal" id="pwShown">●●●●●●●●</span></p>
             <span class="setsum__sub small muted mono" id="pwSumWhen"></span>
+            <span class="small muted" id="pwRevealNote" hidden></span>
           </div>
           <div class="setsum__actions">
+            <button class="btn btn--sm" type="button" id="pwRevealBtn">見る</button>
+            <button class="btn btn--sm" type="button" id="pwRevealCopyBtn" hidden>コピー</button>
             <button class="btn btn--sm" type="button" id="pwChangeBtn">パスワードを変える</button>
           </div>
         </div>
@@ -109,7 +134,7 @@
               <button class="btn btn--sm" type="button" id="genPwBtn">ランダムに作る</button>
               <button class="btn btn--sm" type="button" id="copyPwBtn">コピー</button>
             </div>
-            <span class="hint">「ランダムに作る」で推測されにくいパスワードが入ります。好きな文字に書き換えても大丈夫です。保存したあとは表示できないので、相手に伝える前にコピーして控えてください。</span>
+            <span class="hint">「ランダムに作る」で推測されにくいパスワードが入ります。好きな文字に書き換えても大丈夫です。保存したあとも、この画面の「見る」で確かめられます（見られるのはログインしているあなただけです）。</span>
           </div>
           <p><button class="btn btn--sm btn--ghost" type="button" id="pwCancelBtn" hidden>変えるのをやめる</button></p>
         </div>
@@ -151,6 +176,7 @@
 
         <hr class="divider">
         <h2>ページの中身</h2>
+        <div class="notice notice--warn small" id="contentShareWarn" hidden></div>
         <p class="small muted">動画は作品棚から選ぶか、YouTube・Vimeo・TikTok の URL を貼るだけで並びます。資料は共有リンクを貼ってください。</p>
 
         <div class="card stack" id="addBox">

@@ -9,6 +9,12 @@
 
     var creator = null;   // { id, display_name, contact_pref, contact_dm_url }
     var page = null;      // stock_pages の1行（password_hash は含まない）
+    var pages = [];       // 自分のページ（5つまで）
+    var MAX_PAGES = 5;
+    var shares = [];      // このページを渡した相手（my_stock_page_shares）
+    var contentOk = false; // 渡し済みのページの中身を変えてよいと確かめたか
+    var pwViewable = true; // パスワードを「見る」で出せる形で保存しているか
+    var hideTimer = null;
     var items = [];
     var links = [];
     var addKind = 'video';
@@ -56,10 +62,13 @@
 
     function loadPage() {
       return sb.from('stock_pages').select(PAGE_COLS)
-        .eq('creator_id', creator.id).maybeSingle()
+        .eq('creator_id', creator.id).order('created_at')
         .then(function (r) {
           if (r.error) throw r.error;
-          page = r.data;
+          pages = r.data || [];
+          var want = EM.param('p');
+          page = pages.filter(function (x) { return x.id === want; })[0] || pages[0] || null;
+          renderTabs();
           if (!page) {
             EM.$('#createSection').hidden = false;
             EM.$('#editSection').hidden = true;
@@ -70,9 +79,156 @@
           fillPageForm();
           fillContactForm();
           mountSaveBar();
-          return Promise.all([loadItems(), loadLinks(), loadLibrary()]);
+          if (EM.param('made')) EM.notice(msg, 'ページを作りました。次にパスワードを設定してください。', 'ok');
+          return Promise.all([loadItems(), loadLinks(), loadLibrary(), loadShares(), loadViewable()]);
         });
     }
+
+    /* ---------------- ページの切りかえ（5つまで） ---------------- */
+    function renderTabs() {
+      var box = EM.$('#pageTabs');
+      EM.clear(box);
+      box.hidden = !pages.length;
+      if (!pages.length) return;
+      pages.forEach(function (x) {
+        box.appendChild(el('a', {
+          class: 'chip stock-tab', href: '/mypage/stock.html?p=' + x.id,
+          'aria-pressed': page && x.id === page.id ? 'true' : 'false'
+        }, [
+          el('span', { text: x.title }),
+          el('span', { class: 'stock-tab__state', text: x.is_active ? '公開中' : '非公開' })
+        ]));
+      });
+      if (pages.length < MAX_PAGES) {
+        box.appendChild(el('button', { class: 'chip stock-tab stock-tab--new', type: 'button',
+          text: '＋ 新しいページ（あと' + (MAX_PAGES - pages.length) + 'つ）', onclick: showCreate }));
+      } else {
+        box.appendChild(el('p', { class: 'small muted stock-tabs__full' }, [
+          '鍵付きページは5つまでです。もっと必要なときは ',
+          el('a', { href: '/contact/', text: 'お問い合わせ' }),
+          ' から教えてください。'
+        ]));
+      }
+    }
+
+    function showCreate() {
+      EM.$('#createSection').hidden = false;
+      EM.$('#editSection').hidden = true;
+      EM.$('#createCancelBtn').hidden = !pages.length;
+      EM.$('#newSlug').focus();
+    }
+    EM.$('#createCancelBtn').addEventListener('click', function () {
+      EM.$('#createSection').hidden = true;
+      EM.$('#editSection').hidden = !page;
+    });
+
+    /* ---------------- このページを渡した相手 ---------------- */
+    function loadShares() {
+      return sb.rpc('my_stock_page_shares', { p_page_id: page.id }).then(function (r) {
+        shares = (r && !r.error && r.data) || [];
+        renderShares();
+      });
+    }
+    function validShares() { return shares.filter(function (x) { return x.still_valid; }); }
+    function renderShares() {
+      var box = EM.$('#sharesBox'), warn = EM.$('#contentShareWarn');
+      EM.clear(box); EM.clear(warn);
+      box.hidden = !shares.length;
+      var v = validShares();
+      warn.hidden = !v.length;
+      if (!shares.length) return;
+      box.appendChild(el('p', { class: 'small', text: 'このページを渡した人（' + shares.length + '人）' }));
+      var ul = el('ul', { class: 'small stock-shares__list' });
+      shares.forEach(function (x) {
+        ul.appendChild(el('li', null, [
+          x.recipient_name + '（' + EM.date(x.given_at) + '）',
+          x.still_valid ? null : el('span', { class: 'muted', text: '　パスワードを変えたので、もう開けません' })
+        ]));
+      });
+      box.appendChild(ul);
+      if (v.length) {
+        warn.appendChild(el('p', { text: 'このページは ' + shareNames(v) + ' に渡しています。中身を変えると、パスワードを知っている人には新しい中身が見えます。別の会社に見せたいときは、新しいページを作るか、パスワードを変えてください。' }));
+        var acts = el('p', { class: 'page-links' });
+        if (pages.length < MAX_PAGES) acts.appendChild(el('button', { class: 'btn btn--sm', type: 'button', text: '新しいページを作る', onclick: showCreate }));
+        acts.appendChild(el('button', { class: 'btn btn--sm', type: 'button', text: 'パスワードも変える', onclick: function () {
+          EM.$('#pwChangeBtn').click();
+          EM.$('#newPassword').scrollIntoView({ block: 'center' });
+        } }));
+        warn.appendChild(acts);
+      }
+    }
+    function shareNames(list) {
+      var names = list.slice(0, 3).map(function (x) { return x.recipient_name + 'さん（' + EM.date(x.given_at) + '）'; });
+      return names.join('、') + (list.length > 3 ? ' ほか' + (list.length - 3) + '人' : '');
+    }
+    // 渡し済みのページの中身を変える前に、一度だけ確かめる
+    function okToChangeContent() {
+      var v = validShares();
+      if (!v.length || contentOk) return true;
+      var yes = confirm('このページは ' + shareNames(v) + ' に渡しています。\n中身を変えると、パスワードを知っている人には新しい中身が見えます。\n\n別の会社に見せるためなら「キャンセル」を押して、新しいページを作るか、パスワードを変えてください。\nこのまま変えますか？');
+      if (yes) contentOk = true;
+      return yes;
+    }
+
+    /* ---------------- パスワードを見る（ログイン中の本人だけ・30秒で隠す） ---------------- */
+    function loadViewable() {
+      return sb.rpc('my_stock_pw_viewable').then(function (r) {
+        var row = ((r && r.data) || []).filter(function (x) { return x.page_id === page.id; })[0];
+        pwViewable = !!(row && row.viewable);
+      });
+    }
+    function hidePw() {
+      clearTimeout(hideTimer);
+      EM.$('#pwShown').textContent = '●●●●●●●●';
+      EM.$('#pwRevealBtn').textContent = '見る';
+      EM.$('#pwRevealCopyBtn').hidden = true;
+      EM.$('#pwRevealCopyBtn').dataset.v = '';
+    }
+    EM.$('#pwRevealBtn').addEventListener('click', function () {
+      if (EM.$('#pwRevealCopyBtn').dataset.v) { hidePw(); return; }
+      var note = EM.$('#pwRevealNote');
+      if (!pwViewable) {
+        note.hidden = false;
+        note.textContent = '前のしくみで保存したパスワードなので、表示できません。「パスワードを変える」で設定し直すと、次から見られます。';
+        return;
+      }
+      var btn = this; btn.setAttribute('aria-busy', 'true');
+      sb.rpc('reveal_stock_password', { p_page_id: page.id }).then(function (r) {
+        btn.removeAttribute('aria-busy');
+        if (r.error) { EM.notice(msg, EM.errorText(r.error), 'error'); return; }
+        if (!r.data) { pwViewable = false; btn.click(); return; }
+        note.hidden = true;
+        EM.$('#pwShown').textContent = r.data;
+        btn.textContent = '隠す';
+        var cp = EM.$('#pwRevealCopyBtn'); cp.hidden = false; cp.dataset.v = r.data;
+        clearTimeout(hideTimer);
+        hideTimer = setTimeout(hidePw, 30000);
+      });
+    });
+    EM.$('#pwRevealCopyBtn').addEventListener('click', function () {
+      var v = this.dataset.v;
+      if (!v) return;
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(v).then(function () { EM.toast('パスワードをコピーしました'); }, function () { EM.toast(v); });
+      } else { EM.toast(v); }
+    });
+
+    /* ---------------- 使い回すときの注意（閉じた状態を覚える） ---------------- */
+    (function initReuseWarn() {
+      var KEY = 'em_stock_reuse_warn_closed', closed = false;
+      try { closed = localStorage.getItem(KEY) === '1'; } catch (e) {}
+      function apply() {
+        EM.$('#reuseWarnBody').hidden = closed;
+        EM.$('#reuseWarnToggle').textContent = closed ? '開く' : '閉じる';
+        EM.$('#reuseWarnToggle').setAttribute('aria-expanded', closed ? 'false' : 'true');
+      }
+      EM.$('#reuseWarnToggle').addEventListener('click', function () {
+        closed = !closed;
+        try { localStorage.setItem(KEY, closed ? '1' : '0'); } catch (e) {}
+        apply();
+      });
+      apply();
+    })();
 
     function loadItems() {
       return sb.from('stock_items').select(ITEM_COLS)
@@ -148,6 +304,7 @@
     }
 
     function addFromLibrary(p, btn) {
+      if (!okToChangeContent()) return;
       if (btn) btn.setAttribute('aria-busy', 'true');
       sb.from('stock_items').insert({
         page_id: page.id, kind: 'video', portfolio_id: p.id, width: 'full', sort_order: items.length
@@ -198,6 +355,7 @@
         creator_id: creator.id, slug: slug, title: title, intro: INTRO_TEMPLATE, is_active: false
       }).select(PAGE_COLS).single().then(function (r) {
         if (r.error) throw r.error;
+        if (pages.length) { location.href = '/mypage/stock.html?p=' + r.data.id + '&made=1'; return; }
         EM.notice(msg, 'ページを作りました。次にパスワードを設定してください。', 'ok');
         return loadPage();
       }).catch(function (err) {
@@ -234,6 +392,8 @@
       EM.$('#pwForm').hidden = hasPw;
       EM.$('#pwCancelBtn').hidden = true;
       EM.$('#pwSumWhen').textContent = hasPw ? '最終変更 ' + EM.datetime(page.password_updated_at) : '';
+      hidePw();
+      EM.$('#pwRevealNote').hidden = true;
       EM.$('#pwState').textContent = hasPw ? ''
         : 'パスワードがまだ設定されていません。自動で作った案を入れてあります。そのままでも、書き換えても大丈夫です。保存すると設定されます。';
       EM.$('#pwState').hidden = hasPw;
@@ -291,8 +451,12 @@
         patches.push({ it: it, patch: patch });
       }
 
+      if (pw && page.password_updated_at && validShares().length) {
+        var vs = validShares();
+        if (!confirm('このページを渡した人が' + vs.length + '人います（' + shareNames(vs) + '）。\nパスワードを変えると、その人たちは開けなくなります。\n\n変えますか？')) return false;
+      }
       var chain = pw
-        ? sb.rpc('set_stock_password', { p_password: pw }).then(function (r) { if (r.error) throw r.error; })
+        ? sb.rpc('set_stock_page_password', { p_page_id: page.id, p_password: pw }).then(function (r) { if (r.error) throw r.error; })
         : Promise.resolve();
       return chain.then(function () {
         return sb.from('stock_pages').update({
@@ -319,10 +483,14 @@
           });
         }));
       }).then(function () {
+        var pwChanged = !!EM.$('#newPassword').value;
         EM.$('#newPassword').value = '';
         contactDirty = false;
         dirtyItems = {};
         fillPageForm();
+        pages = pages.map(function (x) { return x.id === page.id ? page : x; });
+        renderTabs();
+        if (pwChanged) { pwViewable = true; loadShares(); }
         EM.notice(msg, '');
         return page.updated_at;
       }).catch(function (err) {
@@ -564,6 +732,7 @@
     }
 
     EM.$('#addItemBtn').addEventListener('click', function () {
+      if (!okToChangeContent()) return;
       var title = EM.$('#addTitle').value.trim();
       var desc = EM.$('#addDesc').value.trim();
       var url = EM.$('#addUrl').value.trim();
@@ -693,6 +862,9 @@
 
       // 直したら「保存していない変更」として覚えておき、画面下のバーでまとめて保存する
       // 並べ替えで画面を描き直しても、書きかけの内容が消えないように控えておく
+      body.addEventListener('focusin', function (e) {
+        if (e.target.matches('input,textarea') && !okToChangeContent()) e.target.blur();
+      });
       body.addEventListener('input', function () {
         dirtyItems[it.id] = it;
         var t = body.querySelector('[data-f="title"]'), d = body.querySelector('[data-f="description"]');
@@ -721,6 +893,7 @@
     }
 
     function removeItem(it) {
+      if (!okToChangeContent()) return;
       var q = it.pf
         ? 'このページから外しますか？（作品棚には残ります）'
         : 'このブロックを削除しますか？';
