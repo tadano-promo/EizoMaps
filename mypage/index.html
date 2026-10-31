@@ -19,6 +19,7 @@
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.116.0/dist/umd/supabase.js" integrity="sha384-iLddHTLokph6Omwoyid4XKxHaWa6w41BnoEj0q5oOrzmYPpHIKt1wyjReA7s//pP" crossorigin="anonymous" referrerpolicy="no-referrer" defer></script>
 <script src="/assets/js/config.js" defer></script>
 <script src="/assets/js/app.js" defer></script>
+<script src="/assets/js/jobs.js" defer></script>
 <script src="/assets/js/page-mypage.js" defer></script>
 <script src="/assets/js/page-myreviews.js" defer></script>
 </head>
@@ -103,8 +104,8 @@
         </label>
 
         <div class="field">
-          <span class="label">職種 <span class="muted">（最大6件）</span></span>
-          <div class="chips" id="genreChips"></div>
+          <span class="label">職種 <span class="muted">（8つまで。部署を開いて選ぶか、言葉で探せます）</span></span>
+          <div id="genreChips"></div>
         </div>
 
         <div class="row">

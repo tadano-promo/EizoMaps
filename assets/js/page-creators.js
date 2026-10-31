@@ -38,7 +38,7 @@
     skeletons();
 
     Promise.all([
-      sb.from('genres').select('id,slug,name_ja,sort_order').order('sort_order'),
+      EM.jobs.load().then(function (d) { return { data: d }; }),
       sb.from('creators')
         .select('id,user_id,handle,display_name,headline,area_pref,area_city,years_of_experience,response_time_hours,avatar_url,updated_at,moods,creator_genres(genre_id)')
         .eq('is_published', true)
@@ -64,21 +64,10 @@
       for (var i = 0; i < 4; i++) listView.appendChild(el('div', { class: 'card skeleton', 'aria-hidden': 'true' }, el('div', { class: 'f-note' }, ' ')));
     }
 
+    // 職種の木から選ぶ（部署を開く・言葉で探す）。選んだ職種を全部持つ人だけに絞る
+    var genrePicker = null;
     function buildGenreChips() {
-      var box = EM.$('#genreChips');
-      EM.clear(box);
-      genres.forEach(function (g) {
-        var b = el('button', {
-          class: 'chip', type: 'button', 'aria-pressed': 'false', text: g.name_ja,
-          onclick: function () {
-            var i = state.genres.indexOf(g.id);
-            if (i === -1) state.genres.push(g.id); else state.genres.splice(i, 1);
-            b.setAttribute('aria-pressed', i === -1 ? 'true' : 'false');
-            render();
-          }
-        });
-        box.appendChild(b);
-      });
+      genrePicker = EM.jobs.picker(EM.$('#genreChips'), genres, state.genres, { compact: true, onChange: function () { render(); } });
     }
 
     // 得意な雰囲気・作品の業種（goodportfolioさん・TYOさんの参考）
@@ -119,11 +108,12 @@
         if (state.inds.length && !state.inds.some(function (i) { return indsOf[c.id] && indsOf[c.id][i]; })) return false;
         if (q) {
           var hay = [c.display_name, c.headline, c.area_pref, c.area_city].join(' ').toLowerCase();
-          var gnames = (c.creator_genres || []).map(function (x) {
+          // 職種は別の呼び方でも当たる（例：「ライトマン」で照明技師の人）
+          var jobHit = (c.creator_genres || []).some(function (x) {
             var g = genres.filter(function (gg) { return gg.id === x.genre_id; })[0];
-            return g ? g.name_ja : '';
-          }).join(' ').toLowerCase();
-          if (hay.indexOf(q) === -1 && gnames.indexOf(q) === -1) return false;
+            return g && EM.jobs.matches(g, q);
+          });
+          if (hay.indexOf(q) === -1 && !jobHit) return false;
         }
         return true;
       });
@@ -290,7 +280,8 @@
       busyIds = null;
       EM.$('#q').value = ''; areaSelect.value = '';
       EM.$('#freeFrom').value = ''; EM.$('#freeTo').value = ''; EM.$('#freeNote').textContent = '';
-      EM.$$('#genreChips .chip, #moodChips .chip, #indChips .chip').forEach(function (b) { b.setAttribute('aria-pressed', 'false'); });
+      EM.$$('#moodChips .chip, #indChips .chip').forEach(function (b) { b.setAttribute('aria-pressed', 'false'); });
+      buildGenreChips();
       render();
     });
   });

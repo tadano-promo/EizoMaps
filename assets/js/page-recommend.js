@@ -8,17 +8,8 @@
     var picked = [];
     EM.requireUser().then(function (u) {
       if (!u) return;
-      return sb.from('genres').select('id,name_ja').order('sort_order').then(function (r) {
-        var box = EM.$('#recGenres');
-        (r.data || []).forEach(function (g) {
-          var b = el('button', { class: 'chip', type: 'button', 'aria-pressed': 'false', text: g.name_ja });
-          b.addEventListener('click', function () {
-            var i = picked.indexOf(g.id);
-            if (i === -1) picked.push(g.id); else picked.splice(i, 1);
-            b.setAttribute('aria-pressed', i === -1 ? 'true' : 'false');
-          });
-          box.appendChild(b);
-        });
+      return EM.jobs.load().then(function (list) {
+        EM.jobs.picker(EM.$('#recGenres'), list, picked, { max: 8 });
       });
     });
     var urls = EM.$('#recUrls');

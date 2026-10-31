@@ -15,7 +15,7 @@
       if (!u) return;
       user = u;
       return Promise.all([
-        sb.from('genres').select('id,name_ja,sort_order').order('sort_order'),
+        EM.jobs.load().then(function (d) { return { data: d }; }),
         sb.from('creators').select('*,creator_genres(genre_id)').eq('user_id', u.id).maybeSingle(),
         sb.from('users').select('account_type').eq('id', u.id).maybeSingle()
       ]);
@@ -268,26 +268,11 @@
       box.appendChild(EM.avatar(creator && creator.avatar_url, EM.$('#displayName').value || 'E', true));
     }
 
+    // 職種の木（部署 → 職種）から選ぶ。8つまで（2026-10-31 職種を細かくしたので6→8）
     function renderGenres() {
-      var box = EM.$('#genreChips');
-      EM.clear(box);
-      genres.forEach(function (g) {
-        var on = selected.indexOf(g.id) !== -1;
-        var b = el('button', {
-          class: 'chip', type: 'button', 'aria-pressed': on ? 'true' : 'false', text: g.name_ja,
-          onclick: function () {
-            var i = selected.indexOf(g.id);
-            if (i !== -1) { selected.splice(i, 1); }
-            else {
-              if (selected.length >= 6) { EM.toast('職種は最大6件までです'); return; }
-              selected.push(g.id);
-            }
-            b.setAttribute('aria-pressed', selected.indexOf(g.id) !== -1 ? 'true' : 'false');
-            profileDirty = true;
-            if (bar) bar.markDirty();
-          }
-        });
-        box.appendChild(b);
+      EM.jobs.picker(EM.$('#genreChips'), genres, selected, {
+        max: 8,
+        onChange: function () { profileDirty = true; if (bar) bar.markDirty(); }
       });
     }
 

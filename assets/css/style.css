@@ -1860,3 +1860,28 @@ body.has-sheet { overflow: hidden; }
 .stock-received__row .small { margin: 2px 0 0; }
 
 .notice__act { margin: 10px 0 0; }
+
+/* ---------- 職種の木（部署 → 職種）039 ---------- */
+.jobs { display: grid; gap: 10px; min-width: 0; width: 100%; }
+.jobs__chosen .chips { margin-top: 4px; }
+.jobs__label { margin: 0; }
+.jobs__on { background: var(--accent); border-color: var(--accent); color: #0a0a0f; font-weight: 700; display: inline-flex; align-items: center; gap: 6px; }
+.jobs__x { font-size: 14px; line-height: 1; }
+.jobs__search { width: 100%; }
+.jobs__field { margin: 6px 0 0; font-family: var(--font-mono); font-size: 11px; letter-spacing: .14em; color: var(--accent); }
+.jobs__tree { display: grid; gap: 6px; }
+.jobs__dept { border: 1px solid var(--border); border-radius: var(--radius-s); background: var(--surface); }
+.jobs__dept.has-on { border-color: rgba(232, 255, 71, .5); }
+.jobs__dept > summary { cursor: pointer; padding: 9px 12px; display: flex; align-items: baseline; gap: 8px; flex-wrap: wrap; list-style: none; }
+.jobs__dept > summary::-webkit-details-marker { display: none; }
+.jobs__dept > summary::before { content: '＋'; color: var(--muted); width: 1em; }
+.jobs__dept[open] > summary::before { content: '－'; }
+.jobs__dept > summary > span:first-of-type { font-weight: 700; }
+.jobs__count { background: var(--accent); color: #0a0a0f; border-radius: 999px; font-size: 11px; font-weight: 700; padding: 0 7px; }
+.jobs__peek { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 100%; }
+.jobs__dept > .chips { padding: 4px 12px 12px; }
+.jobs__dept-tag { margin-left: 6px; font-size: 10px; opacity: .7; }
+.filter-row .jobs { flex: 1; }
+.jobs__depts .chip { display: inline-flex; align-items: center; gap: 6px; font-size: 12px; padding: 4px 10px; }
+.jobs__depts .chip.has-on { border-color: var(--accent); }
+.jobs__below { padding: 8px 10px; border: 1px solid var(--border); border-radius: var(--radius-s); background: var(--surface); }
