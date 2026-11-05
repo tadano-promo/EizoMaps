@@ -64,6 +64,24 @@
   var EM = {};
   EM.config = cfg;
 
+  /* ---------- 結果の記録（Google アナリティクスの「キーイベント」） ----------
+     2026-11-06 翠くん「analyticsの数値を正として、結果が出るようなSEO対策、AIO対策をしていく」
+     ・generate_lead … 依頼を送った／はじめてメッセージを送った／鍵付きページを取り寄せた
+     ・sign_up       … クリエイターのプロフィールを作った
+     名前・メール・本文などの個人の情報は送らない。解析が動いていないとき（手元の試しなど）は何もしない。
+     done を渡すと、送り終わってから（長くても1.2秒で）呼ぶ（すぐ別のページに移るときに記録が消えないように） */
+  EM.track = function (name, params, done) {
+    var called = false, next = function () { if (!called) { called = true; if (done) done(); } };
+    try {
+      if (typeof global.gtag === 'function') {
+        global.gtag('event', name, Object.assign({ transport_type: 'beacon', event_callback: next }, params || {}));
+        setTimeout(next, 1200);
+        return;
+      }
+    } catch (e) { /* 記録できなくても続ける */ }
+    next();
+  };
+
   /* ---------- Supabase クライアント ---------- */
   var _sb = null;
   EM.configured = function () {

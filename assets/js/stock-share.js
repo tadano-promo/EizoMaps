@@ -130,6 +130,7 @@
         sb.rpc('request_stock', { p_creator_id: c.id, p_page_ids: ids, p_body: ta.value.trim() }).then(function (r2) {
           btn.removeAttribute('aria-busy');
           if (r2.error) { EM.notice(s.msg, EM.errorText(r2.error), 'error'); return; }
+          EM.track('generate_lead', { lead_source: 'stock_request' });
           EM.clear(s.body); EM.notice(s.msg, '');
           s.body.appendChild(el('p', { text: '送りました。' + c.display_name + ' さんから届いたら、メッセージでお知らせします。' }));
           s.body.appendChild(el('p', { class: 'small muted', text: '届いたページは、メッセージの画面の「見せてもらった作品」からいつでも開けます。開くには毎回パスワードが要ります。' }));

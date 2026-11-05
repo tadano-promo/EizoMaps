@@ -350,6 +350,7 @@
         : sb.from('creators').insert(Object.assign({ user_id: user.id }, payload)).select('*').single()
       ).then(function (r) {
         if (r.error) throw r.error;
+        if (!(creator && creator.id)) EM.track('sign_up', { method: 'creator_profile' });
         creator = Object.assign({}, r.data);
         savedAt = creator.updated_at;
         if (EM.$('#handleEditor').hidden) initHandle();

@@ -78,6 +78,7 @@
           sb.rpc('send_dm', { p_creator_id: c.id, p_body: v }).then(function (r2) {
             btn.removeAttribute('aria-busy');
             if (r2.error) { EM.notice(msg, EM.errorText(r2.error), 'error'); return; }
+            EM.track('generate_lead', { lead_source: 'first_message' });
             EM.notice(msg, ''); EM.toast('送りました');
             if (history.replaceState) history.replaceState(null, '', '/messages/?t=' + r2.data);
             loadThreads().then(function () { var hit = find(r2.data); if (hit) openThread(hit); });

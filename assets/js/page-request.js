@@ -123,7 +123,9 @@
             sb.from('users').update({ account_type: 'both' }).eq('id', user.id);
           }
         });
-        location.replace('/projects/?id=' + encodeURIComponent(id) + '&sent=1');
+        EM.track('generate_lead', { lead_source: 'request_form' }, function () {
+          location.replace('/projects/?id=' + encodeURIComponent(id) + '&sent=1');
+        });
       }).catch(function (err) {
         btn.removeAttribute('aria-busy');
         EM.notice(msg, EM.errorText(err), 'error');
