@@ -1885,3 +1885,14 @@ body.has-sheet { overflow: hidden; }
 .jobs__depts .chip { display: inline-flex; align-items: center; gap: 6px; font-size: 12px; padding: 4px 10px; }
 .jobs__depts .chip.has-on { border-color: var(--accent); }
 .jobs__below { padding: 8px 10px; border: 1px solid var(--border); border-radius: var(--radius-s); background: var(--surface); }
+
+/* ===== 機能ページ 04：スケジュール・香盤表の絵（2026-11-07） ===== */
+.sch-mock { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 14px; max-width: 420px; width: 100%; margin: 0 auto; }
+.sch-mock__title { font-size: 12px; font-weight: 700; margin: 0 0 10px; }
+.sch-mock__grid { display: grid; grid-template-columns: 40px repeat(3, minmax(0, 1fr)); gap: 6px; font-size: 11px; }
+.sch-mock__grid b { font-weight: 700; color: var(--muted); font-size: 10px; text-align: center; }
+.sch-mock__grid i { font-style: normal; font-family: var(--font-mono); color: var(--muted); font-size: 10px; align-self: center; }
+.sch-mock__grid em { font-style: normal; padding: 6px 4px; border-radius: 6px; text-align: center; line-height: 1.3; border: 1px solid var(--border); background: var(--surface2); }
+.sch-mock__grid em.c1 { border-color: var(--accent); }
+.sch-mock__grid em.c2 { border-style: dashed; }
+.sch-mock__grid em.c3 { border-left: 3px solid var(--accent); }

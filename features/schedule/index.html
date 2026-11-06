@@ -1,0 +1,186 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; base-uri 'self'; object-src 'none'; form-action 'self'; script-src 'self' https://www.googletagmanager.com https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.116.0/; style-src 'self' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src 'self' data: https://*.supabase.co https://*.google-analytics.com https://*.googletagmanager.com; connect-src 'self' https://*.supabase.co wss://*.supabase.co https://*.google-analytics.com https://*.analytics.google.com https://*.googletagmanager.com https://www.google.com; frame-src 'none'; upgrade-insecure-requests">
+<meta name="referrer" content="strict-origin-when-cross-origin">
+<title>撮影の裏の動きまで、1枚の時間割に — 香盤表・撮影スケジュールの共有 — Eizo Maps</title>
+<meta name="description" content="撮影の香盤表（タイムテーブル）を、担当ごとの列で作って、相手ごとに見せる範囲を選んで共有できます。パスワード付き・期限つき・相手は登録不要。案件の全体はガントチャートで。登録は無料。">
+<link rel="canonical" href="https://eizo-maps.com/features/schedule/">
+<meta property="og:site_name" content="Eizo Maps">
+<meta property="og:title" content="撮影の裏の動きまで、1枚の時間割に — 香盤表・撮影スケジュールの共有 — Eizo Maps">
+<meta property="og:description" content="香盤表（タイムテーブル）を担当ごとに作って、相手ごとに見せる範囲を選んで共有。パスワード付き・期限つき・登録不要。">
+<meta property="og:type" content="website">
+<meta property="og:url" content="https://eizo-maps.com/features/schedule/">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bebas+Neue&amp;family=DM+Mono:wght@400;500&amp;family=Noto+Sans+JP:wght@300;400;500;700&amp;display=swap">
+<link rel="stylesheet" href="/assets/css/style.css">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.116.0/dist/umd/supabase.js" integrity="sha384-iLddHTLokph6Omwoyid4XKxHaWa6w41BnoEj0q5oOrzmYPpHIKt1wyjReA7s//pP" crossorigin="anonymous" referrerpolicy="no-referrer" defer></script>
+<script src="/assets/js/config.js" defer></script>
+<script src="/assets/js/app.js" defer></script>
+<script src="/assets/js/page-features.js" defer></script>
+</head>
+<body>
+<main class="feat">
+
+  <!-- ===== はじめの一画面 ===== -->
+  <section class="feat-hero">
+    <div class="wrap feat-hero__inner">
+      <div class="feat-hero__text">
+        <p class="eyebrow"><a href="/features/">Features</a> ／ 04 スケジュール・香盤表</p>
+        <h1>撮影の裏の動きまで、<br>1枚の時間割に。<br><span class="feat-accent">見せる範囲は、<br>相手ごとに。</span></h1>
+        <p class="lead">
+          Eizo Maps のスケジュールは、撮影の日の香盤表（タイムテーブル）を「担当」ごとの列で作れます。
+          できた時間割は、相手ごとに見せる範囲を選んで、パスワード付きのリンクで共有できます。
+          相手は Eizo Maps に登録しなくても、スマホで開くだけで見られます。
+        </p>
+        <div class="cta">
+          <a class="btn btn--primary" href="/auth/" data-cta-out>無料で使ってみる</a>
+          <a class="btn btn--primary" href="/schedule/" data-cta-in hidden>スケジュールを開く</a>
+          <a class="btn" href="/help/#schedule">使い方を見る</a>
+        </div>
+      </div>
+
+      <!-- 画面のイメージ（絵だけ。本物の案件ではありません） -->
+      <div class="sch-mock" aria-hidden="true">
+        <p class="sch-mock__title">春の新商品 Web CM ／ 撮影 6:00〜22:00</p>
+        <div class="sch-mock__grid">
+          <span></span><b>撮影チーム</b><b>車両</b><b>キャスト対応</b>
+          <i>7:00</i><span></span><em class="c2">弁当ピックアップ</em><em class="c3">キャスト迎え</em>
+          <i>9:00</i><em class="c1">撮影開始</em><span></span><em class="c3">メイク</em>
+          <i>13:00</i><em class="c1">屋外カット</em><em class="c2">移動</em><span></span>
+          <i>18:00</i><em class="c1">撤収</em><em class="c2">返却</em><em class="c3">お見送り</em>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===== あるある ===== -->
+  <section class="section">
+    <div class="wrap">
+      <p class="eyebrow">Why</p>
+      <h2>撮影の段取りで、こんなことはありませんか。</h2>
+      <div class="grid grid--3 feat-pains">
+        <div class="card">
+          <p class="num">01</p>
+          <h3>香盤表を、相手ごとに作り直している</h3>
+          <p class="small muted">スタッフ用・クライアント用・車両部用。見せてよい中身が違うので、同じ表を何枚も作り分けることになります。</p>
+        </div>
+        <div class="card">
+          <p class="num">02</p>
+          <h3>配った紙が、戻ってこない</h3>
+          <p class="small muted">紙の香盤表は、配りすぎると回収しきれないことがあります。回収できない紙は、そのまま情報漏れの入口になります。</p>
+        </div>
+        <div class="card">
+          <p class="num">03</p>
+          <h3>変更のたびに、全員に送り直す</h3>
+          <p class="small muted">集合時間が30分ずれただけで、ファイルを直して、また全員に送る。古い版を見て動く人が出るのがいちばん怖いところです。</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===== しくみ ===== -->
+  <section class="section feat-band">
+    <div class="wrap feat-split">
+      <div>
+        <p class="eyebrow">How</p>
+        <h2>予定 → タイムテーブル → <span class="feat-accent">担当の列</span>。</h2>
+        <p class="lead">
+          「撮影 6:00〜22:00」のような大きな予定の中に、細かい流れ（タイムテーブル）を入れていきます。
+          列は「撮影チーム」「車両」「キャスト対応」のように、案件ごとに自由に決められます。
+        </p>
+        <p class="small muted">夜をまたぐ撮影は 25:00 のように書けます。</p>
+      </div>
+      <ul class="feat-sources">
+        <li><b>日ごとの予定</b><span>1日の動きを、担当ごとの列で時間割に</span></li>
+        <li><b>縦型のカレンダー</b><span>月の予定を1枚で。撮影・納品・仮押さえを色分け</span></li>
+        <li><b>ガントチャート</b><span>案件ごとの期間と納品日（◆）を横に並べて</span></li>
+        <li><b>空き状況の公開</b><span>プロフィールに今後60日の空き状況を表示（予定の中身は出ません）</span></li>
+      </ul>
+    </div>
+  </section>
+
+  <!-- ===== 共有 ===== -->
+  <section class="section">
+    <div class="wrap">
+      <p class="eyebrow">Share</p>
+      <h2>同じ時間割を、相手ごとに見せ分ける。</h2>
+      <div class="grid grid--3 feat-pains">
+        <div class="card">
+          <h3>予定だけ</h3>
+          <p class="small muted">例：「撮影 6:00〜22:00」だけを伝えたい相手に。</p>
+        </div>
+        <div class="card">
+          <h3>予定＋全部の担当</h3>
+          <p class="small muted">例：現場のスタッフ全員に、1日の流れをまるごと。</p>
+        </div>
+        <div class="card">
+          <h3>予定＋選んだ担当だけ</h3>
+          <p class="small muted">例：クライアントさんには「撮影チーム」の流れだけ。車両部には「車両」の列だけ。</p>
+        </div>
+      </div>
+      <p class="small muted feat-note">リンクは相手ごとに別々に作れます。直した中身は、同じリンクを開き直せば新しいものが見えるので、送り直しはいりません。</p>
+    </div>
+  </section>
+
+  <!-- ===== 安心のつくり ===== -->
+  <section class="section feat-band">
+    <div class="wrap">
+      <p class="eyebrow">Safety</p>
+      <h2>見せたら終わり、にしない。</h2>
+      <div class="grid grid--2 feat-safe">
+        <div class="feat-safe__item">
+          <h3>パスワードは運営も読めない形で保存</h3>
+          <p class="small muted">共有リンクのパスワードは、元の文字に戻せない形にしてから保存します。</p>
+        </div>
+        <div class="feat-safe__item">
+          <h3>期限がきたら、自動で見られなくなる</h3>
+          <p class="small muted">期限を決めなければ、案件の最後の日から30日後に自動で閉じます。紙のように「回収し忘れ」がありません。</p>
+        </div>
+        <div class="feat-safe__item">
+          <h3>いつでもリンクを止められる</h3>
+          <p class="small muted">止めたリンクは、パスワードを知っていても開けません。相手ごとに止められます。</p>
+        </div>
+        <div class="feat-safe__item">
+          <h3>相手の端末に残さない</h3>
+          <p class="small muted">共有された画面は見るだけです。開いた中身はその画面の中だけで扱い、相手の端末に保存しません。</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===== よくある質問 ===== -->
+  <section class="section">
+    <div class="wrap doc">
+      <p class="eyebrow">FAQ</p>
+      <h2>よくある質問</h2>
+      <h3>無料で使えますか？</h3>
+      <p>はい。登録は無料で、メールアドレスか Google アカウントで始められます。</p>
+      <h3>共有された相手も登録が必要ですか？</h3>
+      <p>いいえ。相手はリンクとパスワードだけで見られます。見るだけで、書き込みはできません。</p>
+      <h3>スマホで見られますか？</h3>
+      <p>はい。現場でスマホやタブレットから開けるように作っています。</p>
+      <h3>香盤表の書き方が分かりません。</h3>
+      <p>入れておくと現場が楽になる項目と、共有のしかたをコラムにまとめました。→ <a href="/column/kouban-hyou/">香盤表は紙で配る？データで共有する？</a></p>
+    </div>
+  </section>
+
+  <!-- ===== しめ ===== -->
+  <section class="section feat-end">
+    <div class="wrap">
+      <h2>次の撮影から、<br>香盤表はリンク1本で。</h2>
+      <p class="lead">登録は無料。メールアドレスか Google アカウントで始められます。</p>
+      <div class="cta">
+        <a class="btn btn--primary" href="/auth/" data-cta-out>無料で使ってみる</a>
+        <a class="btn btn--primary" href="/schedule/" data-cta-in hidden>スケジュールを開く</a>
+        <a class="btn" href="/features/">ほかの便利な機能を見る</a>
+      </div>
+    </div>
+  </section>
+
+</main>
+</body>
+</html>

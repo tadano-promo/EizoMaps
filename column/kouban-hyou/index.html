@@ -1,0 +1,77 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; base-uri 'self'; object-src 'none'; form-action 'self'; script-src 'self' https://www.googletagmanager.com https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.116.0/; style-src 'self' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src 'self' data: https://*.supabase.co https://*.google-analytics.com https://*.googletagmanager.com; connect-src 'self' https://*.supabase.co wss://*.supabase.co https://*.google-analytics.com https://*.analytics.google.com https://*.googletagmanager.com https://www.google.com; frame-src 'none'; upgrade-insecure-requests">
+<meta name="referrer" content="strict-origin-when-cross-origin">
+<title>香盤表は紙で配る？データで共有する？｜CM 200本の現場で見てきた、情報漏れを防ぐ共有のしかた — Eizo Maps</title>
+<meta name="description" content="撮影の香盤表は、紙とデータのどちらで共有するのがよいか。CM 200本以上を担当してきたプロダクションマネージャーが、今の現場の実際と、情報漏れを防ぐ共有のしかたをまとめました。">
+<link rel="canonical" href="https://eizo-maps.com/column/kouban-hyou/">
+<meta property="og:site_name" content="Eizo Maps">
+<meta property="og:title" content="香盤表は紙で配る？データで共有する？｜CM 200本の現場で見てきた、情報漏れを防ぐ共有のしかた — Eizo Maps">
+<meta property="og:description" content="今の現場の実際と、情報漏れを防ぐ香盤表の共有のしかた。">
+<meta property="og:type" content="article">
+<meta property="og:url" content="https://eizo-maps.com/column/kouban-hyou/">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bebas+Neue&amp;family=DM+Mono:wght@400;500&amp;family=Noto+Sans+JP:wght@300;400;500;700&amp;display=swap">
+<link rel="stylesheet" href="/assets/css/style.css">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.116.0/dist/umd/supabase.js" integrity="sha384-iLddHTLokph6Omwoyid4XKxHaWa6w41BnoEj0q5oOrzmYPpHIKt1wyjReA7s//pP" crossorigin="anonymous" referrerpolicy="no-referrer" defer></script>
+<script src="/assets/js/config.js" defer></script>
+<script src="/assets/js/app.js" defer></script>
+<script type="application/ld+json">{"@context": "https://schema.org", "@type": "Article", "headline": "香盤表は紙で配る？データで共有する？｜CM 200本の現場で見てきた、情報漏れを防ぐ共有のしかた", "datePublished": "2026-11-07", "dateModified": "2026-11-07", "author": {"@type": "Person", "name": "kaz", "description": "Eizo Maps 運営。制作会社のプロダクションマネージャー・プロデューサーとして、テレビCM・WebCMなど200本以上を担当"}, "publisher": {"@type": "Organization", "name": "Eizo Maps", "url": "https://eizo-maps.com/"}, "mainEntityOfPage": "https://eizo-maps.com/column/kouban-hyou/"}</script>
+<script type="application/ld+json">{"@context": "https://schema.org", "@type": "BreadcrumbList", "itemListElement": [{"@type": "ListItem", "position": 1, "name": "Eizo Maps", "item": "https://eizo-maps.com/"}, {"@type": "ListItem", "position": 2, "name": "コラム", "item": "https://eizo-maps.com/column/"}, {"@type": "ListItem", "position": 3, "name": "香盤表は紙で配る？データで共有する？", "item": "https://eizo-maps.com/column/kouban-hyou/"}]}</script>
+</head>
+<body>
+<main class="section">
+  <article class="wrap doc">
+    <p class="small muted"><a href="/">Eizo Maps</a> ／ <a href="/column/">コラム</a></p>
+    <h1>香盤表は紙で配る？データで共有する？<br><span class="small">CM 200本の現場で見てきた、情報漏れを防ぐ共有のしかた</span></h1>
+    <p class="small muted">公開：2026年11月7日 ／ 書いた人：kaz（Eizo Maps 運営）</p>
+
+    <h2>結論：今の現場は、データで見るのがふつう。決めるべきは「誰に、どこまで、いつまで」</h2>
+    <p>香盤表を紙で配るか、データで共有するか。私がプロデューサーをしていたころには、もうスタッフは iPad で香盤表を見て、プロダクションアシスタントは iPhone でスケジュールを見ていました。紙の資料をいちばん信頼していたのは、先輩の世代までだったと思います。</p>
+    <p>ただ、紙にもよいところがあります。だから大事なのは「紙かデータか」よりも、<strong>誰に・どこまで・いつまで見せるか</strong>を先に決めることです。</p>
+
+    <h2>香盤表とは</h2>
+    <p>香盤表は、撮影の日の時間割です。「誰が、いつ、どこで、何をするか」を1枚にまとめたもので、現場の全員がこれを見て動きます。たとえば、こんなことを書きます。</p>
+    <ul>
+      <li>集合の時間と場所、撤収の時間</li>
+      <li>撮るカットの順番と、だいたいの時間</li>
+      <li>キャストの入り時間・メイク・衣装替え</li>
+      <li>車両の動き（迎え・移動・返却）</li>
+      <li>お弁当のピックアップなど、カメラの外の動き</li>
+    </ul>
+    <p>カメラの前の流れだけでなく、<strong>裏の動きまで書いておく</strong>と、当日に「誰がやるんだっけ」が減ります。</p>
+
+    <h2>紙が向いている場面</h2>
+    <ul>
+      <li>その場で書き込みたいとき</li>
+      <li>山の上など、電波が通じない場所の撮影</li>
+    </ul>
+    <p>こういう現場では、紙はいまでも頼りになります。</p>
+
+    <h2>紙のいちばんの怖さは「回収できないこと」</h2>
+    <p>紙は、配りすぎると回収しきれないことがあります。回収できなかった紙は、そのまま<strong>情報漏れ</strong>です。香盤表には、発表前の商品名、出演者の名前、撮影場所が並んでいます。</p>
+    <p>私が最初にいた制作会社では、ここをとても厳しく管理していました。配った枚数を数えて、撮影が終わったら必ず回収する。スタッフから「ほかのプロダクションではあり得ないほどセキュリティしている」と言われたほどです。</p>
+    <p>データなら、なくす心配はありません。ただし、ファイルを送るだけだと、今度は「どこに転送されたか分からない」が起きます。</p>
+
+    <h2>データで共有するときの4つのコツ</h2>
+    <ol>
+      <li><strong>相手ごとに、見せる範囲を分ける</strong>：クライアントさんには撮影の流れだけ、車両部には車両の動きだけ。全員に全部を見せる必要はありません。</li>
+      <li><strong>ファイルではなく、リンクで渡す</strong>：時間が変わっても、同じリンクを開き直せば新しい版が見える形にすると、古い版で動く人が出ません。</li>
+      <li><strong>パスワードをかける</strong>：リンクが転送されても、パスワードがなければ開けないようにします。</li>
+      <li><strong>期限を決めて、終わったら閉じる</strong>：紙の「回収」にあたるのがこれです。撮影が終わったら見られなくします。</li>
+    </ol>
+
+    <h2>Eizo Maps でやると</h2>
+    <p>Eizo Maps のスケジュールでは、香盤表を「担当」ごとの列で作れます。共有リンクは相手ごとに作れて、「予定だけ」「全部の担当」「選んだ担当だけ」から見せる範囲を選べます。パスワードと期限が付いていて、いつでも止められます。相手は登録しなくても、スマホで開くだけで見られます。</p>
+    <p><a class="btn btn--primary" href="/features/schedule/">スケジュール・香盤表の機能を見る</a></p>
+
+    <h2>書いた人</h2>
+    <p><strong>kaz</strong>（Eizo Maps 運営）<br>制作会社のプロダクションマネージャー・プロデューサーとして、テレビCM・WebCMなど200本以上を担当。食品・化粧品・自動車・保険・テーマパーク・飲食・ITなど、いろいろな業種の撮影の段取りをしてきました。</p>
+  </article>
+</main>
+</body>
+</html>
