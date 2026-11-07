@@ -602,6 +602,7 @@
       var st = EM.$('#gcalState');
       var connected = !!(gcal && gcal.connected);
       EM.$('#gcalConnectBtn').hidden = connected;
+      if (EM.$('#gcalConsent')) EM.$('#gcalConsent').hidden = connected;
       EM.$('#gcalSyncBtn').hidden = !connected;
       // 連携したあとは、状態の1行と「今すぐ同期」だけをすっきり見せる。細かい設定と解除は「同期の設定を開く」の中
       EM.$('#gcalIntro').hidden = connected;
