@@ -1899,3 +1899,4 @@ body.has-sheet { overflow: hidden; }
 
 /* Google カレンダー：連携の前の説明（審査の条件：許可の直前に画面で説明する） */
 .gcal-consent { border-left: 3px solid var(--accent); padding: 8px 12px; background: var(--surface2); border-radius: 6px; line-height: 1.7; }
+.gcal-consent a { color: var(--accent); text-decoration: underline; }
