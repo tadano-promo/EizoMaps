@@ -145,14 +145,18 @@
             </label>
           </div>
           <div id="gcalBusyWrap" class="gcal-accounts-area">
-            <p class="small muted" id="gcalBusyHint">タップしたカレンダーの予定を「埋まっている日」に含めます（件名・場所は取り込みません）。</p>
+            <p class="small muted" id="gcalBusyHint">タップしたカレンダーの予定を「埋まっている日」に含めます。件名はあなただけに見えます。</p>
             <div id="gcalBusyList" class="gcal-cards"></div>
+            <p class="small muted gcal-consent">追加したアカウントも同じ扱いです。「外す」で消えます。</p>
             <button class="gcal-add" type="button" id="gcalAddBtn">＋ Google アカウントを追加</button>
             <p class="small muted" id="gcalAddNote" hidden></p>
           </div>
           <p class="small muted">15分ごとに自動で同期します。Google 側で消した予定は Eizo Maps からも消えます。</p>
           <p class="autosave-state" id="gcalSaved" aria-live="polite">設定は変えるとすぐ自動で保存されます。</p>
         </div>
+        <p class="small gcal-consent" id="gcalConsent">
+          保存するのは<strong>予定がある時間だけ</strong>。件名はあなたにだけ見え、ほかの人には見せません。解除すると消します。<a href="/privacy/#google-calendar">くわしく</a>
+        </p>
         <div class="form-actions">
           <button class="btn btn--primary" type="button" id="gcalConnectBtn" hidden>Google カレンダーと連携する</button>
           <button class="btn btn--primary" type="button" id="gcalSyncBtn" hidden>今すぐ同期する</button>
