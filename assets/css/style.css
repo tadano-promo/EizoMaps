@@ -1815,6 +1815,10 @@ body.is-pitch .ask-fab, body.is-player .ask-fab, body.is-player .sticky-ask { di
 .stock-shares { border: 1px solid var(--border); border-radius: var(--radius); padding: 10px 14px; margin: 8px 0 12px; background: var(--surface); }
 .stock-shares p { margin: 0 0 4px; }
 .stock-shares__list { margin: 0; padding-left: 1.2em; line-height: 1.8; }
+.pw-notice { border-color: var(--accent, #e0b400); }
+.pw-notice__title { font-weight: 700; }
+.pw-notice__list { list-style: none; margin: 8px 0; padding: 0; line-height: 1.9; }
+.pw-notice .page-links { margin-top: 8px; }
 .pw-reveal { letter-spacing: .08em; margin-left: 6px; word-break: break-all; }
 .pw-row-inline { display: inline-flex; flex-wrap: wrap; align-items: center; gap: 6px; }
 .pw-row-inline .pw-reveal { margin-left: 0; }
