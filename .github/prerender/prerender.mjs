@@ -51,7 +51,7 @@ const PLATFORM = { youtube: 'YouTube', vimeo: 'Vimeo', tiktok: 'TikTok', x: 'X',
 
 const todayJst = new Date(Date.now() + 9 * 3600000).toISOString().slice(0, 10);
 
-const creators = await get('creators?select=id,user_id,handle,display_name,headline,bio,area_pref,area_city,years_of_experience,response_time_hours,avatar_url,website_url,updated_at,service_area,travel_ok,equipment,business_type,invoice_registered,moods,creator_genres(genre_id)&is_published=eq.true&approved=eq.true&suspended=eq.false&order=created_at');
+const creators = await get('creators?select=id,user_id,handle,search_visible,display_name,headline,bio,area_pref,area_city,years_of_experience,response_time_hours,avatar_url,website_url,updated_at,service_area,travel_ok,equipment,business_type,invoice_registered,moods,creator_genres(genre_id)&is_published=eq.true&approved=eq.true&suspended=eq.false&order=created_at');
 const genres = await get('genres?select=id,name_ja');
 const gmap = Object.fromEntries(genres.map((g) => [g.id, g.name_ja]));
 
@@ -188,8 +188,10 @@ ${myLinks.length ? `<div class="chips stock-links">${myLinks.map((l) => `<a clas
     } : {}),
   };
 
+  // 本人が「検索に出さない」を選んだ人は、ページは作るが検索に出さない印を残し、地図にも載せない（2026-11-15）
+  const hide = c.search_visible === false;
   let html = template
-    .replace(/<meta name="robots"[^>]*>\n?/, '')
+    .replace(/<meta name="robots"[^>]*>\n?/, hide ? '<meta name="robots" content="noindex,follow">\n' : '')
     .replace(/<title>[^<]*<\/title>/, `<title>${esc(title)}</title>`)
     .replace(/<meta name="description" content="[^"]*">/, `<meta name="description" content="${esc(desc)}">\n<link rel="canonical" href="${esc(url)}">\n<meta name="em-creator-id" content="${esc(c.id)}">`)
     .replace(/<meta property="og:title" content="[^"]*">/, `<meta property="og:title" content="${esc(title)}">`)
@@ -214,7 +216,7 @@ ${myLinks.length ? `<div class="chips stock-links">${myLinks.map((l) => `<a clas
   writeFileSync(file, html);
   written++;
   const last = [c.updated_at, myReviews[0]?.published_at].filter(Boolean).sort().pop();
-  sitemapUrls.push(`  <url><loc>${url}</loc>${last ? `<lastmod>${isoDay(last)}</lastmod>` : ''}<changefreq>weekly</changefreq><priority>0.8</priority></url>`);
+  if (!hide) sitemapUrls.push(`  <url><loc>${url}</loc>${last ? `<lastmod>${isoDay(last)}</lastmod>` : ''}<changefreq>weekly</changefreq><priority>0.8</priority></url>`);
 }
 
 // ---- 依頼した会社の評価（会社名を入れていて、クリエイターからの評価が1件以上ある会社だけ）
