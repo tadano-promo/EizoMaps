@@ -1918,3 +1918,15 @@ body.has-sheet { overflow: hidden; }
 .price-card__price { font-family: var(--font-display, inherit); font-size: 28px; font-weight: 700; margin: 0; }
 .price-card__year { margin: 2px 0 0; }
 .price-card__list { margin: 12px 0 0; padding-left: 1.2em; line-height: 1.8; }
+.price-more { margin-top: 16px; }
+.cmp-wrap { overflow-x: auto; -webkit-overflow-scrolling: touch; border: 1px solid var(--border); border-radius: 12px; }
+.cmp { width: 100%; min-width: 640px; border-collapse: collapse; font-size: 13px; }
+.cmp th, .cmp td { padding: 10px 12px; border-bottom: 1px solid var(--border); text-align: center; vertical-align: middle; }
+.cmp thead th { position: sticky; top: 0; background: var(--surface); font-weight: 700; }
+.cmp thead th small { font-weight: 400; color: var(--muted); }
+.cmp tbody th[scope="row"] { text-align: left; font-weight: 400; min-width: 220px; }
+.cmp tbody th[scope="row"] a { text-decoration: underline; }
+.cmp-group th { text-align: left; background: var(--surface2); font-weight: 700; font-size: 12px; }
+.cmp-y { color: var(--accent); font-weight: 700; }
+.cmp-n { color: var(--muted); }
+.cmp-soon { display: inline-block; font-size: 10px; padding: 1px 6px; border-radius: 999px; border: 1px solid var(--border); color: var(--muted); margin-left: 4px; vertical-align: middle; }
