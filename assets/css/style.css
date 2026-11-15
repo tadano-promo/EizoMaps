@@ -2014,3 +2014,12 @@ body[data-mode="client"] .doc > .notice:not(.notice--warn) { border-left-color: 
 /* メニューを開いているときは、画面下の保存バーを隠し、いちばん下の項目まで見えるようにする（2026-11-15） */
 body.nav-open .savebar { display: none; }
 .nav-panel { padding-bottom: calc(32px + env(safe-area-inset-bottom)); }
+/* 職種の選び方を短く（2026-11-15）／横にはみ出さないように */
+.jobs__popular { display: grid; gap: 6px; }
+.jobs__poplabel { margin: 0; }
+.jobs__treebtn { justify-self: start; }
+.jobs, .jobs__tree, .jobs__dept, .field { min-width: 0; }
+.jobs__dept > summary { min-width: 0; }
+.jobs__peek { min-width: 0; flex: 1 1 100%; }
+.jobs .chips { min-width: 0; }
+.jobs .chip { max-width: 100%; white-space: normal; text-align: left; }
