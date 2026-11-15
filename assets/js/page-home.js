@@ -23,6 +23,7 @@
       { id: 'countdown', title: '納品・納期まで',     icon: 'flag' },
       { id: 'next',      title: '次の予定',          icon: 'calendar' },
       { id: 'projects',  title: '動いている案件',     icon: 'film' },
+      { id: 'jobs',      title: 'あなたに合う募集',   icon: 'search' },
       { id: 'todo',      title: 'やること',          icon: 'check' },
       { id: 'weather',   title: '天気',              icon: 'sun' },
       { id: 'links',     title: 'よく使うページ',     icon: 'home',     wide: true }
@@ -34,6 +35,7 @@
       { id: 'c_review',  title: '評価を書いてください',   icon: 'star' },
       { id: 'c_active',  title: 'やりとり中の依頼',       icon: 'film',     wide: true },
       { id: 'c_due',     title: '納期が近い依頼',         icon: 'flag' },
+      { id: 'c_posts',   title: '出した募集',             icon: 'doc' },
       { id: 'c_find',    title: 'クリエイターを探す',     icon: 'search' },
       { id: 'c_weather', title: '天気',                  icon: 'sun' }
     ];
@@ -124,18 +126,38 @@
         box.appendChild(el('p', { class: 'small muted', text: '読み込めませんでした。少し時間をおいて開き直してください。' }));
       });
     }
+    // 募集のデータ（トップの部品で共有。1回だけ読む）
+    var jobsPromise = null;
+    function jobsData() {
+      if (jobsPromise) return jobsPromise;
+      jobsPromise = Promise.all([
+        sb.from('job_posts').select('id,title,genre_ids,area_pref,remote_ok,budget_amount,closes_on,status,client_id,created_at')
+          .order('created_at', { ascending: false }).limit(200),
+        sb.rpc('my_client_id')
+      ]).then(function (r) {
+        var all = (r[0].data || []), cid = r[1].data || null, t = EM.today();
+        var d = { open: all.filter(function (p) { return p.status === 'open' && p.closes_on >= t && p.client_id !== cid; }),
+                  mine: all.filter(function (p) { return cid && p.client_id === cid; }), counts: {} };
+        if (!d.mine.length) return d;
+        return sb.rpc('job_post_counts', { p_posts: d.mine.map(function (p) { return p.id; }) }).then(function (c) {
+          (c.data || []).forEach(function (x) { d.counts[x.post_id] = x.proposals; });
+          return d;
+        });
+      }).catch(function () { return { open: [], mine: [], counts: {} }; });
+      return jobsPromise;
+    }
     function cWho(p) { return p.creators && p.creators.display_name ? p.creators.display_name + ' さん' : ''; }
 
     /* ---------------- クリエイターとして使っているとき ---------------- */
     function loadCreator(u) {
       var t = EM.today();
       Promise.all([
-        sb.from('creators').select('id,handle,display_name,is_published,area_pref').eq('user_id', u.id).maybeSingle(),
+        sb.from('creators').select('id,handle,display_name,is_published,area_pref,creator_genres(genre_id)').eq('user_id', u.id).maybeSingle(),
         sb.from('schedule_events').select('id,kind,title,starts_on,ends_on,start_time,end_time')
           .eq('owner_user_id', u.id).gte('ends_on', EM.addDays(t, -7)).lte('starts_on', EM.addDays(t, 120))
           .order('starts_on').order('start_time', { nullsFirst: true }).limit(500),
         sb.from('projects').select('id,title,status,due_on')
-          .in('status', ['offered', 'in_progress', 'delivered'])
+          .in('status', ['offered', 'proposed', 'in_progress', 'delivered'])
           .order('due_on', { ascending: true, nullsFirst: false }).limit(20),
         sb.from('user_home').select('widgets,todos,weather_pref,updated_at').maybeSingle()
       ]).then(function (r) {
@@ -220,7 +242,7 @@
         });
       },
       c_active: function (body) {
-        var ps = cdata.projects.filter(function (p) { return ['draft', 'offered', 'in_progress', 'delivered', 'paid'].indexOf(p.status) !== -1; });
+        var ps = cdata.projects.filter(function (p) { return ['draft', 'offered', 'proposed', 'in_progress', 'delivered', 'paid'].indexOf(p.status) !== -1; });
         if (!ps.length) {
           emptyLine(body, 'いま進んでいる依頼はありません。');
           body.appendChild(el('div', { class: 'wg__foot' }, el('a', { class: 'small', href: '/creators/', text: 'クリエイターを探して依頼する →' })));
@@ -237,7 +259,7 @@
       },
       c_due: function (body) {
         var t = EM.today();
-        var ps = cdata.projects.filter(function (p) { return p.due_on && p.due_on >= t && ['offered', 'in_progress'].indexOf(p.status) !== -1; })
+        var ps = cdata.projects.filter(function (p) { return p.due_on && p.due_on >= t && ['offered', 'proposed', 'in_progress'].indexOf(p.status) !== -1; })
           .sort(function (a, b) { return a.due_on < b.due_on ? -1 : 1; });
         if (!ps.length) { emptyLine(body, '納期が決まっている依頼はありません。'); return; }
         ps.slice(0, 5).forEach(function (p) {
@@ -266,6 +288,46 @@
         body.appendChild(el('p', { class: 'small muted', text: '例：「カメラマン」×「東京都」。くわしい条件は探す画面で足せます。' }));
       },
       c_weather: function (body) { RENDER.weather(body); },
+      c_posts: function (body) {
+        jobsData().then(function (d) {
+          var mine = d.mine;
+          if (!mine.length) {
+            emptyLine(body, 'だれに頼めばいいか決まっていないときは、募集を出すとクリエイターから提案が届きます。');
+            body.appendChild(el('div', { class: 'wg__foot' }, el('a', { class: 'small', href: '/jobs/new.html', text: '募集を出す →' })));
+            return;
+          }
+          mine.slice(0, 4).forEach(function (p) {
+            var open = p.status === 'open';
+            body.appendChild(el('a', { class: 'home-me__row', href: '/jobs/detail.html?id=' + encodeURIComponent(p.id) }, [
+              el('span', { class: 'home-me__tag', text: open ? '提案 ' + (d.counts[p.id] || 0) + '件' : p.status === 'filled' ? '決まった' : '締め切り' }),
+              el('span', { class: 'home-me__title', text: p.title }),
+              open ? el('span', { class: 'home-me__when', text: EM.jobDaysLeft(p.closes_on) }) : null
+            ]));
+          });
+          body.appendChild(el('div', { class: 'wg__foot' }, [el('a', { class: 'small', href: '/jobs/mine.html', text: '出した募集を見る →' }), el('a', { class: 'small', href: '/jobs/new.html', text: '募集を出す →' })]));
+        });
+      },
+      /* ===== クリエイター用：あなたに合う募集（職種・地域が合うもの） ===== */
+      jobs: function (body) {
+        jobsData().then(function (d) {
+          var gs = ((creator && creator.creator_genres) || []).map(function (x) { return x.genre_id; });
+          var pref = creator && creator.area_pref;
+          var rows = d.open.filter(function (p) {
+            var gOk = !(p.genre_ids || []).length || !gs.length || p.genre_ids.some(function (g) { return gs.indexOf(g) !== -1; });
+            var aOk = !p.area_pref || !pref || p.area_pref === pref || p.remote_ok;
+            return gOk && aOk;
+          });
+          if (!rows.length) emptyLine(body, 'いま、あなたの職種・地域に合う募集はありません。');
+          rows.slice(0, 4).forEach(function (p) {
+            body.appendChild(el('a', { class: 'home-me__row', href: '/jobs/detail.html?id=' + encodeURIComponent(p.id) }, [
+              el('span', { class: 'home-me__tag', text: EM.budgetLabel(p.budget_amount) }),
+              el('span', { class: 'home-me__title', text: p.title }),
+              el('span', { class: 'home-me__when', text: EM.jobDaysLeft(p.closes_on) })
+            ]));
+          });
+          body.appendChild(el('div', { class: 'wg__foot' }, [el('a', { class: 'small', href: '/jobs/', text: '募集をすべて見る →' }), el('a', { class: 'small', href: '/jobs/mine.html', text: '送った提案 →' })]));
+        });
+      },
 
       /* ===== クリエイター用 ===== */
       /* ---- 今週の予定（週の帯カレンダー）：何日も続く予定は日をまたぐ1本の帯 ---- */

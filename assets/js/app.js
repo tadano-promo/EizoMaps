@@ -445,7 +445,8 @@
   };
 
   EM.STATUS_LABEL = {
-    draft: '下書き', offered: '依頼中', in_progress: '進行中', delivered: '納品済み',
+    draft: '下書き', offered: '返事待ち', proposed: '条件の返事あり', declined: 'お断り',
+    in_progress: '進行中', delivered: '納品済み',
     paid: '入金済み', closed: '完了', cancelled: 'キャンセル'
   };
 
@@ -453,11 +454,13 @@
   EM.nextStatuses = function (status, role) {
     var out = [];
     if (status === 'draft' && role === 'client') out.push(['offered', '依頼を送る']);
-    if (status === 'offered') out.push(['in_progress', '進行中にする']);
+    // 返事待ち → 条件の返事あり → 進行中 は、案件ページの専用ボタン（project_respond / project_start）で進める
     if (status === 'in_progress' && role === 'creator') out.push(['delivered', '納品済みにする']);
     if (status === 'delivered' && role === 'client') out.push(['paid', '入金済みにする']);
     if (status === 'paid') out.push(['closed', '完了にする']);
-    if (['draft', 'offered', 'in_progress'].indexOf(status) !== -1) out.push(['cancelled', 'キャンセルする']);
+    // 返事の前後でクリエイターがやめるときは「お断りする」を使う
+    if ((role === 'client' && ['draft', 'offered', 'proposed', 'in_progress'].indexOf(status) !== -1) ||
+        (role === 'creator' && status === 'in_progress')) out.push(['cancelled', 'キャンセルする']);
     return out;
   };
 
@@ -473,7 +476,7 @@
   ];
 
   EM.statusBadge = function (status) {
-    return el('span', { class: 'tag' + (status === 'cancelled' ? '' : ' tag--accent'),
+    return el('span', { class: 'tag' + (status === 'cancelled' || status === 'declined' ? '' : status === 'proposed' ? ' tag--client' : ' tag--accent'),
                         text: EM.STATUS_LABEL[status] || status });
   };
 
@@ -544,6 +547,7 @@
   var NAV_PUBLIC = [
     ['/', 'ホーム'],
     ['/creators/', 'クリエイターを探す'],
+    ['/jobs/', '募集を見る'],
     ['/features/', '便利な機能'],
     ['/pricing/', '料金'],
     ['/help/', '使い方・ヘルプ']
@@ -557,6 +561,7 @@
     ['/schedule/gantt.html', 'ガントチャート'],
     ['/templates/', '定型文のひな形'],
     ['/projects/', '案件管理'],
+    ['/jobs/mine.html', '送った提案'],
     ['/report/', '問題報告']
   ];
   // クライアントとして使っているときのメニュー（制作側の道具は出さない・2026-11-15 翠くん）
@@ -564,6 +569,8 @@
     ['/mypage/client/', 'マイページ'],
     ['/messages/', 'メッセージ'],
     ['/projects/', '依頼した案件'],
+    ['/jobs/new.html', '募集を出す'],
+    ['/jobs/mine.html', '出した募集'],
     ['/report/', '問題報告']
   ];
   var NAV_FOOT = [
@@ -740,6 +747,7 @@
   // クライアントとして使っているときの「＋ 追加」
   EM.QUICK_ADD_CLIENT = [
     ['search', 'クリエイターを探して依頼する', function () { return '/creators/'; }],
+    ['doc',    '募集を出す', function () { return '/jobs/new.html'; }],
     ['film',   '依頼した案件を見る', function () { return '/projects/'; }]
   ];
   function mountTools(slot, mode) {
