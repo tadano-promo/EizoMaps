@@ -246,8 +246,10 @@ for (const row of companies) {
     about: { '@type': 'Organization', name: d.company, ...(d.area_pref ? { address: { '@type': 'PostalAddress', addressRegion: d.area_pref, addressCountry: 'JP' } } : {}) },
     hasPart: rs.map((v) => ({ '@type': 'Comment', text: `評価 ${Number(v.score).toFixed(1)}／5：${v.comment}`, dateCreated: v.published_at, author: { '@type': 'Person', name: 'クリエイター（匿名）' } })),
   };
+  // 「検索に出さない」を選んだ会社は、印を残して地図にも載せない（2026-11-15）
+  const cHide = row.search_visible === false;
   const html = cTemplate
-    .replace(/<meta name="robots"[^>]*>\n?/, '')
+    .replace(/<meta name="robots"[^>]*>\n?/, cHide ? '<meta name="robots" content="noindex,follow">\n' : '')
     .replace(/<title>[^<]*<\/title>/, `<title>${esc(title)}</title>`)
     .replace(/<meta name="description" content="[^"]*">/, `<meta name="description" content="${esc(desc)}">\n<link rel="canonical" href="${esc(url)}">\n<meta name="em-company-id" content="${esc(d.id)}">`)
     .replace(/<meta property="og:title" content="[^"]*">/, `<meta property="og:title" content="${esc(title)}">`)
@@ -259,7 +261,7 @@ for (const row of companies) {
   if (!html.includes('em-company-id') || !html.includes('id="reviewList"><')) throw new Error('companies/detail.html の形が変わっていて書き出せません');
   writeFileSync(`${ROOT}/companies/${d.id}.html`, html);
   cWritten++;
-  sitemapUrls.push(`  <url><loc>${url}</loc><lastmod>${isoDay(row.last_review_at)}</lastmod><changefreq>weekly</changefreq><priority>0.6</priority></url>`);
+  if (!cHide) sitemapUrls.push(`  <url><loc>${url}</loc><lastmod>${isoDay(row.last_review_at)}</lastmod><changefreq>weekly</changefreq><priority>0.6</priority></url>`);
 }
 // 一覧ページにも、最初から会社の名前と評価を書き込んでおく
 const cards = companies.length

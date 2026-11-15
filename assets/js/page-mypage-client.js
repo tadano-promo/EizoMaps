@@ -35,6 +35,7 @@
         EM.$('#clName').value = client.display_name || '';
         EM.$('#clCompany').value = client.company || '';
         EM.$('#clArea').value = client.area_pref || '';
+        EM.$('#clSearchVisible').checked = client.search_visible !== false;
       } else {
         EM.notice(msg, 'まずは下の「基本情報」にお名前を入れて保存してください。依頼のときに、相手のクリエイターに伝わります。');
       }
@@ -118,7 +119,8 @@
         var payload = {
           display_name: name,
           company: EM.$('#clCompany').value.trim() || null,
-          area_pref: EM.$('#clArea').value || null
+          area_pref: EM.$('#clArea').value || null,
+          search_visible: EM.$('#clSearchVisible').checked
         };
         p1 = (client && client.id
           ? sb.from('clients').update(payload).eq('id', client.id).select('*').single()
