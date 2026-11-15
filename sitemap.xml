@@ -9,6 +9,8 @@
   <url><loc>https://eizo-maps.com/features/share/</loc><changefreq>monthly</changefreq><priority>0.7</priority></url>
   <url><loc>https://eizo-maps.com/features/works/</loc><changefreq>monthly</changefreq><priority>0.7</priority></url>
   <url><loc>https://eizo-maps.com/features/schedule/</loc><changefreq>monthly</changefreq><priority>0.7</priority></url>
+  <url><loc>https://eizo-maps.com/features/reviews/</loc><changefreq>monthly</changefreq><priority>0.7</priority></url>
+  <url><loc>https://eizo-maps.com/features/request/</loc><changefreq>monthly</changefreq><priority>0.7</priority></url>
   <url><loc>https://eizo-maps.com/column/</loc><changefreq>weekly</changefreq><priority>0.6</priority></url>
   <url><loc>https://eizo-maps.com/column/mitsumori/</loc><changefreq>monthly</changefreq><priority>0.6</priority></url>
   <url><loc>https://eizo-maps.com/column/staff/</loc><changefreq>monthly</changefreq><priority>0.6</priority></url>

@@ -1,0 +1,170 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; base-uri 'self'; object-src 'none'; form-action 'self'; script-src 'self' https://www.googletagmanager.com https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.116.0/; style-src 'self' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src 'self' data: https://*.supabase.co https://*.google-analytics.com https://*.googletagmanager.com; connect-src 'self' https://*.supabase.co wss://*.supabase.co https://*.google-analytics.com https://*.analytics.google.com https://*.googletagmanager.com https://www.google.com; frame-src 'none'; upgrade-insecure-requests">
+<meta name="referrer" content="strict-origin-when-cross-origin">
+<title>映像クリエイターに、直接依頼する — 条件を確かめてから始められる — Eizo Maps</title>
+<meta name="description" content="Eizo Maps では、映像クリエイターを作品と評価で探して、直接依頼できます。クリエイターから条件の返事が届き、納得したら「この条件で始める」で開始。誰に頼むか決まっていなければ募集も出せます。Eizo Maps は仲介の手数料をいただきません。登録は無料です。">
+<link rel="canonical" href="https://eizo-maps.com/features/request/">
+<meta property="og:site_name" content="Eizo Maps">
+<meta property="og:title" content="映像クリエイターに、直接依頼する — 条件を確かめてから始められる — Eizo Maps">
+<meta property="og:description" content="作品と評価で探して、直接依頼。条件を確かめてから始められます。仲介の手数料はかかりません。">
+<meta property="og:type" content="website">
+<meta property="og:url" content="https://eizo-maps.com/features/request/">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bebas+Neue&amp;family=DM+Mono:wght@400;500&amp;family=Noto+Sans+JP:wght@300;400;500;700&amp;display=swap">
+<link rel="stylesheet" href="/assets/css/style.css">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.116.0/dist/umd/supabase.js" integrity="sha384-iLddHTLokph6Omwoyid4XKxHaWa6w41BnoEj0q5oOrzmYPpHIKt1wyjReA7s//pP" crossorigin="anonymous" referrerpolicy="no-referrer" defer></script>
+<script src="/assets/js/config.js" defer></script>
+<script src="/assets/js/app.js" defer></script>
+<script src="/assets/js/page-features.js" defer></script>
+<script type="application/ld+json">{"@context": "https://schema.org", "@type": "FAQPage", "mainEntity": [{"@type": "Question", "name": "依頼にお金はかかりますか？", "acceptedAnswer": {"@type": "Answer", "text": "Eizo Maps の登録と利用は無料で、仲介の手数料もいただきません。制作の代金は、クリエイターとの間で直接お支払いください。"}}, {"@type": "Question", "name": "いくらで頼めるか分かりません。", "acceptedAnswer": {"@type": "Answer", "text": "動画の種類・長さ・本数などを選ぶだけで、予算の目安が分かります。見積もりの見方はこちらのコラムにまとめています。"}}, {"@type": "Question", "name": "誰に頼むか決まっていません。", "acceptedAnswer": {"@type": "Answer", "text": "募集を出すと、内容を見たクリエイターから条件つきの提案が届きます。届いた提案から選べます。"}}, {"@type": "Question", "name": "条件の返事に納得できないときは？", "acceptedAnswer": {"@type": "Answer", "text": "案件の中のメッセージで相談できます。始める前なら、取りやめることもできます。"}}]}</script>
+</head>
+<body>
+<main class="feat">
+  <section class="feat-hero">
+    <div class="wrap feat-hero__inner">
+      <div class="feat-hero__text">
+        <p class="eyebrow"><a href="/features/">Features</a> ／ 06 依頼・募集</p>
+        <h1>映像クリエイターに、<br>直接頼む。<br><span class="feat-accent">条件を確かめてから、<br>始められる。</span></h1>
+        <p class="lead">
+          作品と評価で探して、気になるクリエイターに直接依頼できます。
+          クリエイターから金額や納期の返事が届き、納得したら「この条件で始める」で仕事が始まります。
+          誰に頼むか決まっていなければ、募集を出して提案を待つこともできます。
+        </p>
+        <div class="cta">
+          <a class="btn btn--primary" href="/creators/">クリエイターを探す</a>
+          <a class="btn" href="/estimate/quick/">予算の目安を出す</a>
+        </div>
+      </div>
+      <!-- 画面のイメージ（絵だけ。本物の案件ではありません） -->
+      <div class="card" aria-hidden="true">
+        <p class="small muted">画面のイメージ（本物の案件ではありません）</p>
+        <p><strong>春の新商品 Web CM 15秒</strong></p>
+        <ol class="small">
+          <li>依頼を送った（返事待ち）</li>
+          <li><strong>条件の返事あり</strong>：金額 30万円／納期 4月20日</li>
+          <li>「この条件で始める」→ 進行中</li>
+        </ol>
+      </div>
+    </div>
+  </section>
+
+  <section class="section">
+    <div class="wrap">
+      <p class="eyebrow">Why</p>
+      <h2>映像を頼むとき、こんなことはありませんか。</h2>
+      <div class="grid grid--3 feat-pains">
+        <div class="card">
+          <p class="num">01</p>
+          <h3>誰に頼めばいいか、分からない</h3>
+          <p class="small muted">SNS で探しても、得意なことや、一緒に仕事をした人の感想までは分かりません。</p>
+        </div>
+        <div class="card">
+          <p class="num">02</p>
+          <h3>いくらかかるのか、見当がつかない</h3>
+          <p class="small muted">同じ「30秒の動画」でも、中身しだいで何倍もちがいます。相談する前に、だいたいの金額が知りたいところです。</p>
+        </div>
+        <div class="card">
+          <p class="num">03</p>
+          <h3>「言った・言わない」になりそうで不安</h3>
+          <p class="small muted">電話や SNS の DM で決めた金額・納期は、あとから確かめにくいものです。</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="section feat-band">
+    <div class="wrap feat-split">
+      <div>
+        <p class="eyebrow">How</p>
+        <h2>依頼 → 条件の返事 → <span class="feat-accent">納得して開始</span>。</h2>
+        <p class="lead">
+          依頼を送ると、クリエイターが「この内容で受ける」「条件を出す」「お断りする」のどれかで返事をします。
+          金額と納期を確かめて「この条件で始める」を押すと進行中になり、決めた条件は記録に残ります。
+        </p>
+        <p class="small muted">始めたあとは、条件をあとから書きかえられません。</p>
+      </div>
+      <ul class="feat-sources">
+        <li><b>直接依頼</b><span>作品と評価を見て、プロフィールの「依頼する」から</span></li>
+        <li><b>募集</b><span>誰に頼むか決まっていなければ、内容と予算を出して提案を待つ</span></li>
+        <li><b>予算の目安</b><span>動画の種類・長さ・本数を選ぶだけで、だいたいの金額が分かる</span></li>
+        <li><b>メールのお知らせ</b><span>返事や提案が届いたら、登録したメールアドレスにお知らせ</span></li>
+      </ul>
+    </div>
+  </section>
+
+  <section class="section">
+    <div class="wrap">
+      <p class="eyebrow">Record</p>
+      <h2>決めたことが、残る。</h2>
+      <div class="grid grid--2 feat-safe">
+        <div class="feat-safe__item">
+          <h3>金額・納期は、始めた時点の条件で残る</h3>
+          <p class="small muted">「この条件で始める」を押した時点の金額と納期が記録されます。あとから「聞いていない」を防げます。</p>
+        </div>
+        <div class="feat-safe__item">
+          <h3>誰がいつ進めたかが分かる</h3>
+          <p class="small muted">返事・開始・納品・入金の流れが、案件ごとに記録に残ります。見られるのはその案件の当事者だけです。</p>
+        </div>
+        <div class="feat-safe__item">
+          <h3>仲介の手数料はかからない</h3>
+          <p class="small muted">お金のやりとりは当事者どうしで直接行います。Eizo Maps は仲介の手数料をいただきません。</p>
+        </div>
+        <div class="feat-safe__item">
+          <h3>終わったら、お互いに評価</h3>
+          <p class="small muted">納品のあと、お互いに評価を書けます。次に頼む人・受ける人の手がかりになります。→ <a href="/features/reviews/">評価について</a></p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="section feat-band">
+    <div class="wrap">
+      <p class="eyebrow">For creators</p>
+      <h2>クリエイターの方へ。</h2>
+      <div class="grid grid--2 feat-pains">
+        <div class="card">
+          <h3>受ける前に、条件を出せる</h3>
+          <p class="small muted">依頼の内容を見て、金額や納期の条件を返事できます。例：「予算30万円なら、撮影は半日にしましょう」。</p>
+        </div>
+        <div class="card">
+          <h3>募集に、自分から提案できる</h3>
+          <p class="small muted">「募集を見る」から、得意な仕事に提案を送れます。見積もりは<a href="/estimate/">実行表</a>で作れます。</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="section">
+    <div class="wrap doc">
+      <p class="eyebrow">FAQ</p>
+      <h2>よくある質問</h2>
+      <h3>依頼にお金はかかりますか？</h3>
+      <p>Eizo Maps の登録と利用は無料で、仲介の手数料もいただきません。制作の代金は、クリエイターとの間で直接お支払いください。</p>
+      <h3>いくらで頼めるか分かりません。</h3>
+      <p>動画の種類・長さ・本数などを選ぶだけで、<a href="/estimate/quick/">予算の目安</a>が分かります。見積もりの見方は<a href="/column/mitsumori/">こちらのコラム</a>にまとめています。</p>
+      <h3>誰に頼むか決まっていません。</h3>
+      <p><a href="/jobs/new.html">募集を出す</a>と、内容を見たクリエイターから条件つきの提案が届きます。届いた提案から選べます。</p>
+      <h3>条件の返事に納得できないときは？</h3>
+      <p>案件の中のメッセージで相談できます。始める前なら、取りやめることもできます。</p>
+    </div>
+  </section>
+
+  <section class="section feat-end">
+    <div class="wrap">
+      <h2>作品と評価で選んで、<br>条件を確かめてから始める。</h2>
+      <p class="lead">登録は無料。メールアドレスか Google アカウントで始められます。</p>
+      <div class="cta">
+        <a class="btn btn--primary" href="/creators/">クリエイターを探す</a>
+        <a class="btn" href="/jobs/new.html">募集を出す</a>
+        <a class="btn" href="/features/">ほかの便利な機能を見る</a>
+      </div>
+    </div>
+  </section>
+</main>
+</body>
+</html>
