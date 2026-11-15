@@ -458,7 +458,9 @@
     if (status === 'in_progress' && role === 'creator') out.push(['delivered', '納品済みにする']);
     if (status === 'delivered' && role === 'client') out.push(['paid', '入金済みにする']);
     if (status === 'paid') out.push(['closed', '完了にする']);
-    if (['draft', 'offered', 'proposed', 'in_progress'].indexOf(status) !== -1) out.push(['cancelled', 'キャンセルする']);
+    // 返事の前後でクリエイターがやめるときは「お断りする」を使う
+    if ((role === 'client' && ['draft', 'offered', 'proposed', 'in_progress'].indexOf(status) !== -1) ||
+        (role === 'creator' && status === 'in_progress')) out.push(['cancelled', 'キャンセルする']);
     return out;
   };
 

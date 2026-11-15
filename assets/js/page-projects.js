@@ -125,6 +125,7 @@
 
     function renderStatus(p, role, myReview) {
       var box = EM.clear(EM.$('#statusBox'));
+      if (role) renderFlow(box, p, role);   // いま何をすればいいかを、いちばん上に
 
       // 証跡（各ステータスに入った日時）
       var dl = el('dl');
@@ -138,7 +139,6 @@
       ]));
 
       if (!role) return;
-      renderFlow(box, p, role);
 
       var actions = el('div', { class: 'form-actions' });
       EM.nextStatuses(p.status, role).forEach(function (n) {
