@@ -1904,3 +1904,17 @@ body.has-sheet { overflow: hidden; }
 /* Google カレンダー：連携の前の説明（審査の条件：許可の直前に画面で説明する） */
 .gcal-consent { border-left: 3px solid var(--accent); padding: 8px 12px; background: var(--surface2); border-radius: 6px; line-height: 1.7; }
 .gcal-consent a { color: var(--accent); text-decoration: underline; }
+
+/* ===== 料金プラン（/pricing/・2026-11-15） ===== */
+.price-notice, .price-promise { margin: 24px 0; }
+.price-promise h2 { margin-top: 0; }
+.price-block { margin-top: 48px; }
+.price-grid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 16px; }
+@media (max-width: 960px) { .price-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+@media (max-width: 560px) { .price-grid { grid-template-columns: 1fr; } }
+.price-card { display: flex; flex-direction: column; }
+.price-card--pick { border-color: var(--accent); }
+.price-card__name { font-weight: 700; margin: 0 0 4px; }
+.price-card__price { font-family: var(--font-display, inherit); font-size: 28px; font-weight: 700; margin: 0; }
+.price-card__year { margin: 2px 0 0; }
+.price-card__list { margin: 12px 0 0; padding-left: 1.2em; line-height: 1.8; }
