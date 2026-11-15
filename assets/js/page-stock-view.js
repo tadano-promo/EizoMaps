@@ -48,6 +48,9 @@
     EM.$('#lockForm').addEventListener('submit', function (e) {
       e.preventDefault();
       var pw = EM.$('#password').value;
+      var who = EM.$('#viewerName').value.trim();
+      // 見ている人の名前の透かし（2026-11-15 翠くん：A＝開く前に名前を入れてもらう）
+      if (!who) { EM.notice(msg, 'お名前（会社名）を入れてください。', 'error'); EM.$('#viewerName').focus(); return; }
       if (!pw) return;
       var btn = EM.$('#openBtn');
       btn.setAttribute('aria-busy', 'true');
@@ -62,10 +65,23 @@
         }
         EM.$('#password').value = '';
         render(r.data);
+        mountWatermark(who);
       }).catch(function (err) {
         EM.notice(msg, EM.errorText(err), 'error');
       }).then(function () { btn.removeAttribute('aria-busy'); });
     });
+
+    // 画面全体に、見ている人の名前と日時を薄く斜めに並べる（さわれない・作品の上にも重なる）
+    function mountWatermark(who) {
+      var old = document.getElementById('viewerMark');
+      if (old) old.remove();
+      var now = new Date();
+      var stamp = who + '　閲覧中　' + now.getFullYear() + '/' + (now.getMonth() + 1) + '/' + now.getDate() + ' ' +
+        String(now.getHours()).padStart(2, '0') + ':' + String(now.getMinutes()).padStart(2, '0');
+      var layer = el('div', { class: 'viewer-mark', id: 'viewerMark', 'aria-hidden': 'true' });
+      for (var i = 0; i < 40; i++) layer.appendChild(el('span', { text: stamp }));
+      document.body.appendChild(layer);
+    }
 
     // ページの設定を保存した日時と、中身を足した日時のうち新しいほう
     function lastUpdated(page, items) {
