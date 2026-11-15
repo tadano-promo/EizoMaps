@@ -8,3 +8,7 @@
 - マイページ：クリエイター＝/mypage/、クライアント＝/mypage/client/。
 - 色：クリエイター＝黄色（--accent）、クライアント＝青（--client）。
 - 確認用アカウント：クライアント側は ikuzak8.s.s@gmail.com のブラウザで実際に開いて確かめる。
+
+## 依頼の流れと募集（2026-11-15）
+- 案件の状態：返事待ち（offered）→ 条件の返事あり（proposed）→ 進行中（in_progress）。返事は project_respond、開始は project_start（クライアントだけ）。始めたときの条件（terms_*）は変えられない。
+- 募集：job_posts（だれでも見られる・締め切りまで）／job_proposals（本人と募集主だけ）／choose_job_proposal で案件ができる（状態は proposed から）。ページは /jobs/。

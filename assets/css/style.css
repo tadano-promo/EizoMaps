@@ -1988,3 +1988,24 @@ body[data-mode="client"] .doc > .notice:not(.notice--warn) { border-left-color: 
 .flow-big { font-size: 20px; font-weight: 700; }
 .flow-note { white-space: pre-wrap; }
 #messages p { white-space: pre-wrap; }
+/* 募集の掲示板（2026-11-15） */
+.jobs-filter { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; margin: 16px 0 8px; }
+.jobs-filter select { flex: 1 1 160px; min-width: 0; }
+.jobs-filter__check { display: inline-flex; gap: 6px; align-items: center; }
+.job-card { display: grid; gap: 6px; color: inherit; text-decoration: none; }
+.job-card:hover { border-color: var(--client); }
+.job-card__top { display: flex; justify-content: space-between; gap: 8px; align-items: center; flex-wrap: wrap; }
+.job-card__left { font-size: 12px; color: var(--client); }
+.job-card__left.is-soon { color: var(--accent2); font-weight: 700; }
+.job-card__title { margin: 0; }
+.job-desc { white-space: pre-wrap; }
+.job-works { display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 10px; }
+.job-work { display: grid; gap: 4px; padding: 8px; border: 1px solid var(--border); border-radius: 8px; color: inherit; text-decoration: none; cursor: pointer; }
+.job-work img { width: 100%; aspect-ratio: 16 / 9; object-fit: cover; border-radius: 4px; }
+.job-work input { justify-self: start; }
+.job-prop--passed, .job-prop--withdrawn { opacity: .6; }
+.job-prop--chosen { border-color: var(--accent); }
+.job-prop__state { margin: 0; font-weight: 700; color: var(--client); }
+.job-prop__who { align-items: center; gap: 12px; }
+.jobs-check span:last-child { display: inline-flex; gap: 6px; align-items: center; min-height: 44px; }
+.chip--sm { font-size: 12px; padding: 3px 10px; }

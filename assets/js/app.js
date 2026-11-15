@@ -547,6 +547,7 @@
   var NAV_PUBLIC = [
     ['/', 'ホーム'],
     ['/creators/', 'クリエイターを探す'],
+    ['/jobs/', '募集を見る'],
     ['/features/', '便利な機能'],
     ['/pricing/', '料金'],
     ['/help/', '使い方・ヘルプ']
@@ -560,6 +561,7 @@
     ['/schedule/gantt.html', 'ガントチャート'],
     ['/templates/', '定型文のひな形'],
     ['/projects/', '案件管理'],
+    ['/jobs/mine.html', '送った提案'],
     ['/report/', '問題報告']
   ];
   // クライアントとして使っているときのメニュー（制作側の道具は出さない・2026-11-15 翠くん）
@@ -567,6 +569,8 @@
     ['/mypage/client/', 'マイページ'],
     ['/messages/', 'メッセージ'],
     ['/projects/', '依頼した案件'],
+    ['/jobs/new.html', '募集を出す'],
+    ['/jobs/mine.html', '出した募集'],
     ['/report/', '問題報告']
   ];
   var NAV_FOOT = [
@@ -743,6 +747,7 @@
   // クライアントとして使っているときの「＋ 追加」
   EM.QUICK_ADD_CLIENT = [
     ['search', 'クリエイターを探して依頼する', function () { return '/creators/'; }],
+    ['doc',    '募集を出す', function () { return '/jobs/new.html'; }],
     ['film',   '依頼した案件を見る', function () { return '/projects/'; }]
   ];
   function mountTools(slot, mode) {
