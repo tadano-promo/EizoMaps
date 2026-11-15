@@ -1968,3 +1968,10 @@ body[data-mode="client"] .only-creator { display: none; }
   .mode-band__switch { padding: 4px 10px; font-size: 12px; white-space: nowrap; }
 }
 body[data-mode="client"] .doc > .notice:not(.notice--warn) { border-left-color: var(--client); }
+/* クライアント用トップの部品（2026-11-15） */
+.cl-alert { display: flex; align-items: baseline; gap: 8px; padding: 12px 14px; border-radius: 10px; background: rgba(90,169,255,.12); color: var(--text); text-decoration: none; }
+.cl-alert b { font-size: 26px; color: var(--client); }
+.cl-alert:hover { background: rgba(90,169,255,.2); }
+.cl-go { margin-left: auto; color: var(--client); font-size: 13px; white-space: nowrap; }
+.cl-find { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 8px; }
+.cl-find select { flex: 1 1 140px; min-width: 0; }

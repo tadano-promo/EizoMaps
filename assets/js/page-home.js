@@ -17,7 +17,8 @@
 
     /* ---------------- 自分用トップの部品 ----------------
        部品は必ず「アイコン＋見出し＋中身」の同じ形。並びと出し入れは user_home に保存（本人だけが読める） */
-    var WIDGETS = [
+    // クリエイターとして使っているときの部品
+    var CREATOR_WIDGETS = [
       { id: 'week',      title: '今週の予定',        icon: 'week',     wide: true },
       { id: 'countdown', title: '納品・納期まで',     icon: 'flag' },
       { id: 'next',      title: '次の予定',          icon: 'calendar' },
@@ -26,16 +27,31 @@
       { id: 'weather',   title: '天気',              icon: 'sun' },
       { id: 'links',     title: 'よく使うページ',     icon: 'home',     wide: true }
     ];
+    // クライアントとして使っているときの部品（2026-11-15 翠くん）
+    //   クリエイター側の道具（予定・やること・ガント）は出さない
+    var CLIENT_WIDGETS = [
+      { id: 'c_msgs',    title: 'メッセージ',            icon: 'chat' },
+      { id: 'c_review',  title: '評価を書いてください',   icon: 'star' },
+      { id: 'c_active',  title: 'やりとり中の依頼',       icon: 'film',     wide: true },
+      { id: 'c_due',     title: '納期が近い依頼',         icon: 'flag' },
+      { id: 'c_find',    title: 'クリエイターを探す',     icon: 'search' },
+      { id: 'c_weather', title: '天気',                  icon: 'sun' }
+    ];
+    var WIDGETS = CREATOR_WIDGETS, mode = 'creator', otherWidgets = [];
     function wdef(id) { for (var i = 0; i < WIDGETS.length; i++) if (WIDGETS[i].id === id) return WIDGETS[i]; return null; }
 
     var me = null, creator = null, home = { widgets: [], todos: [], weather_pref: null }, editing = false;
     var data = { events: [], projects: [], delivery: [] };
     var weekFrom = EM.weekStart(EM.today());
 
+    // 並びは user_home.widgets に、クリエイター用とクライアント用をまとめて入れる。
+    // いま使っていない側の並びは otherWidgets に取っておき、保存のときに一緒に書き戻す
     function normWidgets(list) {
       var out = [], seen = {};
+      otherWidgets = [];
       (Array.isArray(list) ? list : []).forEach(function (w) {
         if (w && wdef(w.id) && !seen[w.id]) { seen[w.id] = 1; out.push({ id: w.id, on: w.on !== false }); }
+        else if (w && w.id && !wdef(w.id)) otherWidgets.push({ id: w.id, on: w.on !== false });
       });
       WIDGETS.forEach(function (w) { if (!seen[w.id]) out.push({ id: w.id, on: true }); });
       return out;
@@ -46,6 +62,7 @@
     // 変えたらすぐ保存する（保存ボタンなし）。保存できたら「保存しました（時刻）」
     function saveHome(fields) {
       var my = ++saveSeq;
+      if (fields.widgets) fields = Object.assign({}, fields, { widgets: fields.widgets.concat(otherWidgets) });
       stateText('保存しています…');
       return sb.from('user_home').upsert(fields, { onConflict: 'user_id' }).select('updated_at').single().then(function (r) {
         if (r.error) throw r.error;
@@ -63,6 +80,55 @@
         EM.$('#homeEditHint').hidden = !editing;
         renderWidgets();
       });
+      EM.myAccountType().then(function (type) {
+        mode = EM.viewModeFor(type);
+        if (mode === 'client') { WIDGETS = CLIENT_WIDGETS; loadClient(u); }
+        else loadCreator(u);
+      });
+    }
+
+    /* ---------------- クライアントとして使っているとき ---------------- */
+    var cdata = { client: null, projects: [], reviewed: {}, unread: 0, genres: [] };
+    function loadClient(u) {
+      var t = EM.today();
+      var eb = EM.$('#homeEyebrow');
+      if (eb) { eb.textContent = 'Client · My Eizo Maps'; eb.classList.add('eyebrow--client'); }
+      Promise.all([
+        sb.from('clients').select('id,display_name,company,area_pref').eq('user_id', u.id).maybeSingle(),
+        sb.rpc('my_client_id'),
+        sb.from('reviews').select('project_id').eq('reviewer_id', u.id),
+        sb.rpc('dm_unread_count'),
+        sb.from('user_home').select('widgets,todos,weather_pref,updated_at').maybeSingle(),
+        EM.jobs ? EM.jobs.load().catch(function () { return []; }) : Promise.resolve([])
+      ]).then(function (r) {
+        cdata.client = (!r[0].error && r[0].data) || null;
+        creator = cdata.client ? { area_pref: cdata.client.area_pref } : null;   // 天気のふだんの地域に使う
+        var name = (cdata.client && cdata.client.display_name) || '';
+        EM.$('#homeHello').textContent = name ? 'おかえりなさい、' + name + ' さん' : 'おかえりなさい';
+        (r[2].data || []).forEach(function (x) { if (x.project_id) cdata.reviewed[x.project_id] = true; });
+        cdata.unread = (!r[3].error && Number(r[3].data)) || 0;
+        if (!r[4].error && r[4].data) home = r[4].data;
+        home.widgets = normWidgets(home.widgets);
+        home.todos = Array.isArray(home.todos) ? home.todos : [];
+        cdata.genres = r[5] || [];
+        var cid = r[1].data || null;
+        if (!cid) return null;
+        return sb.from('projects').select('id,title,kind,status,due_on,updated_at,creators(display_name)')
+          .eq('client_id', cid).order('updated_at', { ascending: false }).limit(100);
+      }).then(function (pr) {
+        cdata.projects = (pr && !pr.error && pr.data) || [];
+        renderWidgets();
+      }).catch(function () {
+        var box = EM.$('#homeWidgets');
+        EM.clear(box);
+        box.appendChild(el('p', { class: 'small muted', text: '読み込めませんでした。少し時間をおいて開き直してください。' }));
+      });
+    }
+    function cWho(p) { return p.creators && p.creators.display_name ? p.creators.display_name + ' さん' : ''; }
+
+    /* ---------------- クリエイターとして使っているとき ---------------- */
+    function loadCreator(u) {
+      var t = EM.today();
       Promise.all([
         sb.from('creators').select('id,handle,display_name,is_published,area_pref').eq('user_id', u.id).maybeSingle(),
         sb.from('schedule_events').select('id,kind,title,starts_on,ends_on,start_time,end_time')
@@ -132,6 +198,76 @@
     function emptyLine(box, text) { box.appendChild(el('p', { class: 'small muted', text: text })); }
 
     var RENDER = {
+      /* ===== クライアント用 ===== */
+      c_msgs: function (body) {
+        if (cdata.unread > 0) {
+          body.appendChild(el('a', { class: 'cl-alert', href: '/messages/' }, [
+            el('b', { class: 'num', text: String(cdata.unread) }),
+            el('span', { text: '件の新しいメッセージが届いています' })
+          ]));
+        } else emptyLine(body, '新しいメッセージはありません。');
+        body.appendChild(el('div', { class: 'wg__foot' }, el('a', { class: 'small', href: '/messages/', text: 'メッセージを開く →' })));
+      },
+      c_review: function (body) {
+        var ps = cdata.projects.filter(function (p) { return EM.canReview(p.status) && !cdata.reviewed[p.id]; });
+        if (!ps.length) { emptyLine(body, '評価を待っている案件はありません。納品が終わると、ここに出ます。'); return; }
+        ps.slice(0, 4).forEach(function (p) {
+          body.appendChild(el('a', { class: 'home-me__row', href: '/projects/review.html?id=' + encodeURIComponent(p.id) }, [
+            el('span', { class: 'home-me__title', text: p.title }),
+            el('span', { class: 'home-me__when', text: cWho(p) }),
+            el('span', { class: 'cl-go', text: '評価を書く →' })
+          ]));
+        });
+      },
+      c_active: function (body) {
+        var ps = cdata.projects.filter(function (p) { return ['draft', 'offered', 'in_progress', 'delivered', 'paid'].indexOf(p.status) !== -1; });
+        if (!ps.length) {
+          emptyLine(body, 'いま進んでいる依頼はありません。');
+          body.appendChild(el('div', { class: 'wg__foot' }, el('a', { class: 'small', href: '/creators/', text: 'クリエイターを探して依頼する →' })));
+          return;
+        }
+        ps.slice(0, 6).forEach(function (p) {
+          body.appendChild(el('a', { class: 'home-me__row', href: '/projects/?id=' + encodeURIComponent(p.id) }, [
+            EM.statusBadge(p.status),
+            el('span', { class: 'home-me__title', text: p.title }),
+            el('span', { class: 'home-me__when', text: cWho(p) })
+          ]));
+        });
+        body.appendChild(el('div', { class: 'wg__foot' }, el('a', { class: 'small', href: '/projects/', text: '依頼した案件をすべて見る →' })));
+      },
+      c_due: function (body) {
+        var t = EM.today();
+        var ps = cdata.projects.filter(function (p) { return p.due_on && p.due_on >= t && ['offered', 'in_progress'].indexOf(p.status) !== -1; })
+          .sort(function (a, b) { return a.due_on < b.due_on ? -1 : 1; });
+        if (!ps.length) { emptyLine(body, '納期が決まっている依頼はありません。'); return; }
+        ps.slice(0, 5).forEach(function (p) {
+          var k = EM.dayDiff(t, p.due_on);
+          body.appendChild(el('a', { class: 'cd__row', href: '/projects/?id=' + encodeURIComponent(p.id) }, [
+            el('span', { class: 'cd__left mono', text: k === 0 ? '今日' : 'あと' + k + '日' }),
+            el('span', { class: 'cd__rtitle', text: p.title }),
+            el('span', { class: 'small muted mono', text: EM.md(p.due_on) })
+          ]));
+        });
+      },
+      c_find: function (body) {
+        var job = el('select', { 'aria-label': '職種' }, [el('option', { value: '', text: '職種（すべて）' })]);
+        cdata.genres.forEach(function (g) { job.appendChild(el('option', { value: String(g.id), text: g.name_ja })); });
+        var area = el('select', { 'aria-label': '地域' }, [el('option', { value: '', text: '地域（すべて）' })]);
+        EM.PREFS.forEach(function (p) { area.appendChild(el('option', { value: p, text: p })); });
+        if (cdata.client && cdata.client.area_pref) area.value = cdata.client.area_pref;
+        var go = el('button', { type: 'button', class: 'btn btn--primary btn--sm', text: '探す' });
+        go.addEventListener('click', function () {
+          var q = [];
+          if (job.value) q.push('genre=' + encodeURIComponent(job.value));
+          if (area.value) q.push('area=' + encodeURIComponent(area.value));
+          location.href = '/creators/' + (q.length ? '?' + q.join('&') : '');
+        });
+        body.appendChild(el('div', { class: 'cl-find' }, [job, area, go]));
+        body.appendChild(el('p', { class: 'small muted', text: '例：「カメラマン」×「東京都」。くわしい条件は探す画面で足せます。' }));
+      },
+      c_weather: function (body) { RENDER.weather(body); },
+
+      /* ===== クリエイター用 ===== */
       /* ---- 今週の予定（週の帯カレンダー）：何日も続く予定は日をまたぐ1本の帯 ---- */
       week: function (body) {
         var t = EM.today(), to = EM.addDays(weekFrom, 6);
