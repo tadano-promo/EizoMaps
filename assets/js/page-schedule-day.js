@@ -109,6 +109,39 @@
       }).catch(function () {});
     }
 
+    /* ---- LINE 用にコピー（2026-11-15 翠くん：シタクラさん対策）----
+       その日の予定とタイムテーブルを、LINE やメールにそのまま貼れる文字にする。
+       例）■ 撮影：〇〇カフェ（渋谷）9:00〜18:00
+             【撮影部】 9:00〜10:00 セッティング */
+    function lineText() {
+      var d = parseYmd(day);
+      var out = [(d.getMonth() + 1) + '/' + d.getDate() + '（' + WD[d.getDay()] + '）の予定'];
+      var mine = events.filter(function (e) { return e.owner_user_id === me.id && e.kind !== 'private'; });
+      if (!mine.length) return null;
+      mine.slice().sort(function (a, b) { return spanOf(a).s - spanOf(b).s; }).forEach(function (e) {
+        var sp = spanOf(e);
+        var when = sp.allDay ? '終日' : fmtMin(sp.s) + '〜' + fmtMin(sp.t);
+        out.push('');
+        out.push('■ ' + (KIND[e.kind] ? KIND[e.kind][0] : '') + '：' + e.title + (e.location ? '（' + e.location + '）' : '') + ' ' + when);
+        var its = items.filter(function (i) { return i.event_id === e.id; }).sort(function (a, b) { return a.start_min - b.start_min || String(a.lane).localeCompare(String(b.lane)); });
+        its.forEach(function (i) {
+          out.push('  ' + (i.lane ? '【' + i.lane + '】' : '') + fmtMin(i.start_min) + '〜' + fmtMin(i.end_min) + ' ' + i.title + (i.note ? '（' + i.note + '）' : ''));
+        });
+      });
+      out.push('');
+      out.push('（Eizo Maps で作成）');
+      return out.join('\n');
+    }
+    EM.$('#copyLineBtn').addEventListener('click', function () {
+      var t = lineText();
+      if (!t) { EM.toast('この日にコピーできる自分の予定がありません'); return; }
+      (navigator.clipboard ? navigator.clipboard.writeText(t) : Promise.reject()).then(function () {
+        EM.toast('コピーしました。LINE に貼り付けて送れます');
+      }, function () {
+        window.prompt('下の文字をコピーしてください', t);
+      });
+    });
+
     function go(n) { day = addDays(day, n); closeForm(); load(); }
     EM.$('#prevDay').addEventListener('click', function () { go(-1); });
     EM.$('#nextDay').addEventListener('click', function () { go(1); });

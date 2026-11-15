@@ -7,6 +7,8 @@
     var msg = EM.$('#pageMsg');
     if (!sb) return;
     var user = null, client = null, selected = [];
+    // ?id=… なら「出した募集を直す」（募集中のあいだだけ）
+    var editId = /^[0-9a-f-]{36}$/i.test(String(EM.param('id') || '')) ? EM.param('id') : null, editing = null;
 
     EM.PROJECT_KINDS.forEach(function (k) { EM.$('#kind').appendChild(el('option', { value: k, text: k })); });
     EM.BUDGETS.forEach(function (b, i) { EM.$('#budget').appendChild(el('option', { value: b.v === null ? '' : String(b.v), text: b.l, selected: i === 0 })); });
@@ -21,13 +23,36 @@
       user = u;
       return Promise.all([
         sb.from('clients').select('id,display_name,company,area_pref').eq('user_id', u.id).maybeSingle(),
-        EM.jobs.load().catch(function () { return []; })
+        EM.jobs.load().catch(function () { return []; }),
+        editId ? sb.from('job_posts').select('*').eq('id', editId).maybeSingle() : Promise.resolve({ data: null })
       ]);
     }).then(function (r) {
       if (!r) return;
       client = r[0].data || null;
       EM.$('#clientBox').hidden = !!client;
       if (client && client.area_pref) EM.$('#area').value = client.area_pref;
+      if (editId) {
+        editing = r[2].data;
+        if (!editing || !client || editing.client_id !== client.id || editing.status !== 'open') {
+          EM.notice(msg, 'この募集は直せません（募集中の、自分の募集だけ直せます）。', 'error');
+          EM.$('#postForm').hidden = true;
+          return;
+        }
+        document.title = '募集を直す — Eizo Maps';
+        EM.$('h1').textContent = '募集を直す';
+        EM.$('#submitBtn').textContent = 'この内容に直す';
+        EM.notice(msg, '直した内容は、すでに提案してくれた人にもそのまま見えます。金額や納期を大きく変えるときは、提案した人にメッセージで伝えるのがおすすめです。');
+        EM.$('#title').value = editing.title;
+        EM.$('#description').value = editing.description;
+        EM.$('#kind').value = editing.kind || '';
+        EM.$('#budget').value = editing.budget_amount == null ? '' : String(editing.budget_amount);
+        EM.$('#area').value = editing.area_pref || '';
+        EM.$('#remoteOk').checked = !!editing.remote_ok;
+        EM.$('#dueOn').value = editing.due_on || '';
+        closes.min = editing.closes_on < t ? editing.closes_on : t;
+        closes.value = editing.closes_on;
+        (editing.genre_ids || []).forEach(function (g) { selected.push(g); });
+      }
       EM.jobs.picker(EM.$('#genrePick'), r[1] || [], selected, { max: 5, compact: true });
     }).catch(function (e) { EM.notice(msg, EM.errorText(e), 'error'); });
 
@@ -53,16 +78,18 @@
         });
       }).then(function () {
         var b = EM.$('#budget').value;
-        return sb.from('job_posts').insert({
-          client_id: client.id, title: title, description: desc,
+        var row = {
+          title: title, description: desc,
           kind: EM.$('#kind').value || null, genre_ids: selected.slice(0, 5),
           area_pref: EM.$('#area').value || null, remote_ok: EM.$('#remoteOk').checked,
           budget_amount: b === '' ? null : Number(b), due_on: due, closes_on: closes.value
-        }).select('id').single();
+        };
+        if (editing) return sb.from('job_posts').update(row).eq('id', editing.id).select('id').single();
+        return sb.from('job_posts').insert(Object.assign({ client_id: client.id }, row)).select('id').single();
       }).then(function (r) {
         if (r.error) throw r.error;
-        EM.track('generate_lead', { method: 'job_post' });
-        location.href = '/jobs/detail.html?id=' + encodeURIComponent(r.data.id) + '&posted=1';
+        if (!editing) EM.track('generate_lead', { method: 'job_post' });
+        location.href = '/jobs/detail.html?id=' + encodeURIComponent(r.data.id) + (editing ? '&edited=1' : '&posted=1');
       }).catch(function (err) {
         btn.disabled = false;
         bad(EM.errorText(err));

@@ -17,6 +17,7 @@
 
     EM.PREFS.forEach(function (p) { EM.$('#clArea').appendChild(el('option', { value: p, text: p })); });
     EM.$('#logoutBtn').addEventListener('click', function () { EM.signOut(); });
+    EM.mountNotifyToggle(EM.$('#notifyBox'));
 
     EM.requireUser().then(function (u) {
       if (!u) return;

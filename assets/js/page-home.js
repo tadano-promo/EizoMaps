@@ -84,7 +84,13 @@
       });
       EM.myAccountType().then(function (type) {
         mode = EM.viewModeFor(type);
-        if (mode === 'client') { WIDGETS = CLIENT_WIDGETS; loadClient(u); }
+        // ログインしている人には「使いはじめの流れ」は出さない。紹介はいまの使い方に合わせる
+        var howto = EM.$('#homeHowto'); if (howto) howto.hidden = true;
+        if (mode === 'client') {
+          var pc = EM.$('#pitchCreator'), pl = EM.$('#pitchClient');
+          if (pc) pc.hidden = true; if (pl) pl.hidden = false;
+          WIDGETS = CLIENT_WIDGETS; loadClient(u);
+        }
         else loadCreator(u);
       });
     }

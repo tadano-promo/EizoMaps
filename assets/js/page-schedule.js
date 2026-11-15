@@ -498,14 +498,19 @@
       var id = EM.$('#evId').value;
       var btn = EM.$('#evSaveBtn'); btn.setAttribute('aria-busy', 'true');
       // 「新しい案件を作る」を選んだときは、先に案件を作ってから予定を保存する
-      var pre = pv === 'new'
+      var preFn = function () { return pv === 'new'
         ? sb.from('schedule_projects').insert({ name: newName }).select('id,name').single().then(function (r) {
             if (r.error) throw r.error;
             sprojects.unshift(r.data);
             row.sched_project_id = r.data.id;
           })
-        : Promise.resolve();
-      pre.then(function () {
+        : Promise.resolve(); };
+      // 予定かぶりの注意（2026-11-15 翠くん：シタクラさん対策）。同じ日・同じ時間に、ほかの予定があれば確かめる
+      checkOverlap(row, id).then(function (ok) {
+        if (!ok) { btn.removeAttribute('aria-busy'); return; }
+        return go();
+      });
+      function go() { return preFn().then(function () {
         return id ? sb.from('schedule_events').update(row).eq('id', id)
                   : sb.from('schedule_events').insert(row);
       }).then(function (r) {
@@ -516,7 +521,33 @@
         quietSync();
         return load();
       }).catch(function (err) { EM.notice(msg, EM.errorText(err), 'error'); })
-        .then(function () { btn.removeAttribute('aria-busy'); });
+        .then(function () { btn.removeAttribute('aria-busy'); }); }
+    }
+
+    function hm(t) { return t ? String(t).slice(0, 5) : ''; }
+    function toMin(t) { var p = String(t).split(':'); return (+p[0]) * 60 + (+p[1]); }
+    function checkOverlap(row, id) {
+      if (row.kind === 'private') return Promise.resolve(true);
+      var q = sb.from('schedule_events').select('id,title,kind,starts_on,ends_on,start_time,end_time')
+        .eq('owner_user_id', me.id).lte('starts_on', row.ends_on).gte('ends_on', row.starts_on).limit(50);
+      return q.then(function (r) {
+        var hits = (r.data || []).filter(function (e) {
+          if (id && e.id === id) return false;
+          // 1日だけの予定どうしで、両方に時刻があるときは、時間が重なるかで見る
+          if (e.starts_on === e.ends_on && row.starts_on === row.ends_on && e.start_time && row.start_time) {
+            var a1 = toMin(row.start_time), a2 = row.end_time ? toMin(row.end_time) : a1 + 60;
+            var b1 = toMin(e.start_time), b2 = e.end_time ? toMin(e.end_time) : b1 + 60;
+            if (a2 <= a1) a2 += 1440; if (b2 <= b1) b2 += 1440;
+            return a1 < b2 && b1 < a2;
+          }
+          return true;
+        });
+        if (!hits.length) return true;
+        var lines = hits.slice(0, 3).map(function (e) {
+          return '・' + e.starts_on.slice(5).replace('-', '/') + ' ' + (e.start_time ? hm(e.start_time) + (e.end_time ? '〜' + hm(e.end_time) : '') + ' ' : '') + e.title;
+        });
+        return confirm('ほかの予定と重なっています。\n' + lines.join('\n') + (hits.length > 3 ? '\nほか' + (hits.length - 3) + '件' : '') + '\n\nこのまま保存しますか？');
+      }).catch(function () { return true; });
     }
 
     function remove() {

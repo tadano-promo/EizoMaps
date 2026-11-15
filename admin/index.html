@@ -23,6 +23,7 @@
 <script src="/assets/js/page-admin-reviews.js" defer></script>
 <script src="/assets/js/page-admin-takedowns.js" defer></script>
 <script src="/assets/js/page-admin-creators.js" defer></script>
+<script src="/assets/js/page-admin-withdrawals.js" defer></script>
 </head>
 <body>
 <main class="section">
@@ -66,6 +67,12 @@
         <p class="small muted">申し立てた人がメールの確認を済ませた時点で受付となり、作品は一時非公開になっています（確認待ちのものは作品を止めていません）。申し立ての内容と、作品を載せた人の言い分を見て、<strong>受付から7日以内に</strong>判断してください。理由は必須で、作品を載せた人の画面にそのまま出ます。申し立てた人には、判断のあとに出る「お知らせの文」をコピーして info@eizo-maps.com から送ってください。</p>
         <div class="notice" id="adminTakedownMsg" hidden></div>
         <div id="adminTakedowns" class="stack"></div>
+
+        <hr class="divider">
+        <h2>退会の手続き</h2>
+        <p class="small muted">退会を申し込んだ人の一覧です（新しい順・200件まで）。30日たつと、毎日の予約実行で中身が消えます。それまでは本人がログインすると「元に戻す」を選べます。</p>
+        <div class="notice" id="adminWithdrawMsg" hidden></div>
+        <div id="adminWithdrawals" class="stack"></div>
 
         <hr class="divider">
         <h2>お知らせ</h2>
