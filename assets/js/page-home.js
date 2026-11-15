@@ -135,7 +135,7 @@
           .eq('owner_user_id', u.id).gte('ends_on', EM.addDays(t, -7)).lte('starts_on', EM.addDays(t, 120))
           .order('starts_on').order('start_time', { nullsFirst: true }).limit(500),
         sb.from('projects').select('id,title,status,due_on')
-          .in('status', ['offered', 'in_progress', 'delivered'])
+          .in('status', ['offered', 'proposed', 'in_progress', 'delivered'])
           .order('due_on', { ascending: true, nullsFirst: false }).limit(20),
         sb.from('user_home').select('widgets,todos,weather_pref,updated_at').maybeSingle()
       ]).then(function (r) {
@@ -220,7 +220,7 @@
         });
       },
       c_active: function (body) {
-        var ps = cdata.projects.filter(function (p) { return ['draft', 'offered', 'in_progress', 'delivered', 'paid'].indexOf(p.status) !== -1; });
+        var ps = cdata.projects.filter(function (p) { return ['draft', 'offered', 'proposed', 'in_progress', 'delivered', 'paid'].indexOf(p.status) !== -1; });
         if (!ps.length) {
           emptyLine(body, 'いま進んでいる依頼はありません。');
           body.appendChild(el('div', { class: 'wg__foot' }, el('a', { class: 'small', href: '/creators/', text: 'クリエイターを探して依頼する →' })));
@@ -237,7 +237,7 @@
       },
       c_due: function (body) {
         var t = EM.today();
-        var ps = cdata.projects.filter(function (p) { return p.due_on && p.due_on >= t && ['offered', 'in_progress'].indexOf(p.status) !== -1; })
+        var ps = cdata.projects.filter(function (p) { return p.due_on && p.due_on >= t && ['offered', 'proposed', 'in_progress'].indexOf(p.status) !== -1; })
           .sort(function (a, b) { return a.due_on < b.due_on ? -1 : 1; });
         if (!ps.length) { emptyLine(body, '納期が決まっている依頼はありません。'); return; }
         ps.slice(0, 5).forEach(function (p) {

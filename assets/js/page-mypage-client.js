@@ -13,7 +13,7 @@
 
     var user = null, client = null, bar = null;
     var formDirty = false, typeDirty = false;
-    var ACTIVE = ['draft', 'offered', 'in_progress', 'delivered', 'paid'];
+    var ACTIVE = ['draft', 'offered', 'proposed', 'in_progress', 'delivered', 'paid'];
 
     EM.PREFS.forEach(function (p) { EM.$('#clArea').appendChild(el('option', { value: p, text: p })); });
     EM.$('#logoutBtn').addEventListener('click', function () { EM.signOut(); });

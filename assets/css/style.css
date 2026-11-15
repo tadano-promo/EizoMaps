@@ -1975,3 +1975,16 @@ body[data-mode="client"] .doc > .notice:not(.notice--warn) { border-left-color: 
 .cl-go { margin-left: auto; color: var(--client); font-size: 13px; white-space: nowrap; }
 .cl-find { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 8px; }
 .cl-find select { flex: 1 1 140px; min-width: 0; }
+/* 依頼してから始まるまで（2026-11-15） */
+.tag--client { border-color: var(--client); color: var(--client); }
+.flow { display: grid; gap: 14px; margin-bottom: 18px; }
+.flow-steps { list-style: none; display: flex; gap: 6px; padding: 0; margin: 0; flex-wrap: wrap; }
+.flow-steps li { flex: 1 1 0; min-width: 96px; padding: 8px 10px; border-radius: 8px; border: 1px solid var(--border); font-size: 13px; color: var(--muted, #8a8a99); text-align: center; }
+.flow-steps li.is-done { color: var(--text); }
+.flow-steps li.is-now { border-color: var(--accent); color: var(--accent); font-weight: 700; }
+.flow-lead { margin: 0; }
+.flow-terms { border-color: var(--client); }
+.flow-terms__title { margin: 0 0 8px; font-weight: 700; color: var(--client); }
+.flow-big { font-size: 20px; font-weight: 700; }
+.flow-note { white-space: pre-wrap; }
+#messages p { white-space: pre-wrap; }

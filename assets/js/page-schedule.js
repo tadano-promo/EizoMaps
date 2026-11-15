@@ -166,7 +166,7 @@
         if (e.project_id) used[e.project_id] = true;
         if (e.sched_project_id) usedSp[e.sched_project_id] = true;
       });
-      var live = { draft: 1, offered: 1, in_progress: 1, delivered: 1 };
+      var live = { draft: 1, offered: 1, proposed: 1, in_progress: 1, delivered: 1 };
       var cols = sprojects.filter(function (p) { return usedSp[p.id]; })
         .map(function (p) { return { sp: p.id, label: p.name }; })
         .concat(projects.filter(function (p) { return used[p.id] || live[p.status]; })

@@ -445,7 +445,8 @@
   };
 
   EM.STATUS_LABEL = {
-    draft: '下書き', offered: '依頼中', in_progress: '進行中', delivered: '納品済み',
+    draft: '下書き', offered: '返事待ち', proposed: '条件の返事あり', declined: 'お断り',
+    in_progress: '進行中', delivered: '納品済み',
     paid: '入金済み', closed: '完了', cancelled: 'キャンセル'
   };
 
@@ -453,11 +454,11 @@
   EM.nextStatuses = function (status, role) {
     var out = [];
     if (status === 'draft' && role === 'client') out.push(['offered', '依頼を送る']);
-    if (status === 'offered') out.push(['in_progress', '進行中にする']);
+    // 返事待ち → 条件の返事あり → 進行中 は、案件ページの専用ボタン（project_respond / project_start）で進める
     if (status === 'in_progress' && role === 'creator') out.push(['delivered', '納品済みにする']);
     if (status === 'delivered' && role === 'client') out.push(['paid', '入金済みにする']);
     if (status === 'paid') out.push(['closed', '完了にする']);
-    if (['draft', 'offered', 'in_progress'].indexOf(status) !== -1) out.push(['cancelled', 'キャンセルする']);
+    if (['draft', 'offered', 'proposed', 'in_progress'].indexOf(status) !== -1) out.push(['cancelled', 'キャンセルする']);
     return out;
   };
 
@@ -473,7 +474,7 @@
   ];
 
   EM.statusBadge = function (status) {
-    return el('span', { class: 'tag' + (status === 'cancelled' ? '' : ' tag--accent'),
+    return el('span', { class: 'tag' + (status === 'cancelled' || status === 'declined' ? '' : status === 'proposed' ? ' tag--client' : ' tag--accent'),
                         text: EM.STATUS_LABEL[status] || status });
   };
 
