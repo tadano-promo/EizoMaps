@@ -31,6 +31,15 @@
       client = r[0].data || null;
       EM.$('#clientBox').hidden = !!client;
       if (client && client.area_pref) EM.$('#area').value = client.area_pref;
+      // 「予算の目安」から来たときは、選んだ内容を入れておく
+      if (!editId && EM.param('title')) {
+        EM.$('#title').value = String(EM.param('title')).slice(0, 100);
+        EM.$('#description').value = String(EM.param('desc') || '').slice(0, 4000);
+        if (EM.param('kind')) EM.$('#kind').value = EM.param('kind');
+        var bv = Number(EM.param('budget')), best = null;
+        EM.BUDGETS.forEach(function (b) { if (b.v !== null && b.v <= bv) best = b.v; });
+        if (best !== null) EM.$('#budget').value = String(best);
+      }
       if (editId) {
         editing = r[2].data;
         if (!editing || !client || editing.client_id !== client.id || editing.status !== 'open') {

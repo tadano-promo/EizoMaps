@@ -292,6 +292,7 @@
         });
         body.appendChild(el('div', { class: 'cl-find' }, [job, area, go]));
         body.appendChild(el('p', { class: 'small muted', text: '例：「カメラマン」×「東京都」。くわしい条件は探す画面で足せます。' }));
+        body.appendChild(el('div', { class: 'wg__foot' }, el('a', { class: 'small', href: '/estimate/quick/', text: '予算の目安を出す →' })));
       },
       c_weather: function (body) { RENDER.weather(body); },
       c_posts: function (body) {

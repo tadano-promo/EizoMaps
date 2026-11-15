@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; base-uri 'self'; object-src 'none'; form-action 'self'; script-src 'self' https://www.googletagmanager.com https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.116.0/; style-src 'self' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src 'self' data: https://img.youtube.com https://i.ytimg.com https://i.vimeocdn.com https://*.supabase.co https://*.google-analytics.com https://*.googletagmanager.com; connect-src 'self' https://*.supabase.co wss://*.supabase.co https://vimeo.com https://*.google-analytics.com https://*.analytics.google.com https://*.googletagmanager.com https://www.google.com; frame-src https://www.youtube.com https://player.vimeo.com; upgrade-insecure-requests">
+<meta name="referrer" content="strict-origin-when-cross-origin">
+<title>実行表（見積もり・実行予算） — Eizo Maps</title>
+<meta name="description" content="話すように書くと、12の費目に分けた見積もり・実行予算の表ができます。粗利も自動で出ます。">
+<meta name="robots" content="noindex, nofollow">
+<meta property="og:site_name" content="Eizo Maps">
+<meta property="og:title" content="実行表（見積もり・実行予算） — Eizo Maps">
+<meta property="og:description" content="話すように書くと、12の費目に分けた見積もり・実行予算の表ができます。粗利も自動で出ます。">
+<meta property="og:type" content="website">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bebas+Neue&amp;family=DM+Mono:wght@400;500&amp;family=Noto+Sans+JP:wght@300;400;500;700&amp;display=swap">
+<link rel="stylesheet" href="/assets/css/style.css">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.116.0/dist/umd/supabase.js" integrity="sha384-iLddHTLokph6Omwoyid4XKxHaWa6w41BnoEj0q5oOrzmYPpHIKt1wyjReA7s//pP" crossorigin="anonymous" referrerpolicy="no-referrer" defer></script>
+<script src="/assets/js/config.js" defer></script>
+<script src="/assets/js/app.js" defer></script>
+<script src="/assets/js/estimate.js" defer></script>
+<script src="/assets/js/page-estimate.js" defer></script>
+</head>
+<body>
+<main class="section">
+  <div class="wrap">
+    <div class="page-head">
+      <div>
+        <p class="eyebrow">Estimate</p>
+        <h1>実行表（見積もり・実行予算）</h1>
+      </div>
+      <div class="form-actions est-pick">
+        <select id="estPick" aria-label="保存した実行表"><option value="">保存した実行表を開く</option></select>
+        <button class="btn btn--sm" type="button" id="estNew">新しく作る</button>
+      </div>
+    </div>
+    <p class="muted">お客さまに出す金額（見積）と、実際に払う金額（実行）を同じ行に並べます。出す前に「いくら残るか」が分かります。費目は12に分けています。</p>
+    <div class="notice" id="pageMsg" hidden></div>
+
+    <label class="field"><span class="label">実行表の名前</span>
+      <input type="text" id="estTitle" maxlength="100" placeholder="例：〇〇カフェ 新メニューCM（30秒）"></label>
+
+    <section class="card stack est-talk">
+      <h2 class="h3">ことばで書く</h2>
+      <textarea id="estText" rows="4" maxlength="2000" placeholder="例：WebCM 30秒、撮影1日（都内ロケ）、カメラマン・照明・音声、出演2名、編集5日、ナレーションあり"></textarea>
+      <div class="form-actions">
+        <button class="btn btn--primary" type="button" id="estAi">AI で表にする</button>
+        <button class="btn" type="button" id="estRule">決まった言葉で表にする</button>
+        <span class="small muted" id="estAiInfo"></span>
+      </div>
+      <p class="small muted">表にした行は、今の表の下に足されます。書かれていないものは、下で聞き返します。</p>
+    </section>
+
+    <section id="estAsk" class="est-ask" hidden>
+      <h2 class="h3">抜けていませんか？</h2>
+      <div class="stack" id="estAskList"></div>
+    </section>
+
+    <section>
+      <div class="page-head"><h2>表</h2>
+        <div class="form-actions">
+          <select id="estAddCat" aria-label="足す費目"></select>
+          <button class="btn btn--sm" type="button" id="estAddRow">＋ 行を足す</button>
+        </div>
+      </div>
+      <div class="est-scroll"><table class="est-table" id="estTable"></table></div>
+    </section>
+
+    <section class="card est-sum" id="estSum"></section>
+
+    <section class="stack">
+      <h2>前提条件</h2>
+      <textarea id="estCond" rows="7" maxlength="3000"></textarea>
+      <h3 class="h3">このお見積もりに含まれないもの</h3>
+      <textarea id="estExcl" rows="3" maxlength="1000" placeholder="例：ナレーションの収録／テレビ・広告への使用"></textarea>
+    </section>
+
+    <div class="form-actions">
+      <button class="btn" type="button" id="estCsv">CSV で書き出す</button>
+      <button class="btn" type="button" id="estCopy">文字でコピー（お客さま向け）</button>
+      <button class="btn btn--danger btn--sm" type="button" id="estDel" hidden>この実行表を消す</button>
+    </div>
+  </div>
+</main>
+</body>
+</html>
