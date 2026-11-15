@@ -53,6 +53,17 @@
     return depts;
   }
 
+  // よく選ばれている職種（上位3つ）。1ページで1回だけ読む
+  var popPromise = null;
+  function popularIds() {
+    if (popPromise) return popPromise;
+    var sb = EM.sb();
+    popPromise = !sb ? Promise.resolve([1, 3, 2]) : sb.rpc('popular_genres', { p_limit: 3 }).then(function (r) {
+      return (!r.error && r.data && r.data.length) ? r.data.map(function (x) { return x.genre_id; }) : [1, 3, 2];
+    }, function () { return [1, 3, 2]; });
+    return popPromise;
+  }
+
   function picker(box, list, selected, opts) {
     opts = opts || {};
     EM.clear(box);
@@ -61,11 +72,33 @@
     var chosen = el('div', { class: 'jobs__chosen' });
     var search = el('input', { type: 'search', class: 'jobs__search', placeholder: '職種を言葉で探す（例：ライトマン、PM、カラリスト、Live2D）', 'aria-label': '職種を言葉で探す', autocomplete: 'off' });
     var results = el('div', { class: 'chips jobs__results', hidden: true });
-    var tree = el('div', { class: 'jobs__tree' });
+    var tree = el('div', { class: 'jobs__tree', hidden: true });
+    // 2026-11-15 翠くん：一覧が長すぎて見づらい → 「言葉で探す」＋「よく選ばれている3つ」を先に。部署の一覧はふだん閉じておく
+    var popular = el('div', { class: 'jobs__popular', hidden: true });
+    var treeOpen = false;
+    var treeBtn = el('button', { type: 'button', class: 'btn btn--sm jobs__treebtn', 'aria-expanded': 'false',
+      onclick: function () { treeOpen = !treeOpen; paintTreeBtn(); } });
+    function paintTreeBtn() {
+      tree.hidden = !treeOpen || !!search.value.trim();
+      treeBtn.textContent = treeOpen ? '部署の一覧を閉じる ▲' : '部署の一覧から選ぶ ▼';
+      treeBtn.setAttribute('aria-expanded', treeOpen ? 'true' : 'false');
+    }
     box.appendChild(chosen);
     box.appendChild(search);
     box.appendChild(results);
+    box.appendChild(popular);
+    box.appendChild(treeBtn);
     box.appendChild(tree);
+    var popIds = [];
+    function renderPopular() {
+      EM.clear(popular);
+      var gs = popIds.map(function (id) { return byId[id]; }).filter(Boolean);
+      popular.hidden = !gs.length || !!search.value.trim();
+      if (!gs.length) return;
+      popular.appendChild(el('span', { class: 'small muted jobs__poplabel', text: 'よく選ばれている職種' }));
+      popular.appendChild(el('div', { class: 'chips' }, gs.map(chip)));
+    }
+    popularIds().then(function (ids) { popIds = ids; renderPopular(); });
 
     function isOn(id) { return selected.indexOf(id) !== -1; }
     function toggle(id) {
@@ -86,7 +119,7 @@
     function renderChosen() {
       EM.clear(chosen);
       if (!selected.length) {
-        chosen.appendChild(el('p', { class: 'small muted', text: opts.compact ? '' : 'まだ選んでいません。下の部署を開くか、言葉で探してください。' + (opts.max ? '（' + opts.max + 'つまで）' : '') }));
+        chosen.appendChild(el('p', { class: 'small muted', text: opts.compact ? '' : 'まだ選んでいません。言葉で探すか、下から選んでください。' + (opts.max ? '（' + opts.max + 'つまで）' : '') }));
         return;
       }
       var row = el('div', { class: 'chips' });
@@ -141,7 +174,8 @@
       var q = search.value.trim();
       EM.clear(results);
       results.hidden = !q;
-      tree.hidden = !!q;
+      treeBtn.hidden = !!q;
+      paintTreeBtn();
       if (!q) return;
       var hit = list.filter(function (g) { return matches(g, q); });
       if (!hit.length) { results.appendChild(el('p', { class: 'small muted', text: '見つかりませんでした。別の呼び方でも探してみてください。' })); return; }
@@ -152,7 +186,7 @@
       });
     }
 
-    function refresh() { renderChosen(); renderTree(); renderResults(); }
+    function refresh() { renderChosen(); renderTree(); renderResults(); renderPopular(); }
     search.addEventListener('input', renderResults);
     refresh();
     return { refresh: refresh, clear: function () { selected.length = 0; search.value = ''; refresh(); } };
