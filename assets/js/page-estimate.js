@@ -207,13 +207,14 @@
       return { lines: state.lines, target: state.target, cond: state.cond, excl: state.excl, text: state.text };
     }
     function save() {
-      var title = EM.$('#estTitle').value.trim() || '無題の実行表';
+      var title = EM.$('#estTitle').value.trim() || '無題の実行表', isNew = !cur;
       var data = collect();
       var q = cur ? sb.from('estimates').update({ title: title, data: data }).eq('id', cur.id).select('*').single()
                   : sb.from('estimates').insert({ title: title, data: data }).select('*').single();
       return q.then(function (r) {
         if (r.error) { EM.notice(msg, EM.errorText(r.error), 'error'); throw r.error; }
         cur = r.data; EM.$('#estDel').hidden = false;
+        if (isNew) EM.track('estimate_save', { line_count: (data.lines || []).length });
         loadList(cur.id);
         return cur.updated_at;
       });

@@ -27,7 +27,12 @@
     function fill(id, list) { var s = EM.$(id); list.forEach(function (o) { s.appendChild(el('option', { value: o[0], text: o[1] })); }); }
     fill('#qType', TYPE); fill('#qLen', LEN); fill('#qCount', COUNT); fill('#qShoot', SHOOT); fill('#qCast', CAST); fill('#qPlace', PLACE);
     EM.$('#qLen').value = '60';
-    EM.$('#qForm').addEventListener('change', calc);
+    var counted = false;
+    EM.$('#qForm').addEventListener('change', function () {
+      calc();
+      // 「予算の目安」を使った（1ページで1回だけ数える。選んだ中身は送らない・種類だけ）
+      if (!counted) { counted = true; EM.track('budget_estimate', { video_type: EM.$('#qType').value }); }
+    });
     calc();
 
     function calc() {
@@ -60,7 +65,7 @@
         .concat([EM.$('#qNarr').checked ? 'ナレーションあり' : '', EM.$('#qMusic').checked ? 'オリジナルの音楽あり' : '', EM.$('#qCg').checked ? 'CG・アニメーションあり' : '', EM.$('#qRush').checked ? '急ぎ' : ''].filter(Boolean)).join('\n');
       var q = 'title=' + encodeURIComponent(title) + '&desc=' + encodeURIComponent(desc + '\n（予算の目安：' + man(lo) + '〜' + man(hi) + '）') + '&kind=' + encodeURIComponent(t[4]) + '&budget=' + lo;
       box.appendChild(el('div', { class: 'form-actions' }, [
-        el('a', { class: 'btn btn--primary', href: '/jobs/new.html?' + q, text: 'この内容で募集を出す' }),
+        el('a', { class: 'btn btn--primary', href: '/jobs/new.html?' + q, text: 'この内容で募集を出す', 'data-cta': 'quick_to_job' }),
         el('a', { class: 'btn', href: '/creators/', text: 'クリエイターを探す' })
       ]));
     }

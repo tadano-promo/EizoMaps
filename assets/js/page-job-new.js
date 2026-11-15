@@ -97,7 +97,7 @@
         return sb.from('job_posts').insert(Object.assign({ client_id: client.id }, row)).select('id').single();
       }).then(function (r) {
         if (r.error) throw r.error;
-        if (!editing) EM.track('generate_lead', { method: 'job_post' });
+        if (!editing) EM.track('generate_lead', { lead_source: 'job_post' });
         location.href = '/jobs/detail.html?id=' + encodeURIComponent(r.data.id) + (editing ? '&edited=1' : '&posted=1');
       }).catch(function (err) {
         btn.disabled = false;
