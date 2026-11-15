@@ -2057,3 +2057,6 @@ body.nav-open .savebar { display: none; }
 .est-table.col-tbl { min-width: 0; font-size: 14px; }
 .est-table.col-tbl th, .est-table.col-tbl td { white-space: normal; vertical-align: top; }
 .est-table.col-tbl td:first-child { white-space: nowrap; font-weight: 600; }
+/* 検索に出すかの選択（2026-11-15） */
+#searchVisibleBox { border: 1px solid var(--border); border-radius: var(--radius-s); padding: 14px; display: grid; gap: 8px; }
+#searchVisibleBox legend { padding: 0 6px; }

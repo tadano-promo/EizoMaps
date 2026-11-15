@@ -43,6 +43,10 @@
         renderMoods();
         loadPackages();
         EM.$('#isPublished').checked = !!creator.is_published;
+        if (creator.search_visible != null) {
+          var sv = document.querySelector('input[name="searchVisible"][value="' + (creator.search_visible ? '1' : '0') + '"]');
+          if (sv) sv.checked = true;
+        }
         selected = (creator.creator_genres || []).map(function (x) { return x.genre_id; });
         var link = EM.$('#viewPublicLink');
         link.href = creator.handle ? '/@' + creator.handle : '/creators/detail.html?id=' + encodeURIComponent(creator.id);
@@ -325,6 +329,13 @@
         if (!name) { EM.notice(msg, '表示名を入力してください。', 'error'); return false; }
         var site = EM.$('#websiteUrl').value.trim();
         if (site && !EM.safeUrl(site)) { EM.notice(msg, 'ウェブサイトは https:// から始まる URL を入力してください。', 'error'); return false; }
+        // 検索に出すか（2026-11-15 翠くん）：必ず選ぶ。前から登録していた人は「出す」にしてある（もともと出ていたため）
+        var svEl = document.querySelector('input[name="searchVisible"]:checked');
+        if (!svEl) {
+          EM.notice(msg, '「Google などの検索に、あなたのページを出しますか？」を選んでください。', 'error');
+          EM.$('#searchVisibleBox').scrollIntoView({ block: 'center' });
+          return false;
+        }
         payload = {
           display_name: name,
           headline: EM.$('#headline').value.trim() || null,
@@ -343,6 +354,7 @@
           avatar_url: (creator && creator.avatar_url) || null,
           is_published: EM.$('#isPublished').checked
         };
+        if (svEl) payload.search_visible = svEl.value === '1';
       }
       var savedAt = null;
       var p1 = !payload ? Promise.resolve() : ((creator && creator.id)

@@ -267,6 +267,7 @@
         .then(function (r) {
           if (r.error) { EM.notice(msg, EM.errorText(r.error), 'error'); return; }
           EM.toast(action === 'decline' ? 'お断りを送りました' : '返事を送りました');
+          EM.track('project_reply', { reply_type: action });
           loadDetail();
         });
     }
@@ -275,6 +276,7 @@
       sb.rpc('project_start', { p_project: p.id }).then(function (r) {
         if (r.error) { EM.notice(msg, EM.errorText(r.error), 'error'); return; }
         EM.toast('始めました。進行中になりました');
+        EM.track('project_start', { project_origin: p.origin || 'direct' });
         loadDetail();
       });
     }

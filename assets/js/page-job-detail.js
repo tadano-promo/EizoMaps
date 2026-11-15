@@ -158,7 +158,7 @@
           amount: amt.value === '' ? null : Math.round(Number(amt.value)), due_on: due.value || null, portfolio_ids: picked
         }).then(function (x) {
           if (x.error) { EM.notice(msg, EM.errorText(x.error), 'error'); return; }
-          EM.track('generate_lead', { method: 'job_proposal' });
+          EM.track('generate_lead', { lead_source: 'job_proposal' });
           EM.toast('提案を送りました'); renderCreator();
         });
       });

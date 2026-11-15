@@ -67,7 +67,14 @@
   /* ---------- 結果の記録（Google アナリティクスの「キーイベント」） ----------
      2026-11-06 翠くん「analyticsの数値を正として、結果が出るようなSEO対策、AIO対策をしていく」
      ・generate_lead … 依頼を送った／はじめてメッセージを送った／鍵付きページを取り寄せた
-     ・sign_up       … クリエイターのプロフィールを作った
+     ・sign_up       … クリエイター／依頼する側のプロフィールを作った（method でどちらか）
+     generate_lead の「どこから」はいつも lead_source で送る（2026-11-15 そろえた）
+     ほかに数えるもの（2026-11-15 翠くん「進めていこう」）：
+     ・project_reply   … クリエイターが案件に返事した（reply_type：accept／propose／decline）
+     ・project_start   … クライアントが「この条件で始める」を押した＝取引が決まった（project_origin：direct／board）
+     ・budget_estimate … 「予算の目安」を使った（video_type）
+     ・estimate_save   … 実行表を新しく保存した
+     ・cta_click       … コラム・トップのボタンや data-cta の付いたリンクが押された（cta_id・cta_text）
      名前・メール・本文などの個人の情報は送らない。解析が動いていないとき（手元の試しなど）は何もしない。
      done を渡すと、送り終わってから（長くても1.2秒で）呼ぶ（すぐ別のページに移るときに記録が消えないように） */
   EM.track = function (name, params, done) {
@@ -81,6 +88,15 @@
     } catch (e) { /* 記録できなくても続ける */ }
     next();
   };
+
+  /* ---------- ボタンが押された数（コラム→予算の目安→募集、の流れを見るため） ---------- */
+  try {
+    document.addEventListener('click', function (e) {
+      var a = e.target && e.target.closest ? e.target.closest('a[data-cta], article.doc a.btn, #pitchClient a.btn, #pitchCreator a.btn') : null;
+      if (!a) return;
+      EM.track('cta_click', { cta_id: a.getAttribute('data-cta') || (location.pathname.replace(/\/$/, '') || '/home'), cta_text: (a.textContent || '').trim().slice(0, 40), link_url: (a.getAttribute('href') || '').split('?')[0] });
+    }, true);
+  } catch (e) { /* 数えられなくても動く */ }
 
   /* ---------- Supabase クライアント ---------- */
   var _sb = null;
