@@ -2011,3 +2011,6 @@ body[data-mode="client"] .doc > .notice:not(.notice--warn) { border-left-color: 
 .chip--sm { font-size: 12px; padding: 3px 10px; }
 .notify-toggle { display: flex; gap: 10px; align-items: center; min-height: 44px; }
 .num--client { color: var(--client); }
+/* メニューを開いているときは、画面下の保存バーを隠し、いちばん下の項目まで見えるようにする（2026-11-15） */
+body.nav-open .savebar { display: none; }
+.nav-panel { padding-bottom: calc(32px + env(safe-area-inset-bottom)); }
