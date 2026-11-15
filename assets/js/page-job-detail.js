@@ -13,6 +13,7 @@
     if (!sb) return;
     var id = EM.param('id');
     if (!/^[0-9a-f-]{36}$/i.test(String(id || ''))) { EM.clear(postBox); EM.notice(msg, '募集が指定されていません。', 'error'); return; }
+    if (EM.param('edited')) EM.notice(msg, '募集の内容を直しました。', 'ok');
     if (EM.param('posted')) EM.notice(msg, '募集を出しました。提案が届くと、このページに並びます。トップの「出した募集」や、メニューの「出した募集」からも見られます。', 'ok');
 
     var post = null, genres = [], byId = {}, user = null, myClient = null, myCreator = null;
@@ -195,7 +196,12 @@
     function drawOwner(props, works) {
       EM.clear(act);
       var head = el('div', { class: 'page-head' }, [el('h2', { text: '届いた提案（' + props.length + '件）' })]);
-      if (post.status === 'open') head.appendChild(el('button', { type: 'button', class: 'btn btn--sm', text: '募集を締め切る', onclick: closePost }));
+      if (post.status === 'open') {
+        head.appendChild(el('div', { class: 'form-actions' }, [
+          el('a', { class: 'btn btn--sm', href: '/jobs/new.html?id=' + encodeURIComponent(post.id), text: '内容を直す' }),
+          el('button', { type: 'button', class: 'btn btn--sm', text: '募集を締め切る', onclick: closePost })
+        ]));
+      }
       act.appendChild(head);
       if (post.status === 'filled' && post.filled_project_id) {
         act.appendChild(el('div', { class: 'notice' }, [document.createTextNode('この募集は決まりました。 '),
