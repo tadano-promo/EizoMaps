@@ -2053,3 +2053,7 @@ body.nav-open .savebar { display: none; }
 .q-result { margin-top: 18px; }
 .q-range { font-size: 30px; font-weight: 700; color: var(--client); margin: 0 0 8px; }
 .q-parts { list-style: none; padding: 0; margin: 8px 0; display: grid; gap: 4px; }
+/* コラムの表（2026-11-15）：スマホでも横にはみ出さず、折り返して読める */
+.est-table.col-tbl { min-width: 0; font-size: 14px; }
+.est-table.col-tbl th, .est-table.col-tbl td { white-space: normal; vertical-align: top; }
+.est-table.col-tbl td:first-child { white-space: nowrap; font-weight: 600; }
