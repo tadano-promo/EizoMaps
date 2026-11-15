@@ -13,7 +13,7 @@
     if (!sb) return;
     var id = EM.param('id');
     if (!/^[0-9a-f-]{36}$/i.test(String(id || ''))) { EM.clear(postBox); EM.notice(msg, '募集が指定されていません。', 'error'); return; }
-    if (EM.param('posted')) EM.notice(msg, '募集を出しました。提案が届くと、このページに並びます。トップの「メッセージ」や、メニューの「自分の募集・提案」からも見られます。', 'ok');
+    if (EM.param('posted')) EM.notice(msg, '募集を出しました。提案が届くと、このページに並びます。トップの「出した募集」や、メニューの「出した募集」からも見られます。', 'ok');
 
     var post = null, genres = [], byId = {}, user = null, myClient = null, myCreator = null;
 
