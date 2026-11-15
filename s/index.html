@@ -33,6 +33,12 @@
         <div id="lockHead"></div>
         <form id="lockForm" method="post" novalidate>
           <label class="field">
+            <span class="label">お名前（会社名） <span class="muted">（必須）</span></span>
+            <input type="text" id="viewerName" required autocomplete="name" maxlength="40"
+                   placeholder="例：山田 花子（株式会社〇〇）">
+            <span class="small muted">開いたページに、お名前が薄い文字（透かし）で入ります。お名前はどこにも保存しません。</span>
+          </label>
+          <label class="field">
             <span class="label">パスワード</span>
             <input type="password" id="password" required autocomplete="off" maxlength="72"
                    placeholder="共有されたパスワード">

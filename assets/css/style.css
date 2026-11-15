@@ -2023,3 +2023,9 @@ body.nav-open .savebar { display: none; }
 .jobs__peek { min-width: 0; flex: 1 1 100%; }
 .jobs .chips { min-width: 0; }
 .jobs .chip { max-width: 100%; white-space: normal; text-align: left; }
+/* 鍵付きページの透かし（見ている人の名前・2026-11-15） */
+.viewer-mark { position: fixed; inset: -20vh -20vw; z-index: 200; pointer-events: none; overflow: hidden;
+  display: flex; flex-wrap: wrap; align-content: flex-start; gap: 90px 70px; padding: 40px;
+  transform: rotate(-24deg); opacity: .13; user-select: none; }
+.viewer-mark span { font-size: 15px; font-weight: 700; color: #fff; white-space: nowrap; text-shadow: 0 0 2px #000; }
+@media print { .viewer-mark { opacity: .25; } }
