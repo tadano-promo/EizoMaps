@@ -363,8 +363,14 @@
       });
       return p1.then(function () {
         if (!accountDirty) return null;
-        return sb.from('users').update({ account_type: EM.$('#accountType').value, onboarded: true })
-          .eq('id', user.id).then(function (r) { if (r.error) throw r.error; });
+        var t = EM.$('#accountType').value;
+        return sb.from('users').update({ account_type: t, onboarded: true })
+          .eq('id', user.id).then(function (r) {
+            if (r.error) throw r.error;
+            // クライアントだけにしたら、クライアントのマイページへ移る
+            if (t === 'client') { EM.setViewMode('client'); setTimeout(function () { location.replace('/mypage/client/'); }, 600); }
+            else { EM.setViewMode('creator'); setTimeout(function () { location.reload(); }, 600); }  // 帯とメニューを付け直す
+          });
       }).then(function () {
         profileDirty = false; accountDirty = false;
         EM.notice(msg, '');

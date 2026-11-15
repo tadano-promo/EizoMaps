@@ -559,6 +559,13 @@
     ['/projects/', '案件管理'],
     ['/report/', '問題報告']
   ];
+  // クライアントとして使っているときのメニュー（制作側の道具は出さない・2026-11-15 翠くん）
+  var NAV_CLIENT = [
+    ['/mypage/client/', 'マイページ'],
+    ['/messages/', 'メッセージ'],
+    ['/projects/', '依頼した案件'],
+    ['/report/', '問題報告']
+  ];
   var NAV_FOOT = [
     ['/companies/', '依頼した会社の評価'],
     ['/terms/', '利用規約'],
@@ -728,8 +735,14 @@
     ['doc',      '定型文のひな形を作る', function () { return '/templates/?new=1'; }],
     ['image',    '作品を追加', function () { return '/mypage/portfolio.html'; }]
   ];
-  function mountTools(slot) {
-    var menu = el('div', { class: 'qa__menu', role: 'menu', hidden: true }, EM.QUICK_ADD.map(function (q) {
+  // クライアントとして使っているときの「＋ 追加」
+  EM.QUICK_ADD_CLIENT = [
+    ['search', 'クリエイターを探して依頼する', function () { return '/creators/'; }],
+    ['film',   '依頼した案件を見る', function () { return '/projects/'; }]
+  ];
+  function mountTools(slot, mode) {
+    var items = mode === 'client' ? EM.QUICK_ADD_CLIENT : EM.QUICK_ADD;
+    var menu = el('div', { class: 'qa__menu', role: 'menu', hidden: true }, items.map(function (q) {
       return el('a', { class: 'qa__item', role: 'menuitem', href: q[2]() }, [EM.icon(q[0]), el('span', { text: q[1] })]);
     }));
     var addBtn = el('button', { type: 'button', class: 'btn btn--sm btn--primary qa__btn', 'aria-haspopup': 'menu', 'aria-expanded': 'false' },
@@ -747,6 +760,69 @@
       var t = e.target, typing = t && (t.isContentEditable || /^(INPUT|TEXTAREA|SELECT)$/.test(t.tagName));
       if ((e.key === '/' && !typing) || ((e.ctrlKey || e.metaKey) && (e.key === 'k' || e.key === 'K'))) { e.preventDefault(); EM.openSearch(); }
     });
+  }
+
+  /* ---------- クリエイター／クライアントの切り替え（2026-11-15 翠くん） ----------
+     ・登録の種類（users.account_type）：creator／client／both
+     ・both の人は「いまどちらとして使っているか」をこのブラウザに覚えておく
+     ・クリエイターのマイページ（/mypage/）を開いたらクリエイター、
+       クライアントのマイページ（/mypage/client/）を開いたらクライアントに切り替わる */
+  var MODE_KEY = 'em_view_mode';
+  var typePromise = null;
+  EM.myAccountType = function (fresh) {
+    if (typePromise && !fresh) return typePromise;
+    var sb = EM.sb();
+    typePromise = EM.getUser().then(function (u) {
+      if (!u || !sb) return null;
+      return sb.from('users').select('account_type').eq('id', u.id).maybeSingle().then(function (r) {
+        return (r && r.data && r.data.account_type) || 'creator';
+      }, function () { return 'creator'; });
+    });
+    return typePromise;
+  };
+  EM.setViewMode = function (mode) {
+    try { localStorage.setItem(MODE_KEY, mode === 'client' ? 'client' : 'creator'); } catch (e) {}
+  };
+  function storedMode() {
+    try { return localStorage.getItem(MODE_KEY) === 'client' ? 'client' : 'creator'; } catch (e) { return 'creator'; }
+  }
+  function isClientMypage() { return location.pathname.indexOf('/mypage/client') === 0; }
+  function isCreatorMypage() { return /^\/mypage\/(index\.html)?$/.test(location.pathname); }
+  // 今のページに合うモードを決める。種類と合わないマイページを開いたときは正しい方へ移す
+  EM.applyViewMode = function (type) {
+    if (type === 'client' && isCreatorMypage()) { location.replace('/mypage/client/'); return 'redirect'; }
+    if (type === 'creator' && isClientMypage()) { location.replace('/mypage/'); return 'redirect'; }
+    var mode;
+    if (type === 'client') mode = 'client';
+    else if (type === 'both') {
+      if (isClientMypage()) EM.setViewMode('client');
+      else if (isCreatorMypage()) EM.setViewMode('creator');
+      mode = storedMode();
+    } else mode = 'creator';
+    document.body.setAttribute('data-mode', mode);
+    return mode;
+  };
+  // 「いま：クリエイターとして／クライアントとして」の帯
+  //   両方の人：どの画面でも出す（切り替えボタンつき）／片方だけの人：マイページでだけ出す
+  function mountModeBand(type, mode, header) {
+    if (!type) return;
+    var onMypage = isClientMypage() || isCreatorMypage();
+    if (type !== 'both' && !onMypage) return;
+    var label = mode === 'client' ? 'クライアント' : 'クリエイター';
+    var kids = [el('span', { class: 'mode-band__label' }, [
+      el('span', { class: 'mode-band__dot', 'aria-hidden': 'true' }),
+      document.createTextNode('いま：'), el('b', { text: label }), el('span', { class: 'mode-band__long', text: 'として使っています' })
+    ])];
+    if (type === 'both') {
+      var to = mode === 'client' ? 'creator' : 'client';
+      kids.push(el('a', {
+        class: 'mode-band__switch', href: to === 'client' ? '/mypage/client/' : '/mypage/',
+        text: (to === 'client' ? 'クライアント' : 'クリエイター') + 'に切り替え ⇄',
+        onclick: function () { EM.setViewMode(to); }
+      }));
+    }
+    var band = el('div', { class: 'mode-band mode-band--' + mode, role: 'status' }, el('div', { class: 'wrap' }, kids));
+    header.parentNode.insertBefore(band, header.nextSibling);
   }
 
   EM.mountChrome = function () {
@@ -793,14 +869,20 @@
 
     // ログイン状態に応じてメニューを差し替える
     EM.getUser().then(function (u) {
+      return (u ? EM.myAccountType() : Promise.resolve(null)).then(function (type) { return [u, type]; });
+    }).then(function (pair) {
+      var u = pair[0], type = pair[1];
+      var mode = u ? EM.applyViewMode(type) : null;
+      if (mode === 'redirect') return;
       var hl = document.getElementById('headerLogin');
-      if (hl && u) { hl.textContent = 'マイページ'; hl.setAttribute('href', '/mypage/'); }
-      if (u) mountTools(document.getElementById('headerTools'));
+      if (hl && u) { hl.textContent = 'マイページ'; hl.setAttribute('href', mode === 'client' ? '/mypage/client/' : '/mypage/'); }
+      if (u) mountTools(document.getElementById('headerTools'), mode);
+      if (u) mountModeBand(type, mode, header);
       var slot = document.getElementById('navUserSlot');
       EM.clear(slot);
       var ul = el('ul');
       if (u) {
-        NAV_USER.forEach(function (n) { ul.appendChild(el('li', null, el('a', { href: n[0], text: n[1] }))); });
+        (mode === 'client' ? NAV_CLIENT : NAV_USER).forEach(function (n) { ul.appendChild(el('li', null, el('a', { href: n[0], text: n[1] }))); });
         // まだ読んでいないメッセージがあれば、メニューとマイページのボタンに数を出す
         var sbm = EM.sb();
         if (sbm) sbm.rpc('dm_unread_count').then(function (r) {

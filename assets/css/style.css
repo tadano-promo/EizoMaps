@@ -1936,3 +1936,35 @@ body.has-sheet { overflow: hidden; }
 /* 退会の手続き（/account/delete/・2026-11-15） */
 .acct-grid { margin: 24px 0; }
 .acct-step { margin-top: 16px; }
+
+/* ---------- クリエイター／クライアントの帯（2026-11-15） ----------
+   クリエイター＝いつもの黄色、クライアント＝青 */
+:root { --client: #5aa9ff; }
+.mode-band { border-bottom: 1px solid var(--border); font-size: 13px; }
+.mode-band .wrap { display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; padding-top: 8px; padding-bottom: 8px; }
+.mode-band__label { display: inline-flex; align-items: center; gap: 2px; }
+.mode-band__dot { width: 8px; height: 8px; border-radius: 50%; margin-right: 8px; flex: none; }
+.mode-band--creator { background: rgba(232,255,71,.08); }
+.mode-band--creator b { color: var(--accent); }
+.mode-band--creator .mode-band__dot { background: var(--accent); }
+.mode-band--client { background: rgba(90,169,255,.12); }
+.mode-band--client b { color: var(--client); }
+.mode-band--client .mode-band__dot { background: var(--client); }
+.mode-band__switch {
+  display: inline-block; padding: 5px 12px; border-radius: 999px;
+  border: 1px solid var(--border); color: var(--text); text-decoration: none; font-weight: 500;
+}
+.mode-band--creator .mode-band__switch:hover { border-color: var(--client); color: var(--client); }
+.mode-band--client .mode-band__switch:hover { border-color: var(--accent); color: var(--accent); }
+.eyebrow--client { color: var(--client); }
+body[data-mode="client"] .only-creator { display: none; }
+.cl-quick { margin: 8px 0 24px; }
+.cl-proj { display: flex; justify-content: space-between; align-items: center; gap: 12px; flex-wrap: wrap; }
+.cl-proj__main { color: inherit; text-decoration: none; min-width: 0; flex: 1 1 220px; }
+.cl-proj__main:hover .pf-title { text-decoration: underline; }
+@media (max-width: 480px) {
+  .mode-band .wrap { flex-wrap: nowrap; padding-top: 6px; padding-bottom: 6px; }
+  .mode-band__long { display: none; }
+  .mode-band__switch { padding: 4px 10px; font-size: 12px; white-space: nowrap; }
+}
+body[data-mode="client"] .doc > .notice:not(.notice--warn) { border-left-color: var(--client); }
