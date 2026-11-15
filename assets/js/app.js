@@ -890,7 +890,32 @@
 
   document.addEventListener('DOMContentLoaded', function () {
     if (!document.body.hasAttribute('data-no-chrome')) EM.mountChrome();
+    EM.checkAccount();
   });
+
+  /* ---------- 退会の手続き中かどうか／また登録した人に前の評価をつなぐ（2026-11-15） ----------
+     ・退会の手続き中（30日以内）の人は、どの画面を開いても「元に戻しますか？」の画面へ
+     ・ログインしたら1回だけ、前のアカウント（退会して30日たったもの）の評価をつなぐ */
+  EM.checkAccount = function () {
+    var sb = EM.sb();
+    if (!sb) return;
+    EM.getUser().then(function (u) {
+      if (!u) return;
+      sb.rpc('my_withdrawal').then(function (r) {
+        if (r && r.data && location.pathname.indexOf('/account/delete/') !== 0) {
+          location.replace('/account/delete/');
+        }
+      });
+      var key = 'em_relinked_' + u.id;
+      var done = false;
+      try { done = sessionStorage.getItem(key) === '1'; } catch (e) {}
+      if (done) return;
+      sb.rpc('relink_my_reviews').then(function (r) {
+        try { sessionStorage.setItem(key, '1'); } catch (e) {}
+        if (r && r.data > 0 && EM.toast) EM.toast('前のアカウントの評価（' + r.data + '件）をつなぎました');
+      });
+    });
+  };
 
   global.EM = EM;
 })(window);

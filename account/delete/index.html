@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; base-uri 'self'; object-src 'none'; form-action 'self'; script-src 'self' https://www.googletagmanager.com https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.116.0/; style-src 'self' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src 'self' data: https://img.youtube.com https://i.ytimg.com https://i.vimeocdn.com https://*.supabase.co https://*.google-analytics.com https://*.googletagmanager.com; connect-src 'self' https://*.supabase.co wss://*.supabase.co https://vimeo.com https://*.google-analytics.com https://*.analytics.google.com https://*.googletagmanager.com https://www.google.com; frame-src https://www.youtube.com https://player.vimeo.com; upgrade-insecure-requests">
+<meta name="referrer" content="strict-origin-when-cross-origin">
+<title>退会の手続き — Eizo Maps</title>
+<meta name="description" content="Eizo Maps の退会の手続き。30日以内なら元に戻せます。">
+<meta name="robots" content="noindex, nofollow">
+<meta property="og:site_name" content="Eizo Maps">
+<meta property="og:title" content="退会の手続き — Eizo Maps">
+<meta property="og:description" content="Eizo Maps の退会の手続き。30日以内なら元に戻せます。">
+<meta property="og:type" content="website">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bebas+Neue&amp;family=DM+Mono:wght@400;500&amp;family=Noto+Sans+JP:wght@300;400;500;700&amp;display=swap">
+<link rel="stylesheet" href="/assets/css/style.css">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.116.0/dist/umd/supabase.js" integrity="sha384-iLddHTLokph6Omwoyid4XKxHaWa6w41BnoEj0q5oOrzmYPpHIKt1wyjReA7s//pP" crossorigin="anonymous" referrerpolicy="no-referrer" defer></script>
+<script src="/assets/js/config.js" defer></script>
+<script src="/assets/js/app.js" defer></script>
+<script src="/assets/js/page-account-delete.js" defer></script>
+</head>
+<body>
+<main class="section">
+  <div class="wrap doc">
+    <p class="eyebrow">Account</p>
+    <h1>退会の手続き</h1>
+    <div class="notice" id="pageMsg" hidden></div>
+
+    <!-- 退会の手続き中の人 -->
+    <section id="restoreBox" hidden>
+      <div class="card stack">
+        <h2>退会の手続き中です</h2>
+        <p><strong id="purgeDate"></strong> までは、元に戻せます。その日を過ぎると、プロフィールや作品などは消え、元に戻せなくなります。</p>
+        <p class="small muted">元に戻すと、プロフィールや作品は退会する前と同じ状態で表に出ます。</p>
+        <div class="form-actions">
+          <button class="btn btn--primary" type="button" id="restoreBtn">元に戻す</button>
+          <button class="btn" type="button" id="signOutBtn">このままログアウトする</button>
+        </div>
+      </div>
+    </section>
+
+    <!-- 退会する前 -->
+    <section id="deleteBox" hidden>
+      <p class="lead">退会すると、30日の猶予のあと、あなたのプロフィールや作品などが消えます。<strong>30日以内なら、ログインすれば元に戻せます。</strong></p>
+
+      <div class="grid grid--2 acct-grid">
+        <div class="card">
+          <h3>30日後に消えるもの</h3>
+          <ul class="small">
+            <li>プロフィール（活動名・自己紹介・写真）</li>
+            <li>作品・鍵付きページ・営業用の共有リンク</li>
+            <li>スケジュール・定型文のひな形</li>
+            <li>Google カレンダーとのつながり（退会したときにすぐ外します）</li>
+            <li>あなたが送ったメッセージの本文（相手の画面では「退会したユーザー」と出ます）</li>
+          </ul>
+        </div>
+        <div class="card">
+          <h3>残るもの</h3>
+          <ul class="small">
+            <li><strong>あなたが書いた評価</strong>（「退会したユーザー」として）</li>
+            <li><strong>あなたについて書かれた評価</strong>（表からは隠れます。会社について書かれた評価は表に出たままです）</li>
+            <li>案件の記録（日付・金額など）</li>
+          </ul>
+          <p class="small muted">同じメールアドレスや同じ Google アカウントでまた登録すると、前の評価が自動でつながります。</p>
+        </div>
+      </div>
+
+      <div class="card stack acct-step">
+        <h3>1. 自分のデータを保存する（任意）</h3>
+        <p class="small">プロフィール・作品の一覧・スケジュール・ひな形を、1つのファイルにして保存できます。</p>
+        <div><button class="btn" type="button" id="exportBtn">データを保存する</button></div>
+      </div>
+
+      <form class="card stack acct-step" id="deleteForm" novalidate>
+        <h3>2. 退会する</h3>
+        <label class="field">
+          <span class="label">確認のため「退会する」と入れてください</span>
+          <input type="text" id="confirmText" autocomplete="off" placeholder="退会する">
+        </label>
+        <div class="form-actions">
+          <button class="btn btn--danger" type="submit" id="deleteBtn" disabled>退会する</button>
+        </div>
+        <p class="small muted">わからないことがあれば、<a href="/contact/">お問い合わせ</a>からご連絡ください。</p>
+      </form>
+    </section>
+
+    <!-- 退会したあと -->
+    <section id="doneBox" hidden>
+      <div class="card stack">
+        <h2>退会を受け付けました</h2>
+        <p><strong id="doneDate"></strong> までにログインすれば、元に戻せます。</p>
+        <p class="small muted">ご利用ありがとうございました。</p>
+        <div><a class="btn" href="/">トップへ</a></div>
+      </div>
+    </section>
+  </div>
+</main>
+</body>
+</html>
