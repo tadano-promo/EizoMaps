@@ -2029,3 +2029,27 @@ body.nav-open .savebar { display: none; }
   transform: rotate(-24deg); opacity: .13; user-select: none; }
 .viewer-mark span { font-size: 15px; font-weight: 700; color: #fff; white-space: nowrap; text-shadow: 0 0 2px #000; }
 @media print { .viewer-mark { opacity: .25; } }
+/* 実行表・予算の目安（2026-11-15） */
+.est-pick select { min-width: 0; max-width: 260px; }
+.est-talk textarea { width: 100%; }
+.est-ask { margin: 16px 0; }
+.est-ask__row { border: 1px solid var(--accent); border-radius: var(--radius-s); padding: 10px 12px; display: grid; gap: 6px; }
+.est-ask__row p { margin: 0; }
+.est-scroll { overflow-x: auto; -webkit-overflow-scrolling: touch; max-width: 100%; border: 1px solid var(--border); border-radius: var(--radius-s); }
+.est-table { border-collapse: collapse; min-width: 980px; width: 100%; font-size: 13px; }
+.est-table th, .est-table td { padding: 6px; border-bottom: 1px solid var(--border); text-align: left; white-space: nowrap; }
+.est-table td.num { text-align: right; }
+.est-cat th { background: var(--surface); color: var(--accent); font-weight: 700; }
+.est-in { background: var(--bg, #0a0a0f); border: 1px solid var(--border); border-radius: 6px; padding: 6px 8px; color: var(--text); font: inherit; }
+.est-in--n { width: 100px; } .est-in--s { width: 64px; } .est-in--name { width: 170px; }
+.est-sum { margin: 18px 0; }
+.est-dl { display: grid; grid-template-columns: auto auto; gap: 6px 16px; justify-content: start; }
+.est-dl dd { margin: 0; text-align: right; }
+.est-big { font-size: 20px; font-weight: 700; color: var(--accent); }
+.est-bycat ul { list-style: none; padding: 0; margin: 8px 0 0; display: grid; gap: 4px; }
+.est-bycat li, .q-parts li { display: flex; justify-content: space-between; gap: 12px; }
+.q-opts { display: flex; flex-wrap: wrap; gap: 8px 18px; border: 0; padding: 0; }
+.q-opts label { display: inline-flex; gap: 6px; align-items: center; min-height: 40px; }
+.q-result { margin-top: 18px; }
+.q-range { font-size: 30px; font-weight: 700; color: var(--client); margin: 0 0 8px; }
+.q-parts { list-style: none; padding: 0; margin: 8px 0; display: grid; gap: 4px; }

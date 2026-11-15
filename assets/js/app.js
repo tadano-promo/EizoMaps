@@ -560,6 +560,7 @@
     ['/schedule/', 'スケジュール'],
     ['/schedule/gantt.html', 'ガントチャート'],
     ['/templates/', '定型文のひな形'],
+    ['/estimate/', '実行表（見積もり）'],
     ['/projects/', '案件管理'],
     ['/jobs/mine.html', '送った提案'],
     ['/report/', '問題報告']
@@ -571,6 +572,7 @@
     ['/projects/', '依頼した案件'],
     ['/jobs/new.html', '募集を出す'],
     ['/jobs/mine.html', '出した募集'],
+    ['/estimate/quick/', '予算の目安'],
     ['/report/', '問題報告']
   ];
   var NAV_FOOT = [
