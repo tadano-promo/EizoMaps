@@ -329,9 +329,9 @@
         if (!name) { EM.notice(msg, '表示名を入力してください。', 'error'); return false; }
         var site = EM.$('#websiteUrl').value.trim();
         if (site && !EM.safeUrl(site)) { EM.notice(msg, 'ウェブサイトは https:// から始まる URL を入力してください。', 'error'); return false; }
-        // 検索に出すか（2026-11-15 翠くん）：これから作る人は必ず選ぶ。前から登録している人は、選ぶまで今までどおり
+        // 検索に出すか（2026-11-15 翠くん）：必ず選ぶ。前から登録していた人は「出す」にしてある（もともと出ていたため）
         var svEl = document.querySelector('input[name="searchVisible"]:checked');
-        if (!svEl && !(creator && creator.id)) {
+        if (!svEl) {
           EM.notice(msg, '「Google などの検索に、あなたのページを出しますか？」を選んでください。', 'error');
           EM.$('#searchVisibleBox').scrollIntoView({ block: 'center' });
           return false;

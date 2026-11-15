@@ -2,7 +2,7 @@
 --  053: クリエイターのページを Google などの検索に出すかを、本人が選べるようにする（2026-11-15 翠くん）
 --  ・search_visible：true＝出す／false＝出さない／null＝まだ選んでいない
 --  ・これから登録する人は、プロフィールを作るときに必ずどちらかを選ぶ（画面で必須）
---  ・すでに登録している人は null のまま（今までどおり検索に出る）。あとでメールで選んでもらう
+--  ・すでに登録している人は「出す」にした（もともと検索に出ていたため・翠くん「出る設定だったことにしといて」）
 --  ・false の人のページ（/@ハンドル）は「検索に出さない」印を付け、サイトの地図にも載せない
 -- =====================================================================
 alter table public.creators add column if not exists search_visible boolean;
@@ -26,3 +26,6 @@ end $$;
 drop trigger if exists creator_search_visible_stamp on public.creators;
 create trigger creator_search_visible_stamp before insert or update on public.creators
   for each row execute function public.creator_search_visible_stamp();
+
+-- 前から登録していた人：もともと検索に出ていたので「出す」にする（2026-11-15 実行済み）
+update public.creators set search_visible = true where search_visible is null;
