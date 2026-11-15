@@ -36,13 +36,12 @@
         EM.avatar(r.data.avatar_url, r.data.creator_name),
         el('div', null, [
           el('p', { class: 'eyebrow', text: 'Protected' }),
-          el('h1', { text: r.data.title || '限定ページ' }),
+          el('h1', { text: '限定ページ' }),   // タイトルは開いたあとにだけ出す（社名や案件名が漏れないように）
           el('p', { class: 'small muted', text: (r.data.creator_name || '') + ' さんの限定ページです' })
         ])
       ]));
       head.appendChild(el('p', { class: 'lock__notice small',
         text: '掲載作品には守秘義務があります。パスワードや内容の外部への共有・転載はご遠慮ください。' }));
-      document.title = (r.data.title || 'ストックページ') + ' — Eizo Maps';
     }).catch(function () { /* メタ情報は出せなくても入力は続けられる */ });
 
     EM.$('#lockForm').addEventListener('submit', function (e) {
