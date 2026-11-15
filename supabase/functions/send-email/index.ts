@@ -206,6 +206,20 @@ function fail(status: number, message: string): Response {
 
 if (import.meta.main) {
   Deno.serve(async (req) => {
+    // つながるかだけを確かめる入口（ログインもパスワードも使わない。メールのサーバーのあいさつの1行目だけ返す）
+    if (req.method === 'GET' && new URL(req.url).searchParams.get('diag') === 'connect') {
+      const t0 = Date.now();
+      try {
+        const conn = await Deno.connectTls({ hostname: SMTP_HOST, port: SMTP_PORT });
+        const buf = new Uint8Array(256);
+        const n = await Promise.race([conn.read(buf), new Promise<null>((r) => setTimeout(() => r(null), 8000))]);
+        conn.close();
+        const banner = n ? new TextDecoder().decode(buf.subarray(0, n)).split('\r\n')[0].slice(0, 80) : '(no banner)';
+        return new Response(JSON.stringify({ ok: true, port: SMTP_PORT, ms: Date.now() - t0, banner }), { headers: { 'Content-Type': 'application/json' } });
+      } catch (e) {
+        return new Response(JSON.stringify({ ok: false, port: SMTP_PORT, ms: Date.now() - t0, error: String((e as Error)?.name) + ': ' + String((e as Error)?.message).slice(0, 120) }), { status: 502, headers: { 'Content-Type': 'application/json' } });
+      }
+    }
     if (req.method !== 'POST') return fail(405, 'Method not allowed');
     if (!HOOK_SECRET || !SMTP_HOST || !SMTP_USER || !SMTP_PASS) {
       console.error('send-email: 設定が足りません（SEND_EMAIL_HOOK_SECRET / SMTP_HOST / SMTP_USER / SMTP_PASS）');
@@ -233,7 +247,10 @@ if (import.meta.main) {
         await tr.sendMail({ from: MAIL_FROM, to: m.to, subject: m.subject, text: m.text, html: m.html });
       }
     } catch (e) {
-      console.error('send-email: 送信に失敗', type, (e as Error)?.name ?? 'error');
+      // 原因を探すための情報だけを出す（アドレス・本文・パスワードは出さない）
+      const er = e as { name?: string; code?: string; responseCode?: number; command?: string; message?: string };
+      const msg = String(er?.message ?? '').replace(/[\w.+-]+@[\w.-]+/g, '(address)').slice(0, 200);
+      console.error('send-email: 送信に失敗', type, JSON.stringify({ name: er?.name, code: er?.code, responseCode: er?.responseCode, command: er?.command, message: msg }));
       return fail(500, 'メールを送れませんでした。しばらくしてからもう一度お試しください');
     }
     console.log('send-email: 送信', type, mails.length + '通');

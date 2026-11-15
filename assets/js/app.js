@@ -176,9 +176,21 @@
       ['permission denied', '権限がありません。'],
       ['violates row-level security', 'この操作は許可されていません。'],
       ['duplicate key', 'すでに登録済みです。'],
-      ['Failed to fetch', '通信に失敗しました。ネットワーク環境をご確認ください。']
+      ['Failed to fetch', '通信に失敗しました。ネットワーク環境をご確認ください。'],
+      // メールの送信まわり（Supabase の英語のメッセージを日本語にする）
+      ['returned from hook', 'メールを送れませんでした。時間をおいてもう一度お試しください。'],
+      ['Error sending', 'メールを送れませんでした。時間をおいてもう一度お試しください。'],
+      ['rate limit', '短い時間に何度も送られています。しばらく待ってからもう一度お試しください。'],
+      ['you can only request this after', '短い時間に何度も送られています。1分ほど待ってからもう一度お試しください。'],
+      ['Unable to validate email address', 'メールアドレスの形が正しくありません。'],
+      ['invalid format', 'メールアドレスの形が正しくありません。'],
+      ['should be different from the old', '前と同じパスワードは使えません。'],
+      ['Signup requires a valid password', 'パスワードを入力してください。'],
+      ['Signups not allowed', 'いまは新しい登録を受け付けていません。']
     ];
     for (var i = 0; i < map.length; i++) if (m.indexOf(map[i][0]) !== -1) return map[i][1];
+    // 日本語を含まない（英語だけの）メッセージは、そのまま出さない
+    if (!/[\u3040-\u30ff\u4e00-\u9fff]/.test(m)) return 'うまくいきませんでした。時間をおいてもう一度お試しください。';
     return m;
   };
 
