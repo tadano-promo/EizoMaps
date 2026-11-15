@@ -841,6 +841,32 @@
     header.parentNode.insertBefore(band, header.nextSibling);
   }
 
+  /* ---------- メールのお知らせのオン・オフ（両方のマイページの「アカウント」・2026-11-15） ----------
+     変えたらすぐ保存（保存ボタンは押さなくてよい） */
+  EM.mountNotifyToggle = function (box) {
+    var sb = EM.sb();
+    if (!box || !sb) return;
+    EM.getUser().then(function (u) {
+      if (!u) return;
+      sb.from('users').select('notify_email').eq('id', u.id).maybeSingle().then(function (r) {
+        var on = !(r && r.data && r.data.notify_email === false);
+        var cb = el('input', { type: 'checkbox', id: 'notifyEmail' });
+        cb.checked = on;
+        cb.addEventListener('change', function () {
+          sb.from('users').update({ notify_email: cb.checked }).eq('id', u.id).then(function (x) {
+            if (x.error) { cb.checked = !cb.checked; EM.toast(EM.errorText(x.error)); return; }
+            EM.toast(cb.checked ? 'メールのお知らせをオンにしました' : 'メールのお知らせを止めました');
+          });
+        });
+        box.appendChild(el('div', { class: 'field' }, [
+          el('span', { class: 'label', text: 'メールのお知らせ' }),
+          el('label', { class: 'notify-toggle' }, [cb, el('span', { text: '依頼・返事・提案・メッセージが届いたら、メールで知らせる' })]),
+          el('span', { class: 'small muted', text: '例：「〇〇さんから依頼が届きました」「募集に提案が届きました」。メッセージは同じ相手から30分に1通までです。切り替えるとすぐ保存されます。' })
+        ]));
+      });
+    });
+  };
+
   EM.mountChrome = function () {
     var header = el('header', { class: 'site-header' }, [
       el('div', { class: 'wrap' }, [

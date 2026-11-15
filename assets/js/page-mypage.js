@@ -515,5 +515,6 @@
     }
 
     EM.$('#logoutBtn').addEventListener('click', function () { EM.signOut(); });
+    EM.mountNotifyToggle(EM.$('#notifyBox'));
   });
 })(window.EM);

@@ -2009,3 +2009,4 @@ body[data-mode="client"] .doc > .notice:not(.notice--warn) { border-left-color: 
 .job-prop__who { align-items: center; gap: 12px; }
 .jobs-check span:last-child { display: inline-flex; gap: 6px; align-items: center; min-height: 44px; }
 .chip--sm { font-size: 12px; padding: 3px 10px; }
+.notify-toggle { display: flex; gap: 10px; align-items: center; min-height: 44px; }
