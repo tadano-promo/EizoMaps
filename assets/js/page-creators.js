@@ -59,6 +59,9 @@
         var g = r.media && EM.mediaGroup ? EM.mediaGroup(r.media) : null;
         if (g) (medsOf[r.creator_id] = medsOf[r.creator_id] || {})[g] = true;
       });
+      // ?genre=<職種のid> で職種を選んだ状態から始める（クライアントのトップの「探す」から来たとき）
+      var gp = EM.param('genre');
+      if (gp) genres.forEach(function (g) { if (String(g.id) === gp) state.genres = [g.id]; });
       buildGenreChips();
       buildExtraChips();
       render();

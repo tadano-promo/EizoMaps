@@ -625,6 +625,8 @@
     eyeoff:   [['path', 'M3 3l18 18M10.6 6.1A9.8 9.8 0 0 1 12 6c6 0 10 6 10 6a17 17 0 0 1-3.1 3.6M6.3 7.3A17 17 0 0 0 2 12s4 7 10 7a9.6 9.6 0 0 0 4.1-.9']],
     home:     [['path', 'M4 11l8-7 8 7v9H4z'], ['path', 'M10 20v-5h4v5']],
     image:    [['rect', 3, 4, 18, 16, 2], ['path', 'M3 16l5-5 4 4 3-3 6 6']],
+    chat:     [['path', 'M4 5h16v11H9l-5 4z']],
+    star:     [['path', 'M12 3l2.8 5.7 6.2.9-4.5 4.4 1 6.2L12 17.3 6.5 20.2l1-6.2L3 9.6l6.2-.9z']],
     pin:      [['path', 'M12 21s-6-5.6-6-11a6 6 0 0 1 12 0c0 5.4-6 11-6 11z'], ['circle', 12, 10, 2.2]]
   };
   var SVGNS = 'http://www.w3.org/2000/svg';
@@ -786,6 +788,12 @@
   function storedMode() {
     try { return localStorage.getItem(MODE_KEY) === 'client' ? 'client' : 'creator'; } catch (e) { return 'creator'; }
   }
+  // 登録の種類から、いまの使い方（creator／client）を返す（ページを移らずに知りたいとき用）
+  EM.viewModeFor = function (type) {
+    if (type === 'client') return 'client';
+    if (type === 'both') return isClientMypage() ? 'client' : isCreatorMypage() ? 'creator' : storedMode();
+    return 'creator';
+  };
   function isClientMypage() { return location.pathname.indexOf('/mypage/client') === 0; }
   function isCreatorMypage() { return /^\/mypage\/(index\.html)?$/.test(location.pathname); }
   // 今のページに合うモードを決める。種類と合わないマイページを開いたときは正しい方へ移す
