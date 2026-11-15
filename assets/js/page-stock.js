@@ -170,6 +170,65 @@
       return yes;
     }
 
+    /* ---------------- パスワードを変えたあと、渡した人に知らせる ----------------
+       知らせるかどうか・新しいパスワードも渡すかは、毎回クリエイターが選ぶ（2026-11-15 翠くん）。
+       相手ごとにチェックを外せる。最初にチェックが入っているのは、変える前まで開けていた人だけ。 */
+    function showPwNotice(openBefore) {
+      var box = EM.$('#pwNoticeBox');
+      var pageId = page.id, title = page.title;
+      var key = function (x) { return x.recipient_name + '|' + x.given_at; };
+      var before = {};
+      openBefore.forEach(function (x) { before[key(x)] = true; });
+      sb.rpc('stock_pw_notice_targets', { p_page_id: pageId }).then(function (r) {
+        if (r.error) throw r.error;
+        var list = r.data || [];
+        if (!list.length) return;
+        EM.clear(box);
+        box.hidden = false;
+        box.appendChild(el('p', { class: 'pw-notice__title', text: 'パスワードを変えました。渡した人に知らせますか？' }));
+        box.appendChild(el('p', { class: 'small muted', text: '知らせはメッセージで届きます。新しいパスワードを渡すときも、パスワードは本文には入らず、受け取った人とあなただけが見られます。' }));
+        var ul = el('ul', { class: 'pw-notice__list' });
+        list.forEach(function (x) {
+          var cb = el('input', { type: 'checkbox', value: x.thread_id });
+          cb.checked = !!before[key(x)];
+          ul.appendChild(el('li', null, el('label', { class: 'checkbox' }, [
+            cb, el('span', { text: x.recipient_name + 'さん（' + EM.date(x.given_at) + ' に渡した）' })
+          ])));
+        });
+        box.appendChild(ul);
+        var note = el('p', { class: 'small', hidden: true });
+        var acts = el('p', { class: 'page-links' });
+        function picked() {
+          return Array.prototype.map.call(ul.querySelectorAll('input:checked'), function (i) { return i.value; });
+        }
+        function send(give) {
+          var ids = picked();
+          if (!ids.length) { EM.notice(note, '知らせる人にチェックを入れてください。', 'error'); note.hidden = false; return; }
+          Array.prototype.forEach.call(acts.querySelectorAll('button'), function (b) { b.disabled = true; });
+          sb.rpc('notify_stock_pw_change', { p_page_id: pageId, p_thread_ids: ids, p_give: give }).then(function (q) {
+            if (q.error) throw q.error;
+            closeBox(give ? ids.length + '人に新しいパスワードを渡しました（メッセージ）' : ids.length + '人にパスワードを変えたことを知らせました（メッセージ）');
+            loadShares();
+          }).catch(function (e) {
+            Array.prototype.forEach.call(acts.querySelectorAll('button'), function (b) { b.disabled = false; });
+            EM.notice(note, (e && e.message) || '送れませんでした。もう一度お試しください。', 'error');
+            note.hidden = false;
+          });
+        }
+        function closeBox(t) {
+          EM.clear(box);
+          box.hidden = true;
+          if (t) EM.toast(t);
+        }
+        acts.appendChild(el('button', { class: 'btn btn--sm btn--primary', type: 'button', text: '新しいパスワードも渡す', onclick: function () { send(true); } }));
+        acts.appendChild(el('button', { class: 'btn btn--sm', type: 'button', text: '変えたことだけ知らせる', onclick: function () { send(false); } }));
+        acts.appendChild(el('button', { class: 'btn btn--sm btn--ghost', type: 'button', text: '知らせない', onclick: function () { closeBox(''); } }));
+        box.appendChild(acts);
+        box.appendChild(note);
+        box.scrollIntoView({ block: 'center', behavior: 'smooth' });
+      }).catch(function () { /* 知らせの一覧が取れなくても、保存は終わっている */ });
+    }
+
     /* ---------------- パスワードを見る（ログイン中の本人だけ・30秒で隠す） ---------------- */
     function loadViewable() {
       return sb.rpc('my_stock_pw_viewable').then(function (r) {
@@ -456,6 +515,8 @@
         patches.push({ it: it, patch: patch });
       }
 
+      // パスワードを変える前に、今開ける人を控えておく（変えたあとに「知らせますか？」で使う）
+      var openBefore = (pw && page.password_updated_at) ? validShares().slice() : [];
       if (pw && page.password_updated_at && validShares().length) {
         var vs = validShares();
         if (!confirm('このページを渡した人が' + vs.length + '人います（' + shareNames(vs) + '）。\nパスワードを変えると、その人たちは開けなくなります。\n\n変えますか？')) return false;
@@ -495,7 +556,11 @@
         fillPageForm();
         pages = pages.map(function (x) { return x.id === page.id ? page : x; });
         renderTabs();
-        if (pwChanged) { pwViewable = true; loadShares(); }
+        if (pwChanged) {
+          pwViewable = true;
+          loadShares();
+          if (openBefore.length) showPwNotice(openBefore);
+        }
         EM.notice(msg, '');
         return page.updated_at;
       }).catch(function (err) {
