@@ -902,6 +902,7 @@
     btn.addEventListener('click', function () {
       var open = panel.getAttribute('data-open') === 'true';
       panel.setAttribute('data-open', open ? 'false' : 'true');
+      document.body.classList.toggle('nav-open', !open);   // 開いているあいだは画面下の保存バーを隠す（最後の項目が隠れないように）
       btn.setAttribute('aria-expanded', open ? 'false' : 'true');
       btn.textContent = open ? '☰' : '✕';
     });
