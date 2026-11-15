@@ -1930,3 +1930,7 @@ body.has-sheet { overflow: hidden; }
 .cmp-y { color: var(--accent); font-weight: 700; }
 .cmp-n { color: var(--muted); }
 .cmp-soon { display: inline-block; font-size: 10px; padding: 1px 6px; border-radius: 999px; border: 1px solid var(--border); color: var(--muted); margin-left: 4px; vertical-align: middle; }
+.contact-sep { border: 0; border-top: 1px solid var(--border); margin: 40px 0 16px; }
+/* 退会の手続き（/account/delete/・2026-11-15） */
+.acct-grid { margin: 24px 0; }
+.acct-step { margin-top: 16px; }
