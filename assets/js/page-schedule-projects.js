@@ -93,11 +93,14 @@
       EM.clear(box);
       EM.$('#projEmpty').hidden = !!sprojects.length;
       return Promise.all(sprojects.map(function (p) {
-        return sb.rpc('my_schedule_shares', { p_project_id: p.id }).then(function (r) {
-          return { p: p, shares: (!r.error && r.data) || [] };
+        return Promise.all([
+          sb.rpc('my_schedule_shares', { p_project_id: p.id }),
+          sb.rpc('my_schedule_feedback', { p_project_id: p.id })
+        ]).then(function (r) {
+          return { p: p, shares: (!r[0].error && r[0].data) || [], fb: (!r[1].error && r[1].data) || [] };
         });
       })).then(function (list) {
-        list.forEach(function (x) { box.appendChild(projectCard(x.p, x.shares)); });
+        list.forEach(function (x) { box.appendChild(projectCard(x.p, x.shares, x.fb)); });
       });
     }
 
@@ -115,7 +118,35 @@
       return addDays(t, 30);
     }
 
-    function projectCard(p, shares) {
+    // 相手から届いた「OK」「直してほしい」（2026-11-16 翠くん）
+    function feedbackBox(p, fb) {
+      if (!fb.length) return null;
+      var unread = fb.filter(function (f) { return !f.read_at; }).length;
+      var wrap = el('div', { class: 'sfb' }, [
+        el('p', { class: 'sfb__title' }, [el('strong', { text: '相手からの確認' }), unread ? el('span', { class: 'tag tag--client', text: '新着 ' + unread }) : null])
+      ]);
+      // リンクごとに、いちばん新しいものを上に（古いものは「前の確認」としてたたむ）
+      var seen = {};
+      var latest = [], older = [];
+      fb.forEach(function (f) { if (seen[f.share_id]) older.push(f); else { seen[f.share_id] = 1; latest.push(f); } });
+      function row(f) {
+        var stale = f.current_updated && f.seen_updated && new Date(f.current_updated) > new Date(f.seen_updated);
+        return el('div', { class: 'sfb__row ' + (f.kind === 'ok' ? 'is-ok' : 'is-change') }, [
+          el('p', { class: 'small' }, [
+            el('strong', { text: f.kind === 'ok' ? '✓ OK' : '✎ 直してほしい' }),
+            ' ' + f.name + ' さん（' + f.label + 'のリンク）', el('span', { class: 'muted', text: ' ' + EM.datetime(f.created_at) })
+          ]),
+          f.comment ? el('p', { class: 'small sfb__comment', text: f.comment }) : null,
+          stale ? el('p', { class: 'small sfb__stale', text: 'この確認のあとに予定を直しています。直した内容を見てもらうには、もう一度リンクを開いてもらってください。' }) : null
+        ]);
+      }
+      latest.forEach(function (f) { wrap.appendChild(row(f)); });
+      if (older.length) wrap.appendChild(el('details', null, [el('summary', { class: 'small', text: '前の確認（' + older.length + '件）' })].concat(older.map(row))));
+      if (unread) sb.rpc('read_schedule_feedback', { p_project_id: p.id }).then(function () {}, function () {});
+      return wrap;
+    }
+
+    function projectCard(p, shares, fb) {
       var card = el('section', { class: 'card stack' });
       var formHost = el('div');
 
@@ -131,6 +162,8 @@
       } else {
         card.appendChild(el('p', { class: 'small muted', text: 'まだ共有リンクはありません。' }));
       }
+      var fbBox = feedbackBox(p, fb || []);
+      if (fbBox) card.appendChild(fbBox);
 
       card.appendChild(el('div', { class: 'form-actions' }, [
         el('button', { type: 'button', class: 'btn btn--primary btn--sm', text: '＋ 共有リンクを作る',

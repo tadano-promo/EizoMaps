@@ -15,6 +15,7 @@
     };
     var WD = ['日', '月', '火', '水', '木', '金', '土'];
     var token = String(EM.param('t') || '');
+    var openedPw = null, openedAt = null;   // 返事を送るときにだけ使う（メモリ上だけ。保存しない）
 
     function pad(n) { return String(n).padStart(2, '0'); }
     function parseYmd(s) { var p = String(s).split('-'); return new Date(+p[0], +p[1] - 1, +p[2]); }
@@ -53,12 +54,43 @@
           return;
         }
         EM.notice(msg, '');
+        openedPw = pw; openedAt = r.data.updated_at || null;
         EM.$('#password').value = '';
         EM.$('#lockBox').hidden = true;
         render(r.data);
+        setupFeedback();
       }).catch(function (e) { EM.notice(msg, EM.errorText(e), 'error'); })
         .then(function () { btn.removeAttribute('aria-busy'); });
     });
+
+    // ---- 「OK」「直してほしい」を返す ----
+    function setupFeedback() {
+      var fm = EM.$('#fbMsg'), kind = null;
+      try { EM.$('#fbName').value = localStorage.getItem('em_fb_name') || ''; } catch (e) { /* 使えなくても動く */ }
+      function send(k) {
+        var name = EM.$('#fbName').value.trim(), cm = EM.$('#fbComment').value.trim();
+        if (!name) { EM.notice(fm, 'お名前を入れてください。', 'error'); EM.$('#fbName').focus(); return; }
+        if (k === 'change' && !cm) { EM.notice(fm, '直してほしいところを、ひとこと書いてください。', 'error'); EM.$('#fbComment').focus(); return; }
+        var btns = [EM.$('#fbOk'), EM.$('#fbSend')]; btns.forEach(function (b) { b.disabled = true; });
+        sb.rpc('send_schedule_feedback', { p_token: token, p_password: openedPw, p_kind: k, p_name: name, p_comment: cm || null, p_seen: openedAt })
+          .then(function (r) {
+            if (r.error) throw r.error;
+            if (!r.data) throw new Error('送れませんでした。リンクの期限が切れたか、止められた可能性があります。');
+            try { localStorage.setItem('em_fb_name', name); } catch (e) { /* 使えなくても動く */ }
+            EM.$('#fbForm').hidden = true;
+            EM.notice(fm, k === 'ok' ? '「OK」を送りました。ありがとうございます。' : '直してほしいところを送りました。作った人にお知らせが届きます。', 'ok');
+            EM.track('schedule_feedback', { feedback_kind: k });
+          })
+          .catch(function (e) { EM.notice(fm, EM.errorText(e), 'error'); btns.forEach(function (b) { b.disabled = false; }); });
+      }
+      EM.$('#fbOk').addEventListener('click', function () { send('ok'); });
+      EM.$('#fbChange').addEventListener('click', function () {
+        kind = 'change';
+        EM.$('#fbCommentField').hidden = false; EM.$('#fbSendRow').hidden = false;
+        EM.$('#fbComment').focus();
+      });
+      EM.$('#fbForm').addEventListener('submit', function (e) { e.preventDefault(); send(kind || 'change'); });
+    }
 
     function render(d) {
       EM.$('#contentBox').hidden = false;
