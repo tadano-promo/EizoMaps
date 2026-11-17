@@ -47,8 +47,32 @@
       <p class="eyebrow">Schedule</p>
       <h1 id="shProject"></h1>
       <p class="small muted" id="shMeta"></p>
-      <p class="small muted">このページは見るだけです。外部への共有・転載はご遠慮ください。</p>
+      <p class="small muted">外部への共有・転載はご遠慮ください。いちばん下から、作った人に「OK」や「直してほしいところ」を返せます。</p>
       <div class="stack" id="shDays"></div>
+
+      <!-- 見た人が「OK」「直してほしい」を返す（2026-11-16 翠くん。登録はいらない） -->
+      <section class="card stack sfb-form" id="fbBox">
+        <h2>内容を確認しましたか？</h2>
+        <p class="small muted">作った人に、ひとことで返事ができます。登録はいりません。</p>
+        <form id="fbForm" class="stack" novalidate>
+          <label class="field">
+            <span class="label">お名前（必須・40文字まで）</span>
+            <input type="text" id="fbName" maxlength="40" autocomplete="name" placeholder="例：山田（〇〇株式会社）">
+          </label>
+          <div class="form-actions">
+            <button class="btn btn--primary" type="button" id="fbOk">✓ この内容でOKです</button>
+            <button class="btn" type="button" id="fbChange">✎ 直してほしいところがある</button>
+          </div>
+          <label class="field" id="fbCommentField" hidden>
+            <span class="label">直してほしいところ（1000文字まで）</span>
+            <textarea id="fbComment" maxlength="1000" rows="4" placeholder="例：2日目の集合を 7:00 から 7:30 にできますか？"></textarea>
+          </label>
+          <div class="form-actions" id="fbSendRow" hidden>
+            <button class="btn btn--primary" type="submit" id="fbSend">送る</button>
+          </div>
+        </form>
+        <div class="notice" id="fbMsg" hidden></div>
+      </section>
     </section>
   </div>
 </main>
