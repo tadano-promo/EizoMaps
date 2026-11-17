@@ -131,6 +131,7 @@
       ]));
 
       renderStatus(p, role, myReview);
+      if (role) mountAttach(p);
     }
 
     function renderStatus(p, role, myReview) {
@@ -394,7 +395,7 @@
     /* ---------------- メッセージ ---------------- */
     function loadMessages() {
       return sb.from('project_messages')
-        .select('id,sender_id,body,created_at')
+        .select('id,sender_id,body,files,created_at')
         .eq('project_id', projectId)
         .order('created_at')
         .then(function (r) {
@@ -409,31 +410,72 @@
           }
           var rows = r.data || [];
           if (!rows.length) { box.appendChild(el('div', { class: 'empty', text: 'まだやり取りはありません。' })); return; }
+          // 付いた画像・PDFは、1時間だけ開けるリンクをまとめてもらう
+          var all = []; rows.forEach(function (m) { (m.files || []).forEach(function (f) { all.push(f); }); });
+          var urlsP = all.length ? sb.storage.from('project-files').createSignedUrls(all, 3600).then(function (x) {
+            var map = {}; (x.data || []).forEach(function (d) { if (d.signedUrl) map[d.path] = d.signedUrl; }); return map;
+          }) : Promise.resolve({});
           rows.forEach(function (m) {
             var mine = m.sender_id === user.id;
+            var filesBox = (m.files || []).length ? el('div', { class: 'msg__files' }) : null;
+            if (filesBox) urlsP.then(function (map) {
+              var pdfNo = 0, pdfAll = m.files.filter(function (f) { return /\.pdf$/i.test(f); }).length;
+              m.files.forEach(function (f) {
+                var u = map[f]; var isPdf = /\.pdf$/i.test(f);
+                if (!u) { filesBox.appendChild(el('span', { class: 'small muted', text: 'ファイルを開けませんでした' })); return; }
+                if (isPdf) { pdfNo++; filesBox.appendChild(el('a', { class: 'btn btn--sm', href: u, target: '_blank', rel: 'noopener', text: '📄 PDF を開く' + (pdfAll > 1 ? '（' + pdfNo + '）' : '') })); }
+                else filesBox.appendChild(el('a', { class: 'msg__thumb', href: u, target: '_blank', rel: 'noopener', title: '大きく見る' }, el('img', { src: u, alt: '付いた画像', loading: 'lazy' })));
+              });
+            });
             box.appendChild(el('div', { class: 'card msg' + (mine ? ' msg--mine' : '') }, [
               el('p', { class: 'small muted' }, [
                 el('strong', { class: 'msg__name', text: mine ? names.me + '（あなた）' : names.other + ' さん' }),
                 document.createTextNode(' / ' + EM.datetime(m.created_at))
               ]),
-              el('p', { text: m.body })
+              (m.body && m.body !== FILE_ONLY) ? el('p', { class: 'msg__body' }, EM.linkify(m.body)) : null,
+              filesBox
             ]));
           });
         });
     }
 
     var sending = false;
+    var FILE_ONLY = '（画像・ファイルを送りました）';
+    var attach = null;
+    // やり取りに画像・PDFを付ける（2026-11-17 相手の方「作りかけの画像を添付できたら」）。終わった案件には付けられない
+    function mountAttach(p) {
+      var slot = EM.$('#messageAttach'); if (!slot) return;
+      EM.clear(slot); attach = null;
+      if (['closed', 'cancelled', 'declined'].indexOf(p.status) !== -1) {
+        slot.appendChild(el('p', { class: 'small muted', text: 'この案件は終わっているので、新しい画像・PDFは付けられません。付いている画像・PDFは、終わってから90日で自動で消えます。' }));
+        return;
+      }
+      attach = EM.attachBox(user, {
+        bucket: 'project-files', folder: p.id, maxMB: 10, spaceRpc: 'project_space_ok',
+        ok: /^(image\/(jpeg|png|webp|gif|heic|heif)|application\/pdf)$/, accept: 'image/*,application/pdf',
+        kindText: '画像・PDF', formatHelp: '動画は Google ドライブなどに置いて、リンクを文章に貼ってください。',
+        sizeHelp: '画像は小さくしてから、大きいものは Google ドライブなどのリンクで送ってください。',
+        fullText: 'いまは画像・PDFを付けられません（置き場がいっぱいです）。Google ドライブなどのリンクを文章に貼って送ってください。',
+        hint: '見られるのは、この案件の2人だけです。動画は Google ドライブなどのリンクを文章に貼ってください（URLは押せるリンクになります）。案件が終わってから90日たつと、画像・PDFは自動で消えます（文章は残ります）。'
+      });
+      slot.appendChild(attach.node);
+    }
     EM.$('#messageForm').addEventListener('submit', function (e) {
       e.preventDefault();
       var body = EM.$('#messageBody').value.trim();
-      if (!body || sending) return;
+      var nFiles = attach ? attach.count() : 0;
+      if ((!body && !nFiles) || sending) return;
+      if (!body) body = FILE_ONLY;
       // 2回押しで同じものが2つ届かないように、送っている間はボタンを止める（2026-11-17 同じメッセージが0.1秒差で2つ届いた）
       sending = true;
       var btn = EM.$('#messageSend'); btn.disabled = true; btn.textContent = '送信中…';
-      sb.from('project_messages').insert({ project_id: projectId, sender_id: user.id, body: body })
+      (nFiles ? attach.upload() : Promise.resolve([]))
+        .then(function (paths) { return sb.from('project_messages').insert({ project_id: projectId, sender_id: user.id, body: body, files: paths }); })
+        .catch(function (e) { return { error: e }; })
         .then(function (r) {
           sending = false; btn.disabled = false; btn.textContent = '送信';
-          if (r.error) { EM.notice(msg, EM.errorText(r.error), 'error'); return; }
+          if (r.error) { EM.notice(msg, r.error.message && !r.error.code ? r.error.message : EM.errorText(r.error), 'error'); return; }
+          if (attach) attach.clear();
           EM.$('#messageBody').value = '';
           loadMessages();
         });
