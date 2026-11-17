@@ -2119,3 +2119,9 @@ body.nav-open .savebar { display: none; }
 .quote-list li.is-off strong{text-decoration:line-through;color:var(--muted)}
 .quote-list__v{font-size:.85rem;color:var(--muted);padding-top:2px}
 .quote-list__note{display:block;margin-top:4px;white-space:pre-wrap}
+.flow-pause{border-color:#f5a524}
+.flow-pause .flow-next__who:first-child{color:#f5a524}
+.flow-pause__lead{background:rgba(245,165,36,.08);border-radius:var(--radius-s);padding:8px 10px}
+.tag--pause{border-color:#f5a524;color:#f5a524}
+.quote-pauses{border:1px dashed #f5a524;border-radius:var(--radius-s);padding:8px 12px;margin:0 0 10px}
+.quote-pauses p{margin:0 0 4px}.quote-pauses ul{margin:0;padding-left:1.2em}

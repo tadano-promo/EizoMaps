@@ -59,6 +59,7 @@
             ]),
             el('div', { class: 'row' }, [
               EM.statusBadge(p.status),
+        openPause() && ['in_progress', 'delivered'].indexOf(p.status) !== -1 ? el('span', { class: 'tag tag--pause', text: '一時停止中' }) : null,
               el('span', { class: 'small muted', text: EM.date(p.updated_at) })
             ])
           ])
@@ -75,9 +76,11 @@
         sb.from('projects').select(SELECT).eq('id', projectId).maybeSingle(),
         sb.rpc('project_my_role', { p_project_id: projectId }),
         sb.from('reviews').select('id,status,score').eq('project_id', projectId).eq('reviewer_id', user.id),
-        sb.from('project_quotes').select('id,version,amount,due_on,note,status,decline_reason,created_at,decided_at').eq('project_id', projectId).order('version')
+        sb.from('project_quotes').select('id,version,amount,due_on,note,status,decline_reason,created_at,decided_at').eq('project_id', projectId).order('version'),
+        sb.from('project_pauses').select('id,started_at,ended_at,end_reason').eq('project_id', projectId).order('started_at')
       ]).then(function (res) {
         quotes = (res[3] && res[3].data) || [];
+        pauses = (res[4] && res[4].data) || [];
         if (res[0].error) throw res[0].error;
         var p = res[0].data;
         if (!p) { EM.notice(msg, 'この案件は見つかりませんでした。', 'error'); EM.$('#detailView').hidden = true; return; }
@@ -109,6 +112,7 @@
       var head = EM.clear(EM.$('#detailHead'));
       head.appendChild(el('div', { class: 'row' }, [
         EM.statusBadge(p.status),
+        openPause() && ['in_progress', 'delivered'].indexOf(p.status) !== -1 ? el('span', { class: 'tag tag--pause', text: '一時停止中' }) : null,
         el('span', { class: 'small muted', text: (role === 'client' ? '依頼先' : '依頼元') + '：' + who }),
         role === 'client' && p.creators
           ? el('a', { class: 'btn btn--sm btn--ghost', href: '/creators/detail.html?id=' + encodeURIComponent(p.creators.id), text: 'プロフィール' })
@@ -215,12 +219,23 @@
     function nextBox(p, role) {
       var mine, text;
       var c = role === 'client';
-      var pend = pendingQuote();
-      if (pend && ['in_progress', 'delivered'].indexOf(p.status) !== -1) {
-        return el('div', { class: 'flow-next ' + (c ? 'is-mine' : 'is-wait') }, [
-          el('p', { class: 'flow-next__who', text: c ? 'あなたの番です' : '相手の番です（待つだけでOK）' }),
-          el('p', { text: c ? 'クリエイターから見積もり（' + pend.version + '回目）が届いています。下の「金額の記録」で、いまの金額と見比べて「この金額で確定する」か「見送る」を押してください。'
-                           : '見積もり（' + pend.version + '回目）を出しました。クライアントさんが「この金額で確定する」を押すのを待っています。' })
+      var pend = pendingQuote(), pz = openPause();
+      if (pz && ['in_progress', 'delivered'].indexOf(p.status) !== -1) {
+        // 見積もりの話し合い中は、作業は一時停止（2026-11-17 翠くん「クライアントさんが納得するまで一旦停止、クリエイターも安心して」）
+        var since = '（' + EM.mdw(pz.started_at.slice(0, 10)) + 'から・' + pauseDays(pz) + '日目）';
+        var mine2 = c ? !!pend : !pend;
+        var t2 = c
+          ? (pend ? 'クリエイターから見積もり（' + pend.version + '回目）が届いています。下の「金額の記録」で、いまの金額と見比べて「この金額で確定する」か「見送る」を押してください。'
+                  : '見積もりは見送りました。クリエイターさんと、納得できるまでメッセージで話し合ってください。決まると、クリエイターさんが見積もりを出し直すか、いまの金額のまま再開します。')
+          : (pend ? '見積もり（' + pend.version + '回目）を出しました。クライアントさんが「この金額で確定する」を押すのを待っています。'
+                  : '見積もりが見送られました。メッセージでとことん話し合って、決まったら「見積もりを出し直す」か「取り下げて、いまの金額のまま再開」を押してください。');
+        return el('div', { class: 'flow-next flow-pause ' + (mine2 ? 'is-mine' : 'is-wait') }, [
+          el('p', { class: 'flow-next__who', text: '一時停止中：作業はいったん止まっています' + since }),
+          el('p', { class: 'flow-pause__lead', text: c
+            ? '金額が決まるまで、クリエイターさんは作業を止めています。納期もその分うしろにずれることがあります。あわてず、納得できるまで話し合ってください。'
+            : '金額が決まるまで、作業は止めて大丈夫です。止まっていた日数は記録に残り、クライアントさんにも同じものが見えています。' }),
+          el('p', { class: 'flow-next__who', text: mine2 ? 'あなたの番です' : '相手の番です（待つだけでOK）' }),
+          el('p', { text: t2 })
         ]);
       }
       switch (p.status) {
@@ -314,9 +329,11 @@
     }
     /* ---- 見積もりの出し直し（2026-11-17 翠くん） ----
        始めたときの条件＝1回目。クリエイターが2回目・3回目…を出し、クライアントさんが確定する。経緯はぜんぶ残る */
-    var quotes = [];
+    var quotes = [], pauses = [];
+    function openPause() { for (var i = 0; i < pauses.length; i++) if (!pauses[i].ended_at) return pauses[i]; return null; }
+    function pauseDays(z) { var a = new Date(z.started_at).getTime(), b = z.ended_at ? new Date(z.ended_at).getTime() : Date.now(); return Math.max(1, Math.ceil((b - a) / 86400000)); }
     function pendingQuote() { for (var i = 0; i < quotes.length; i++) if (quotes[i].status === 'proposed') return quotes[i]; return null; }
-    var QST = { proposed: ['確定待ち', 'tag--accent'], accepted: ['確定', 'tag--ok'], declined: ['見送り', ''], replaced: ['出し直しで取り下げ', ''] };
+    var QST = { proposed: ['確定待ち', 'tag--accent'], accepted: ['確定', 'tag--ok'], declined: ['見送り', ''], replaced: ['出し直しで取り下げ', ''], withdrawn: ['取り下げ', ''] };
     function quotesCard(p, role) {
       var c = role === 'client';
       var open = ['in_progress', 'delivered'].indexOf(p.status) !== -1;
@@ -348,6 +365,13 @@
           p.final_at ? el('span', { class: 'small muted', text: '　' + EM.date(p.final_at) + ' に確定' }) : null
         ]),
         list,
+        pauses.length ? el('div', { class: 'quote-pauses' }, [
+          el('p', { class: 'small', text: '一時停止の記録（合計 ' + pauses.reduce(function (n, z) { return n + pauseDays(z); }, 0) + '日）' }),
+          el('ul', null, pauses.map(function (z) {
+            return el('li', { class: 'small muted', text: EM.mdw(z.started_at.slice(0, 10)) + ' 〜 ' + (z.ended_at ? EM.mdw(z.ended_at.slice(0, 10)) : 'いま') + '（' + pauseDays(z) + '日）'
+              + (z.end_reason === 'accepted' ? '・確定して再開' : z.end_reason === 'withdrawn' ? '・取り下げて再開' : z.end_reason === 'closed' ? '・案件の終わりで解除' : '・話し合い中') });
+          }))
+        ]) : null,
         el('p', { class: 'small muted', text: '出した見積もりと返事は、すべてここと「やり取り」に残ります。あとから消したり書き換えたりはできません。' })
       ]);
       if (!open) return card;
@@ -368,7 +392,10 @@
         } })));
       } else {
         var f = quoteForm(p, now);
-        card.appendChild(el('div', { class: 'form-actions' }, el('button', { type: 'button', class: 'btn' + (pend ? '' : ' btn--primary'), text: pend ? '見積もりを出し直す（いまの確定待ちは取り下げ）' : '見積もりを出し直す', onclick: function () { f.hidden = !f.hidden; } })));
+        card.appendChild(el('div', { class: 'form-actions' }, [
+          el('button', { type: 'button', class: 'btn' + (pend ? '' : ' btn--primary'), text: pend ? '見積もりを出し直す（いまの確定待ちは取り下げ）' : '見積もりを出し直す', onclick: function () { f.hidden = !f.hidden; } }),
+          openPause() ? el('button', { type: 'button', class: 'btn', text: '取り下げて、いまの金額のまま再開', onclick: function () { withdrawResume(p, now); } }) : null
+        ]));
         card.appendChild(f);
       }
       return card;
@@ -395,6 +422,15 @@
         });
       });
       return f;
+    }
+    function withdrawResume(p, now) {
+      if (!confirm('見積もりの出し直しを取り下げて、いまの金額（' + yen(now) + '）のまま作業を再開しますか？\nクライアントさんにお知らせが届きます。')) return;
+      if (busy) return; busy = true;
+      sb.rpc('quote_withdraw_resume', { p_project: p.id, p_note: null }).then(function (r) {
+        busy = false;
+        if (r.error) { EM.notice(msg, EM.errorText(r.error), 'error'); return; }
+        EM.toast('作業を再開しました'); EM.track('project_resume', {}); loadDetail();
+      });
     }
     function decideQuote(q, action, reason) {
       if (action === 'accept' && !confirm(q.version + '回目の見積もりで確定しますか？\n金額：' + yen(q.amount) + '\n確定すると、この金額が記録に残ります。')) return;
