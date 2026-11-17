@@ -23,7 +23,8 @@ Deno.serve(async (req) => {
       if (rm.error) { console.error('inquiry-cleanup: 消せなかった', r.id, rm.error.message); continue; }
       removed += paths.length;
     }
-    await db.from('inquiries').update({ files: [], files_deleted_at: new Date().toISOString() }).eq('id', r.id);
+    const mk = await db.rpc('inquiry_files_mark_deleted', { p_id: r.id });
+    if (mk.error) { console.error('inquiry-cleanup: 記録できなかった', r.id, mk.error.message); continue; }
     done++;
   }
   return new Response(JSON.stringify({ ok: true, inquiries: done, files: removed }), { headers: { 'Content-Type': 'application/json' } });
