@@ -2111,3 +2111,11 @@ body.nav-open .savebar { display: none; }
 .share-done{border-color:var(--accent);margin-bottom:16px}
 .share-done__title{font-weight:700;font-size:1.1rem;margin:0 0 6px}
 .share-done--client{border-color:var(--client)}
+/* 金額の記録（見積もりの出し直し。2026-11-17） */
+.tag--ok{border-color:#3ecf8e;color:#3ecf8e}
+.quote-now{display:flex;flex-wrap:wrap;align-items:baseline;gap:6px;margin:4px 0 10px}
+.quote-list{list-style:none;padding:0;margin:0 0 10px;border-top:1px solid var(--border)}
+.quote-list li{display:grid;grid-template-columns:56px 1fr;gap:8px;padding:10px 0;border-bottom:1px solid var(--border)}
+.quote-list li.is-off strong{text-decoration:line-through;color:var(--muted)}
+.quote-list__v{font-size:.85rem;color:var(--muted);padding-top:2px}
+.quote-list__note{display:block;margin-top:4px;white-space:pre-wrap}

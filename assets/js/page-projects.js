@@ -21,7 +21,7 @@
     var SELECT = 'id,title,description,kind,status,budget_amount,due_on,reference_url,' +
                  'started_at,delivered_at,paid_at,created_at,updated_at,client_id,creator_id,' +
                  'terms_amount,terms_due_on,terms_note,terms_at,declined_reason,declined_at,origin,job_post_id,' +
-                 'clients(display_name,company),creators(id,display_name,headline,avatar_url,handle,search_visible)';
+                 'final_amount,final_due_on,final_at,clients(display_name,company),creators(id,display_name,headline,avatar_url,handle,search_visible)';
 
     /* ---------------- 一覧 ---------------- */
     function loadList() {
@@ -74,8 +74,10 @@
       return Promise.all([
         sb.from('projects').select(SELECT).eq('id', projectId).maybeSingle(),
         sb.rpc('project_my_role', { p_project_id: projectId }),
-        sb.from('reviews').select('id,status,score').eq('project_id', projectId).eq('reviewer_id', user.id)
+        sb.from('reviews').select('id,status,score').eq('project_id', projectId).eq('reviewer_id', user.id),
+        sb.from('project_quotes').select('id,version,amount,due_on,note,status,decline_reason,created_at,decided_at').eq('project_id', projectId).order('version')
       ]).then(function (res) {
+        quotes = (res[3] && res[3].data) || [];
         if (res[0].error) throw res[0].error;
         var p = res[0].data;
         if (!p) { EM.notice(msg, 'この案件は見つかりませんでした。', 'error'); EM.$('#detailView').hidden = true; return; }
@@ -213,6 +215,14 @@
     function nextBox(p, role) {
       var mine, text;
       var c = role === 'client';
+      var pend = pendingQuote();
+      if (pend && ['in_progress', 'delivered'].indexOf(p.status) !== -1) {
+        return el('div', { class: 'flow-next ' + (c ? 'is-mine' : 'is-wait') }, [
+          el('p', { class: 'flow-next__who', text: c ? 'あなたの番です' : '相手の番です（待つだけでOK）' }),
+          el('p', { text: c ? 'クリエイターから見積もり（' + pend.version + '回目）が届いています。下の「金額の記録」で、いまの金額と見比べて「この金額で確定する」か「見送る」を押してください。'
+                           : '見積もり（' + pend.version + '回目）を出しました。クライアントさんが「この金額で確定する」を押すのを待っています。' })
+        ]);
+      }
       switch (p.status) {
         case 'offered':
           mine = !c;
@@ -302,6 +312,99 @@
         el('p', { class: 'small muted', text: '案件の名前や金額は載りません。投稿する前に、文章は自由に書き換えられます。' })
       ]);
     }
+    /* ---- 見積もりの出し直し（2026-11-17 翠くん） ----
+       始めたときの条件＝1回目。クリエイターが2回目・3回目…を出し、クライアントさんが確定する。経緯はぜんぶ残る */
+    var quotes = [];
+    function pendingQuote() { for (var i = 0; i < quotes.length; i++) if (quotes[i].status === 'proposed') return quotes[i]; return null; }
+    var QST = { proposed: ['確定待ち', 'tag--accent'], accepted: ['確定', 'tag--ok'], declined: ['見送り', ''], replaced: ['出し直しで取り下げ', ''] };
+    function quotesCard(p, role) {
+      var c = role === 'client';
+      var open = ['in_progress', 'delivered'].indexOf(p.status) !== -1;
+      var now = p.final_amount != null ? p.final_amount : p.terms_amount;
+      var list = el('ol', { class: 'quote-list' });
+      list.appendChild(el('li', null, [
+        el('span', { class: 'quote-list__v', text: '1回目' }),
+        el('span', null, [el('strong', { text: yen(p.terms_amount) }), el('span', { class: 'small muted', text: '　始めたときの条件' + (p.terms_at ? '・' + EM.date(p.terms_at) : '') })])
+      ]));
+      quotes.forEach(function (q) {
+        var st = QST[q.status] || [q.status, ''];
+        list.appendChild(el('li', { class: q.status === 'replaced' || q.status === 'declined' ? 'is-off' : '' }, [
+          el('span', { class: 'quote-list__v', text: q.version + '回目' }),
+          el('span', null, [
+            el('strong', { text: yen(q.amount) }), ' ', el('span', { class: 'tag ' + st[1], text: st[0] }),
+            el('span', { class: 'small muted', text: '　' + EM.date(q.created_at) + (q.due_on ? '・納期 ' + EM.mdw(q.due_on) : '') }),
+            q.note ? el('span', { class: 'small quote-list__note', text: q.note }) : null,
+            q.decline_reason ? el('span', { class: 'small muted quote-list__note', text: '見送りの理由：' + q.decline_reason }) : null
+          ])
+        ]));
+      });
+      var pend = pendingQuote();
+      var card = el('div', { class: 'card flow-terms quote-card' }, [
+        el('p', { class: 'flow-terms__title', text: '金額の記録（見積もり）' }),
+        el('p', { class: 'quote-now' }, [
+          el('span', { class: 'small muted', text: p.final_at ? 'いまの金額（確定）' : 'いまの金額' }),
+          el('strong', { class: 'flow-amt', text: now != null ? Number(now).toLocaleString('ja-JP') + '円' : '未定' }),
+          now != null ? el('span', { class: 'small muted', text: '（税込）' }) : null,
+          p.final_at ? el('span', { class: 'small muted', text: '　' + EM.date(p.final_at) + ' に確定' }) : null
+        ]),
+        list,
+        el('p', { class: 'small muted', text: '出した見積もりと返事は、すべてここと「やり取り」に残ります。あとから消したり書き換えたりはできません。' })
+      ]);
+      if (!open) return card;
+      if (c && pend) {
+        var why = el('textarea', { rows: '2', maxlength: '500', placeholder: '例：予算を少し超えてしまうため。（書かなくても大丈夫です）' });
+        var dec = el('div', { class: 'stack', hidden: true }, [
+          el('label', { class: 'field' }, [el('span', { class: 'label', text: '見送る理由（相手に届きます・任意）' }), why]),
+          el('div', { class: 'form-actions' }, el('button', { type: 'button', class: 'btn btn--danger', text: '見送りを送る', onclick: function () { decideQuote(pend, 'decline', why.value.trim()); } }))
+        ]);
+        card.appendChild(el('div', { class: 'form-actions' }, [
+          el('button', { type: 'button', class: 'btn btn--primary', text: 'この金額で確定する（' + Number(pend.amount).toLocaleString('ja-JP') + '円）', onclick: function () { decideQuote(pend, 'accept'); } }),
+          el('button', { type: 'button', class: 'btn', text: '見送る', onclick: function () { dec.hidden = !dec.hidden; } })
+        ]));
+        card.appendChild(dec);
+      } else if (c) {
+        card.appendChild(el('div', { class: 'form-actions' }, el('button', { type: 'button', class: 'btn btn--sm', text: '見積もりの出し直しをお願いする', onclick: function () {
+          var t = EM.$('#messageBody'); t.value = '金額について相談させてください。見積もりを出し直していただけますか？\n'; t.scrollIntoView({ block: 'center' }); t.focus();
+        } })));
+      } else {
+        var f = quoteForm(p, now);
+        card.appendChild(el('div', { class: 'form-actions' }, el('button', { type: 'button', class: 'btn' + (pend ? '' : ' btn--primary'), text: pend ? '見積もりを出し直す（いまの確定待ちは取り下げ）' : '見積もりを出し直す', onclick: function () { f.hidden = !f.hidden; } })));
+        card.appendChild(f);
+      }
+      return card;
+    }
+    function quoteForm(p, now) {
+      var amt = el('input', { type: 'number', min: '0', step: '1000', inputmode: 'numeric', placeholder: '例：40000', value: now != null ? String(now) : '' });
+      var due = el('input', { type: 'date', min: EM.today(), value: '' });
+      var note = el('textarea', { rows: '3', maxlength: '1000', placeholder: '例：構成づくりが加わったため、構成代 10,000円を足しました。' });
+      var f = el('form', { class: 'stack flow-form', hidden: true, novalidate: true }, [
+        el('label', { class: 'field' }, [el('span', { class: 'label', text: '新しい金額（税込・円・必須）' }), amt]),
+        el('label', { class: 'field' }, [el('span', { class: 'label', text: '納期（変えるときだけ）' }), due]),
+        el('label', { class: 'field' }, [el('span', { class: 'label', text: '何が変わったか（1000文字まで）' }), note,
+          el('span', { class: 'hint', text: '「何を足した・減らしたから、いくら変わったか」を書くと、クライアントさんが判断しやすくなります。' })]),
+        el('div', { class: 'form-actions' }, el('button', { type: 'submit', class: 'btn btn--primary', text: 'この見積もりを送る' }))
+      ]);
+      f.addEventListener('submit', function (e) {
+        e.preventDefault();
+        if (amt.value === '') { EM.notice(msg, '新しい金額を入れてください。', 'error'); amt.focus(); return; }
+        if (busy) return; busy = true;
+        sb.rpc('quote_propose', { p_project: p.id, p_amount: Math.round(Number(amt.value)), p_due: due.value || null, p_note: note.value.trim() || null }).then(function (r) {
+          busy = false;
+          if (r.error) { EM.notice(msg, EM.errorText(r.error), 'error'); return; }
+          EM.toast('見積もりを送りました'); EM.track('quote_propose', {}); loadDetail();
+        });
+      });
+      return f;
+    }
+    function decideQuote(q, action, reason) {
+      if (action === 'accept' && !confirm(q.version + '回目の見積もりで確定しますか？\n金額：' + yen(q.amount) + '\n確定すると、この金額が記録に残ります。')) return;
+      if (busy) return; busy = true;
+      sb.rpc('quote_decide', { p_quote: q.id, p_action: action, p_reason: reason || null }).then(function (r) {
+        busy = false;
+        if (r.error) { EM.notice(msg, EM.errorText(r.error), 'error'); return; }
+        EM.toast(action === 'accept' ? '確定しました' : '見送りを送りました'); EM.track('quote_decide', { reply_type: action }); loadDetail();
+      });
+    }
     function renderFlow(box, p, role) {
       if (p.status === 'declined') {
         box.appendChild(el('div', { class: 'notice' }, [
@@ -319,6 +422,7 @@
       if (['offered', 'proposed'].indexOf(p.status) === -1) {
         if (p.status === 'in_progress') wrap.appendChild(guideBox(role));
         if (p.terms_at) wrap.appendChild(termsCard(p, '始めたときの条件（あとから変えられません）'));
+        if (['in_progress', 'delivered', 'paid', 'closed'].indexOf(p.status) !== -1) wrap.appendChild(quotesCard(p, role));
         return;
       }
       if (p.status === 'offered' && role === 'client') {
