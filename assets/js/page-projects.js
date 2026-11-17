@@ -276,11 +276,14 @@
       var c = p.creators || {};
       var shown = c.search_visible !== false;
       var profile = location.origin + (c.handle ? '/@' + c.handle : '/creators/detail.html?id=' + encodeURIComponent(c.id || ''));
-      // クリエイター：本人のページ／クライアント：Eizo Maps のトップ（相手の名前は出さない。2026-11-17 翠くん）
-      var url = role === 'creator' && shown && c.id ? profile : location.origin + '/';
+      // クリエイター：本人のページ／クライアント：クリエイターさんの名前とページでお礼（2026-11-17 翠くん「最初のやつでよかった」）
+      // クリエイターさんが「検索に出さない」設定なら、名前を出さず Eizo Maps のトップ
+      var url = shown && c.id ? profile : location.origin + '/';
       var text = role === 'creator'
         ? 'Eizo Maps で、映像の仕事を1件完了しました🎬\nこれまでの実績や評価はこちらから👇'
-        : 'Eizo Maps で依頼した映像の制作が完了しました🎬\n映像の仕事を頼めるクリエイターが見つかるサイトです👇';
+        : (shown && c.display_name
+            ? 'Eizo Maps で依頼した映像の制作が完了しました🎬\n' + c.display_name + ' さん、ありがとうございました！'
+            : 'Eizo Maps で依頼した映像の制作が完了しました🎬');
       var tag = '#EizoMaps';
       var links = [
         ['X', 'https://x.com/intent/post?text=' + encodeURIComponent(text + '\n' + tag) + '&url=' + encodeURIComponent(url)],
@@ -291,7 +294,7 @@
         el('p', { class: 'share-done__title', text: '🎉 案件を完了しました' }),
         el('p', { class: 'small', text: role === 'creator'
           ? 'おつかれさまでした。実績として SNS にシェアしてみませんか？ あなたの Eizo Maps のページが一緒に載ります。'
-          : 'おつかれさまでした。よければ SNS にシェアしてください。Eizo Maps のページが一緒に載ります（クリエイターさんの名前は載りません）。' }),
+          : 'おつかれさまでした。よければ SNS にシェアしてください。クリエイターさんへのお礼と紹介になり、とても喜ばれます。' }),
         el('div', { class: 'form-actions' }, links.map(function (l) {
           return el('a', { class: 'btn btn--sm', href: l[1], target: '_blank', rel: 'noopener noreferrer', text: l[0] + ' にシェア',
             onclick: function () { EM.track('share', { method: l[0], content_type: 'project_closed', item_id: role }); } });
