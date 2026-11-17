@@ -6,7 +6,7 @@
     var msg = EM.$('#pageMsg');
     if (!sb) { return; }  // 未設定の案内はヘッダー直下に共通表示される
 
-    var user = null, projects = [];
+    var user = null, projects = [], attach = null;
 
     EM.REPORT_CATEGORIES.forEach(function (c) {
       EM.$('#category').appendChild(el('option', { value: c[0], text: c[1] }));
@@ -20,6 +20,8 @@
     EM.requireUser().then(function (u) {
       if (!u) return;
       user = u;
+      attach = EM.attachBox(u);
+      EM.$('#reportAttach').appendChild(attach.node);
       return sb.from('projects')
         .select('id,title,status,created_at,clients(display_name,company),creators(display_name)')
         .order('updated_at', { ascending: false }).limit(100);
@@ -54,14 +56,18 @@
           }).catch(function () { return null; })
         : Promise.resolve(null);
 
-      target.then(function (targetUserId) {
+      var paths = [];
+      target.then(function (t) {
+        return (attach ? attach.upload() : Promise.resolve([])).then(function (p) { paths = p; return t; });
+      }).then(function (targetUserId) {
         return sb.from('reports').insert({
           reporter_id: user.id,
           target_user_id: targetUserId,
           project_id: pid,
           category: EM.$('#category').value,
           detail: text,
-          evidence_url: ev || null
+          evidence_url: ev || null,
+          files: paths
         });
       }).then(function (r) {
         btn.removeAttribute('aria-busy');
