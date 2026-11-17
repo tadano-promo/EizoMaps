@@ -230,24 +230,28 @@
   /* ---------- 画像・動画を付ける（お問い合わせ・問題の報告。2026-11-17 翠くん） ----------
      ・非公開の置き場 inquiry-files の「自分のフォルダ」に入れる。見られるのは本人と運営だけ
      ・5つまで・1つ50MBまで・画像（jpg/png/webp/gif/heic）と動画（mp4/mov/webm） */
-  EM.attachBox = function (user) {
-    var MAX = 5, MAXB = 50 * 1024 * 1024;
-    var OK = /^(image\/(jpeg|png|webp|gif|heic|heif)|video\/(mp4|quicktime|webm))$/;
+  /* opts を渡すと、ほかの置き場でも使える（案件のやり取り：画像・PDF・10MB。2026-11-17） */
+  EM.attachBox = function (user, opts) {
+    opts = opts || {};
+    var MAX = 5, MAXB = (opts.maxMB || 50) * 1024 * 1024;
+    var OK = opts.ok || /^(image\/(jpeg|png|webp|gif|heic|heif)|video\/(mp4|quicktime|webm))$/;
+    var BUCKET = opts.bucket || 'inquiry-files', SPACE = opts.spaceRpc || 'inquiry_space_ok';
+    var KIND = opts.kindText || '画像・動画';
     var files = [];
-    var input = el('input', { type: 'file', multiple: true, accept: 'image/*,video/mp4,video/quicktime,video/webm', class: 'attach__input' });
+    var input = el('input', { type: 'file', multiple: true, accept: opts.accept || 'image/*,video/mp4,video/quicktime,video/webm', class: 'attach__input' });
     var list = el('ul', { class: 'attach__list' });
     var err = el('p', { class: 'small attach__err', hidden: true });
     var node = el('div', { class: 'field attach' }, [
-      el('span', { class: 'label', text: '画像・動画を付ける（任意・5つまで・1つ50MBまで）' }),
-      user ? el('label', { class: 'btn btn--sm attach__pick' }, [input, document.createTextNode('＋ 画像・動画を選ぶ')]) : el('p', { class: 'small muted' }, [document.createTextNode('画像や動画（スクリーンショットなど）を付けるには、'), el('a', { href: '/auth/?next=' + encodeURIComponent(location.pathname + location.search), text: 'ログイン' }), document.createTextNode('してください。')]),
+      el('span', { class: 'label', text: KIND + 'を付ける（任意・5つまで・1つ' + (opts.maxMB || 50) + 'MBまで）' }),
+      user ? el('label', { class: 'btn btn--sm attach__pick' }, [input, document.createTextNode('＋ ' + KIND + 'を選ぶ')]) : el('p', { class: 'small muted' }, [document.createTextNode('画像や動画（スクリーンショットなど）を付けるには、'), el('a', { href: '/auth/?next=' + encodeURIComponent(location.pathname + location.search), text: 'ログイン' }), document.createTextNode('してください。')]),
       list, err,
-      el('span', { class: 'hint', text: '付けたファイルは、あなたと運営だけが見られます。運営が対応を終えてから30日たつと、ファイルは自動で消えます（文章は残ります）。' })
+      el('span', { class: 'hint', text: opts.hint || '付けたファイルは、あなたと運営だけが見られます。運営が対応を終えてから30日たつと、ファイルは自動で消えます（文章は残ります）。' })
     ]);
     function draw() {
       EM.clear(list);
       files.forEach(function (f, i) {
         list.appendChild(el('li', null, [
-          el('span', { class: 'small', text: (f.type.indexOf('video') === 0 ? '🎬 ' : '🖼 ') + f.name + '（' + (f.size / 1048576).toFixed(1) + 'MB）' }),
+          el('span', { class: 'small', text: (f.type.indexOf('video') === 0 ? '🎬 ' : f.type === 'application/pdf' ? '📄 ' : '🖼 ') + f.name + '（' + (f.size / 1048576).toFixed(1) + 'MB）' }),
           el('button', { type: 'button', class: 'btn btn--sm btn--ghost', text: '外す', onclick: function () { files.splice(i, 1); draw(); } })
         ]));
       });
@@ -256,8 +260,8 @@
       var msgs = [];
       Array.prototype.forEach.call(input.files || [], function (f) {
         if (files.length >= MAX) { msgs.push('5つまでです。'); return; }
-        if (!OK.test(f.type)) { msgs.push(f.name + '：この形式は付けられません（画像・動画だけ）。'); return; }
-        if (f.size > MAXB) { msgs.push(f.name + '：50MBを超えています。短くするか、軽くしてから付けてください。'); return; }
+        if (!OK.test(f.type)) { msgs.push(f.name + '：この形式は付けられません（' + KIND + 'だけ）。' + (opts.formatHelp || '')); return; }
+        if (f.size > MAXB) { msgs.push(f.name + '：' + (opts.maxMB || 50) + 'MBを超えています。' + (opts.sizeHelp || '短くするか、軽くしてから付けてください。')); return; }
         files.push(f);
       });
       input.value = '';
@@ -268,19 +272,32 @@
       if (!files.length || !user) return Promise.resolve([]);
       var sb = EM.sb();
       /* 置き場が500MBを超えていたら、ファイルは受け付けない（文章は送れる。2026-11-17） */
-      return sb.rpc('inquiry_space_ok').then(function (r) {
-        if (r.data === false) throw new Error('いまは画像・動画を受け付けられません（置き場がいっぱいです）。ファイルを外して文章だけ送るか、support@eizo-maps.com にメールで送ってください。');
+      return sb.rpc(SPACE).then(function (r) {
+        if (r.data === false) throw new Error(opts.fullText || 'いまは画像・動画を受け付けられません（置き場がいっぱいです）。ファイルを外して文章だけ送るか、support@eizo-maps.com にメールで送ってください。');
       }).then(function () { return Promise.all(files.map(function (f) {
         var ext = (f.name.match(/\.([A-Za-z0-9]{1,5})$/) || [, ''])[1].toLowerCase();
         var id = (global.crypto && crypto.randomUUID) ? crypto.randomUUID() : String(Date.now()) + Math.random().toString(36).slice(2);
-        var path = user.id + '/' + id + (ext ? '.' + ext : '');
-        return sb.storage.from('inquiry-files').upload(path, f, { contentType: f.type, upsert: false }).then(function (r) {
+        var path = (opts.folder || user.id) + '/' + id + (ext ? '.' + ext : '');
+        return sb.storage.from(BUCKET).upload(path, f, { contentType: f.type, upsert: false }).then(function (r) {
           if (r.error) throw new Error(f.name + ' を送れませんでした：' + EM.errorText(r.error));
           return path;
         });
       })); });
     }
-    return { node: node, upload: upload, count: function () { return files.length; } };
+    return { node: node, upload: upload, count: function () { return files.length; }, clear: function () { files = []; draw(); err.hidden = true; } };
+  };
+
+  /* 文章の中の URL を押せるリンクにする（案件のやり取り。2026-11-17 相手の方「リンクを貼れたら」） */
+  EM.linkify = function (text) {
+    var out = [], re = /https?:\/\/[^\s<>「」（）()、。]+/g, last = 0, m;
+    while ((m = re.exec(text))) {
+      if (m.index > last) out.push(document.createTextNode(text.slice(last, m.index)));
+      var u = EM.safeUrl ? EM.safeUrl(m[0]) : m[0];
+      out.push(u ? el('a', { href: u, target: '_blank', rel: 'noopener noreferrer nofollow', text: m[0] }) : document.createTextNode(m[0]));
+      last = m.index + m[0].length;
+    }
+    if (last < text.length) out.push(document.createTextNode(text.slice(last)));
+    return out;
   };
 
   EM.signOut = function () {
