@@ -164,23 +164,79 @@
        ① 返事待ち（offered） ② 条件の返事あり（proposed） ③ 進行中（in_progress）
        クリエイター：受ける／条件を提案する／お断り   クライアント：この条件で始める */
     function yen(v) { return v === null || v === undefined ? '相談' : Number(v).toLocaleString('ja-JP') + '円（税込）'; }
+    // 依頼した側の希望と、クリエイターの条件を並べる（2026-11-17 翠くん「希望がそのまま返ってきたのか、向こうの条件なのか分かりづらい」）
     function termsCard(p, title) {
-      var dl = el('dl');
-      dl.appendChild(el('dt', { text: '金額' })); dl.appendChild(el('dd', { class: 'flow-big', text: yen(p.terms_amount) }));
-      dl.appendChild(el('dt', { text: '納期' })); dl.appendChild(el('dd', { text: p.terms_due_on ? EM.mdw(p.terms_due_on) + '（' + p.terms_due_on + '）' : '相談' }));
-      if (p.terms_note) { dl.appendChild(el('dt', { text: '中身・ひとこと' })); dl.appendChild(el('dd', { class: 'flow-note', text: p.terms_note })); }
+      function cmp(wish, terms, same) {
+        return el('span', { class: 'tag flow-cmp ' + (same ? '' : 'is-changed'), text: same ? '希望のまま' : (wish ? '変更あり' : 'クリエイターが決めた') });
+      }
+      var tbl = el('div', { class: 'flow-table' }, [
+        el('div', { class: 'flow-table__row flow-table__head' }, [el('span'), el('span', { text: '依頼したときの希望' }), el('span', { text: 'クリエイターの条件' })]),
+        el('div', { class: 'flow-table__row' }, [
+          el('span', { class: 'flow-table__k', text: '金額' }),
+          el('span', { text: p.budget_amount != null ? yen(p.budget_amount) : '未定' }),
+          el('span', null, [el('strong', { class: 'flow-amt', text: p.terms_amount != null ? Number(p.terms_amount).toLocaleString('ja-JP') + '円' : '相談' }), p.terms_amount != null ? el('span', { class: 'small muted', text: '（税込）' }) : null, ' ', p.terms_amount != null ? cmp(p.budget_amount != null, p.terms_amount, p.budget_amount === p.terms_amount) : null])
+        ]),
+        el('div', { class: 'flow-table__row' }, [
+          el('span', { class: 'flow-table__k', text: '納期' }),
+          el('span', { text: p.due_on ? EM.mdw(p.due_on) : '未定' }),
+          el('span', null, [el('strong', { text: p.terms_due_on ? EM.mdw(p.terms_due_on) : '相談' }), ' ', p.terms_due_on ? cmp(!!p.due_on, p.terms_due_on, p.due_on === p.terms_due_on) : null])
+        ])
+      ]);
       return el('div', { class: 'card flow-terms' }, [
         el('p', { class: 'flow-terms__title', text: title }),
-        dl,
+        tbl,
+        p.terms_note ? el('p', { class: 'flow-note' }, [el('span', { class: 'small muted', text: 'クリエイターからのひとこと：' }), document.createTextNode(p.terms_note)]) : null,
+        p.terms_amount == null ? el('p', { class: 'small flow-warn', text: '金額がまだ決まっていません（「相談」のまま）。' }) : null,
         p.terms_at ? el('p', { class: 'small muted', text: '返事の日時：' + EM.datetime(p.terms_at) }) : null
       ]);
     }
     function steps(status) {
-      var at = status === 'offered' ? 0 : status === 'proposed' ? 1 : 2;
-      var names = ['① 返事待ち', '② 条件の返事あり', '③ 進行中'];
+      var order = ['offered', 'proposed', 'in_progress', 'delivered', 'paid'];
+      var at = order.indexOf(status); if (status === 'closed') at = 5;
+      var names = ['① 返事待ち', '② 条件の確認', '③ 進行中', '④ 納品', '⑤ 入金'];
       return el('ol', { class: 'flow-steps' }, names.map(function (n, i) {
         return el('li', { class: i < at ? 'is-done' : i === at ? 'is-now' : '', text: n });
       }));
+    }
+    // いま誰の番で、何をすればいいか（両方の側で、どの状態でも出す）
+    function nextBox(p, role) {
+      var mine, text;
+      var c = role === 'client';
+      switch (p.status) {
+        case 'offered':
+          mine = !c;
+          text = c ? 'クリエイターの返事を待っています。返事（金額と納期）が届くと、メールでお知らせします。あなたが押すボタンは、まだありません。'
+                   : (p.budget_amount == null
+                       ? '依頼が届いています。予算が「未定」なので、下の欄に金額と納期を入れて「この条件を送る」で返事をしてください。'
+                       : '依頼が届いています。下の「この内容で受ける」「条件を提案する」「お断りする」から返事をしてください。');
+          break;
+        case 'proposed':
+          mine = c;
+          text = c ? (p.terms_amount == null
+                       ? 'クリエイターから返事が届きましたが、金額が「相談」のままです。メッセージで金額を相談し、クリエイターに金額を入れて出し直してもらってください。'
+                       : 'クリエイターから条件が届きました。下の表で「依頼したときの希望」と見比べて、よければ「この条件で始める」を押してください。押すまで仕事は始まりません。')
+                   : 'クライアントさんが条件を確かめて「この条件で始める」を押すのを待っています。始まるまでは、条件を出し直せます。';
+          break;
+        case 'in_progress':
+          mine = !c;
+          text = c ? '仕事が進んでいます。クリエイターが納品したら、ここに「納品済み」と出ます。'
+                   : '仕事を進めてください。納品したら、下の「納品済みにする」を押してください。';
+          break;
+        case 'delivered':
+          mine = c;
+          text = c ? '納品されました。中身を確かめて、代金を支払ったら「入金済みにする」を押してください。'
+                   : 'クライアントさんの確認と入金を待っています。';
+          break;
+        case 'paid':
+          mine = true;
+          text = '入金済みです。「完了にする」を押して、お互いに評価を書きましょう。';
+          break;
+        default: return null;
+      }
+      return el('div', { class: 'flow-next ' + (mine ? 'is-mine' : 'is-wait') }, [
+        el('p', { class: 'flow-next__who', text: mine ? 'あなたの番です' : '相手の番です（待つだけでOK）' }),
+        el('p', { text: text })
+      ]);
     }
     function renderFlow(box, p, role) {
       if (p.status === 'declined') {
@@ -191,45 +247,50 @@
         ]));
         return;
       }
-      if (['offered', 'proposed'].indexOf(p.status) === -1) {
-        if (p.terms_at) box.appendChild(termsCard(p, '始めたときの条件（あとから変えられません）'));
-        return;
-      }
-      var wrap = el('div', { class: 'flow' }, [steps(p.status)]);
+      if (['cancelled', 'draft'].indexOf(p.status) !== -1) return;
+      var wrap = el('div', { class: 'flow' }, [steps(p.status), nextBox(p, role)]);
       box.appendChild(wrap);
 
+      if (['offered', 'proposed'].indexOf(p.status) === -1) {
+        if (p.terms_at) wrap.appendChild(termsCard(p, '始めたときの条件（あとから変えられません）'));
+        return;
+      }
       if (p.status === 'offered' && role === 'client') {
-        wrap.appendChild(el('p', { class: 'flow-lead', text: 'クリエイターの返事を待っています。返事が届くと、ここに金額と納期が出ます。' }));
         wrap.appendChild(el('p', { class: 'small muted', text: '伝え忘れたことは、下の「やり取り」から送れます。' }));
         return;
       }
       if (p.status === 'proposed') {
-        wrap.appendChild(termsCard(p, role === 'client' ? 'クリエイターからの条件' : 'あなたが出した条件'));
+        wrap.appendChild(termsCard(p, role === 'client' ? 'クリエイターから届いた条件' : 'あなたが出した条件'));
       }
       if (role === 'client') {
-        wrap.appendChild(el('p', { class: 'flow-lead', text: 'この条件でよければ「この条件で始める」を押してください。押すと進行中になり、条件はあとから変えられなくなります。' }));
+        var noAmt = p.terms_amount == null;
         wrap.appendChild(el('div', { class: 'form-actions' }, [
-          el('button', { type: 'button', class: 'btn btn--primary', text: 'この条件で始める', onclick: function () { startProject(p); } }),
+          el('button', { type: 'button', class: 'btn btn--primary', text: 'この条件で始める', disabled: noAmt, onclick: function () { startProject(p); } }),
           el('button', { type: 'button', class: 'btn', text: '条件を相談する', onclick: function () {
-            var t = EM.$('#messageBody'); t.value = '条件について相談させてください。\n'; t.scrollIntoView({ block: 'center' }); t.focus();
+            var t = EM.$('#messageBody'); t.value = noAmt ? '金額を入れた条件を出していただけますか？\n' : '条件について相談させてください。\n'; t.scrollIntoView({ block: 'center' }); t.focus();
           } })
         ]));
+        wrap.appendChild(el('p', { class: 'small muted', text: '「この条件で始める」を押すと進行中になり、金額と納期はあとから変えられなくなります。' }));
         return;
       }
       // クリエイター
-      wrap.appendChild(el('p', { class: 'flow-lead', text: p.status === 'offered'
-        ? '依頼が届いています。内容を見て、返事をしてください。'
-        : 'クライアントさんが「この条件で始める」を押すと進行中になります。条件を変えたいときは出し直せます。' }));
+      var noBudget = p.budget_amount == null;
+      if (p.status === 'offered') {
+        wrap.appendChild(el('p', { class: 'small muted', text: noBudget
+          ? 'この依頼は予算が「未定」です。「条件を提案する」から、金額と納期を入れて返事をしてください。'
+          : '「この内容で受ける」は、依頼したときの予算（' + yen(p.budget_amount) + '）と希望納期（' + (p.due_on ? EM.mdw(p.due_on) : '未定') + '）のまま受けます。変えたいときは「条件を提案する」へ。' }));
+      }
       var form = respondForm(p);
       var btns = el('div', { class: 'form-actions' }, [
-        p.status === 'offered' ? el('button', { type: 'button', class: 'btn btn--primary', text: 'この内容で受ける', onclick: function () { respond(p, 'accept'); } }) : null,
-        el('button', { type: 'button', class: 'btn' + (p.status === 'proposed' ? ' btn--primary' : ''), text: p.status === 'offered' ? '条件を提案する' : '条件を出し直す', onclick: function () { form.hidden = !form.hidden; decline.hidden = true; } }),
+        p.status === 'offered' && !noBudget ? el('button', { type: 'button', class: 'btn btn--primary', text: 'この内容で受ける', onclick: function () { respond(p, 'accept'); } }) : null,
+        el('button', { type: 'button', class: 'btn' + (p.status === 'proposed' || noBudget ? ' btn--primary' : ''), text: p.status === 'offered' ? '条件を提案する' : '条件を出し直す', onclick: function () { form.hidden = !form.hidden; decline.hidden = true; } }),
         el('button', { type: 'button', class: 'btn btn--danger', text: 'お断りする', onclick: function () { decline.hidden = !decline.hidden; form.hidden = true; } })
       ]);
       var decline = declineForm(p);
       wrap.appendChild(btns);
       wrap.appendChild(form);
       wrap.appendChild(decline);
+      if (noBudget && p.status === 'offered') form.hidden = false;
     }
     function respondForm(p) {
       var amt = el('input', { type: 'number', min: '0', step: '1000', inputmode: 'numeric', placeholder: '例：120000', value: p.terms_amount != null ? String(p.terms_amount) : (p.budget_amount != null ? String(p.budget_amount) : '') });
@@ -237,14 +298,15 @@
       var note = el('textarea', { rows: '4', maxlength: '1000', placeholder: '例：縦型15秒×3本。撮影は半日、修正2回まで。' });
       if (p.terms_note) note.value = p.terms_note;
       var f = el('form', { class: 'card stack flow-form', hidden: true, novalidate: true }, [
-        el('label', { class: 'field' }, [el('span', { class: 'label', text: '金額（税込・円）' }), amt]),
+        el('label', { class: 'field' }, [el('span', { class: 'label', text: '金額（税込・円・必須）' }), amt]),
         el('label', { class: 'field' }, [el('span', { class: 'label', text: '納期' }), due]),
         el('label', { class: 'field' }, [el('span', { class: 'label', text: '中身・ひとこと（1000文字まで）' }), note]),
         el('div', { class: 'form-actions' }, el('button', { type: 'submit', class: 'btn btn--primary', text: 'この条件を送る' }))
       ]);
       f.addEventListener('submit', function (e) {
         e.preventDefault();
-        respond(p, 'propose', amt.value === '' ? null : Math.round(Number(amt.value)), due.value || null, note.value.trim() || null);
+        if (amt.value === '') { EM.notice(msg, '金額を入れてください。決めにくいときは、だいたいの金額と、中身の欄に「〇〇なら△△円」のように書いてください。', 'error'); amt.focus(); return; }
+        respond(p, 'propose', Math.round(Number(amt.value)), due.value || null, note.value.trim() || null);
       });
       return f;
     }
@@ -262,7 +324,7 @@
       return f;
     }
     function respond(p, action, amount, due, note) {
-      if (action === 'accept' && !confirm('依頼の内容（予算・希望納期）のまま受けますか？\nクライアントさんが「この条件で始める」を押すと進行中になります。')) return;
+      if (action === 'accept' && !confirm('依頼したときの希望のまま受けますか？\n金額：' + yen(p.budget_amount) + '\n納期：' + (p.due_on ? EM.mdw(p.due_on) : '相談') + '\nクライアントさんが「この条件で始める」を押すと進行中になります。')) return;
       sb.rpc('project_respond', { p_project: p.id, p_action: action, p_amount: amount === undefined ? null : amount, p_due: due || null, p_note: note || null })
         .then(function (r) {
           if (r.error) { EM.notice(msg, EM.errorText(r.error), 'error'); return; }
@@ -272,7 +334,7 @@
         });
     }
     function startProject(p) {
-      if (!confirm('この条件で始めますか？\n金額：' + yen(p.terms_amount) + '\n納期：' + (p.terms_due_on || '相談') + '\n始めたあとは条件を変えられません。')) return;
+      if (!confirm('この条件で始めますか？\n金額：' + yen(p.terms_amount) + '\n納期：' + (p.terms_due_on ? EM.mdw(p.terms_due_on) : '相談') + '\n始めたあとは条件を変えられません。')) return;
       sb.rpc('project_start', { p_project: p.id }).then(function (r) {
         if (r.error) { EM.notice(msg, EM.errorText(r.error), 'error'); return; }
         EM.toast('始めました。進行中になりました');
