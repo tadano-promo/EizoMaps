@@ -62,8 +62,24 @@
         </div>
       </form>
 
-      <hr class="divider">
-      <p class="small muted">パスワードをお忘れの方は <button class="btn btn--sm btn--ghost" type="button" id="resetBtn">再設定メールを送る</button></p>
+      <!-- パスワード再設定メールのリンクから来たとき（2026-11-17 翠くん「ボタンを押しても再設定の画面が出てこない」） -->
+      <form id="resetForm" class="stack" novalidate hidden>
+        <p>新しいパスワードを決めてください。</p>
+        <label class="field">
+          <span class="label">新しいパスワード（8文字以上）</span>
+          <input type="password" id="newPw" autocomplete="new-password" minlength="8" placeholder="8文字以上">
+        </label>
+        <label class="field">
+          <span class="label">もう一度（確認）</span>
+          <input type="password" id="newPw2" autocomplete="new-password" minlength="8" placeholder="同じものをもう一度">
+        </label>
+        <div class="form-actions">
+          <button class="btn btn--primary" type="submit" id="resetSubmit">このパスワードにする</button>
+        </div>
+      </form>
+
+      <hr class="divider" id="resetDivider">
+      <p class="small muted" id="resetLine">パスワードをお忘れの方は <button class="btn btn--sm btn--ghost" type="button" id="resetBtn">再設定メールを送る</button></p>
     </div>
   </div>
 </main>

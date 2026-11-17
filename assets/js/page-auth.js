@@ -1,6 +1,10 @@
 /* Eizo Maps — サインアップ / ログイン */
 (function (EM) {
   'use strict';
+  // パスワード再設定メールのリンクから来たか（読み込みの最初に見る。あとで URL の印は消されるため）
+  var h = String(location.hash || '');
+  var isRecovery = /(^|[#&])type=recovery(&|$)/.test(h);
+  var linkError = /(^|[#&])error_code=([^&]+)/.exec(h);
   document.addEventListener('DOMContentLoaded', function () {
     var sb = EM.sb();
     var msg = EM.$('#authMsg');
@@ -37,8 +41,41 @@
 
     if (!sb) { return; }  // 未設定の案内はヘッダー直下に共通表示される
 
-    // すでにログイン済みなら飛ばす。初回ログイン時は利用種別を反映する。
+    // ---- パスワードの再設定（メールのリンクから来たとき）----
+    function showReset() {
+      isRecovery = true;
+      EM.$('#authTitle').textContent = 'パスワードの再設定';
+      form.hidden = true;
+      EM.$('.view-switch').hidden = true;
+      EM.$('#resetDivider').hidden = true; EM.$('#resetLine').hidden = true;
+      EM.$('#resetForm').hidden = false;
+      EM.$('#newPw').focus();
+    }
+    if (linkError) {
+      EM.notice(msg, decodeURIComponent(linkError[2]) === 'otp_expired'
+        ? 'このリンクは期限が切れているか、すでに使われています。下の「再設定メールを送る」から、もう一度送ってください。'
+        : 'リンクを開けませんでした。下の「再設定メールを送る」から、もう一度送ってください。', 'error');
+    }
+    sb.auth.onAuthStateChange(function (ev) { if (ev === 'PASSWORD_RECOVERY') showReset(); });
+    if (isRecovery) showReset();
+    EM.$('#resetForm').addEventListener('submit', function (e) {
+      e.preventDefault();
+      var a = EM.$('#newPw').value, b = EM.$('#newPw2').value;
+      if (a.length < 8) { EM.notice(msg, 'パスワードは8文字以上にしてください。', 'error'); return; }
+      if (a !== b) { EM.notice(msg, '確認のパスワードが合っていません。', 'error'); return; }
+      var btn = EM.$('#resetSubmit'); btn.disabled = true;
+      sb.auth.updateUser({ password: a }).then(function (r) {
+        btn.disabled = false;
+        if (r.error) { EM.notice(msg, EM.errorText(r.error), 'error'); return; }
+        EM.$('#resetForm').hidden = true;
+        EM.notice(msg, '新しいパスワードにしました。マイページに移ります…', 'ok');
+        setTimeout(function () { location.replace('/mypage/'); }, 1500);
+      }).catch(function (err) { btn.disabled = false; EM.notice(msg, EM.errorText(err), 'error'); });
+    });
+
+    // すでにログイン済みなら飛ばす。初回ログイン時は利用種別を反映する。（再設定のときは飛ばさない）
     sb.auth.getUser().then(function (r) {
+      if (isRecovery) return;
       var u = r && r.data && r.data.user;
       if (!u) return;
       return applyOnboarding(u).then(function () { location.replace(nextUrl()); });
