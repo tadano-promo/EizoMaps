@@ -220,6 +220,14 @@
       var mine, text;
       var c = role === 'client';
       var pend = pendingQuote(), pz = openPause();
+      // 見積もりを出しただけでは止まらない（クリエイターが自分で納期を伸ばせないように。2026-11-17 翠くん）
+      if (pend && !pz && ['in_progress', 'delivered'].indexOf(p.status) !== -1) {
+        return el('div', { class: 'flow-next ' + (c ? 'is-mine' : 'is-wait') }, [
+          el('p', { class: 'flow-next__who', text: c ? 'あなたの番です' : '相手の番です（待つだけでOK）' }),
+          el('p', { text: c ? 'クリエイターから見積もり（' + pend.version + '回目）が届いています。下の「金額の記録」で、いまの金額と見比べて「この金額で確定する」か「見送る」を押してください。見送ると、話し合いのあいだ作業はいったん止まります。'
+                           : '見積もり（' + pend.version + '回目）を出しました。クライアントさんの返事を待つあいだも、作業と納期はそのままです。見送られたときは、話し合いのあいだ作業を止めて大丈夫です。' })
+        ]);
+      }
       if (pz && ['in_progress', 'delivered'].indexOf(p.status) !== -1) {
         // 見積もりの話し合い中は、作業は一時停止（2026-11-17 翠くん「クライアントさんが納得するまで一旦停止、クリエイターも安心して」）
         var since = '（' + EM.mdw(pz.started_at.slice(0, 10)) + 'から・' + pauseDays(pz) + '日目）';
@@ -394,7 +402,8 @@
         var f = quoteForm(p, now);
         card.appendChild(el('div', { class: 'form-actions' }, [
           el('button', { type: 'button', class: 'btn' + (pend ? '' : ' btn--primary'), text: pend ? '見積もりを出し直す（いまの確定待ちは取り下げ）' : '見積もりを出し直す', onclick: function () { f.hidden = !f.hidden; } }),
-          openPause() ? el('button', { type: 'button', class: 'btn', text: '取り下げて、いまの金額のまま再開', onclick: function () { withdrawResume(p, now); } }) : null
+          openPause() ? el('button', { type: 'button', class: 'btn', text: '取り下げて、いまの金額のまま再開', onclick: function () { withdrawResume(p, now, true); } })
+            : pend ? el('button', { type: 'button', class: 'btn btn--ghost', text: '出した見積もりを取り下げる', onclick: function () { withdrawResume(p, now, false); } }) : null
         ]));
         card.appendChild(f);
       }
@@ -423,13 +432,14 @@
       });
       return f;
     }
-    function withdrawResume(p, now) {
-      if (!confirm('見積もりの出し直しを取り下げて、いまの金額（' + yen(now) + '）のまま作業を再開しますか？\nクライアントさんにお知らせが届きます。')) return;
+    function withdrawResume(p, now, paused) {
+      if (!confirm(paused ? '見積もりの出し直しを取り下げて、いまの金額（' + yen(now) + '）のまま作業を再開しますか？\nクライアントさんにお知らせが届きます。'
+                          : '出した見積もりを取り下げて、いまの金額（' + yen(now) + '）のまま進めますか？\nクライアントさんにお知らせが届きます。')) return;
       if (busy) return; busy = true;
       sb.rpc('quote_withdraw_resume', { p_project: p.id, p_note: null }).then(function (r) {
         busy = false;
         if (r.error) { EM.notice(msg, EM.errorText(r.error), 'error'); return; }
-        EM.toast('作業を再開しました'); EM.track('project_resume', {}); loadDetail();
+        EM.toast(paused ? '作業を再開しました' : '見積もりを取り下げました'); EM.track('project_resume', { reply_type: paused ? 'resume' : 'withdraw' }); loadDetail();
       });
     }
     function decideQuote(q, action, reason) {
