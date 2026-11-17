@@ -241,7 +241,7 @@
       el('span', { class: 'label', text: '画像・動画を付ける（任意・5つまで・1つ50MBまで）' }),
       user ? el('label', { class: 'btn btn--sm attach__pick' }, [input, document.createTextNode('＋ 画像・動画を選ぶ')]) : el('p', { class: 'small muted' }, [document.createTextNode('画像や動画（スクリーンショットなど）を付けるには、'), el('a', { href: '/auth/?next=' + encodeURIComponent(location.pathname + location.search), text: 'ログイン' }), document.createTextNode('してください。')]),
       list, err,
-      el('span', { class: 'hint', text: '付けたファイルは、あなたと運営だけが見られます。' })
+      el('span', { class: 'hint', text: '付けたファイルは、あなたと運営だけが見られます。運営が対応を終えてから30日たつと、ファイルは自動で消えます（文章は残ります）。' })
     ]);
     function draw() {
       EM.clear(list);
@@ -267,7 +267,10 @@
     function upload() {
       if (!files.length || !user) return Promise.resolve([]);
       var sb = EM.sb();
-      return Promise.all(files.map(function (f) {
+      /* 置き場が500MBを超えていたら、ファイルは受け付けない（文章は送れる。2026-11-17） */
+      return sb.rpc('inquiry_space_ok').then(function (r) {
+        if (r.data === false) throw new Error('いまは画像・動画を受け付けられません（置き場がいっぱいです）。ファイルを外して文章だけ送るか、support@eizo-maps.com にメールで送ってください。');
+      }).then(function () { return Promise.all(files.map(function (f) {
         var ext = (f.name.match(/\.([A-Za-z0-9]{1,5})$/) || [, ''])[1].toLowerCase();
         var id = (global.crypto && crypto.randomUUID) ? crypto.randomUUID() : String(Date.now()) + Math.random().toString(36).slice(2);
         var path = user.id + '/' + id + (ext ? '.' + ext : '');
@@ -275,7 +278,7 @@
           if (r.error) throw new Error(f.name + ' を送れませんでした：' + EM.errorText(r.error));
           return path;
         });
-      }));
+      })); });
     }
     return { node: node, upload: upload, count: function () { return files.length; } };
   };

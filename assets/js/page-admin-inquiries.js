@@ -16,7 +16,7 @@
     }).catch(function (e) { EM.notice(msg, EM.errorText(e), 'error'); });
 
     function load() {
-      return sb.from('inquiries').select('id,user_id,kind,name,email,body,page,files,status,created_at')
+      return sb.from('inquiries').select('id,user_id,kind,name,email,body,page,files,status,done_at,files_deleted_at,created_at')
         .order('created_at', { ascending: false }).limit(100).then(function (r) {
           if (r.error) throw r.error;
           render(r.data || []);
@@ -46,6 +46,8 @@
           ]),
           el('p', { class: 'sfb__comment', text: q.body }),
           (q.files || []).length ? files : null,
+          (done && q.done_at && (q.files || []).length) ? el('p', { class: 'small muted', text: '画像・動画は ' + EM.datetime(new Date(new Date(q.done_at).getTime() + 30 * 86400000).toISOString()) + ' ごろに自動で消えます。' }) : null,
+          q.files_deleted_at ? el('p', { class: 'small muted', text: '画像・動画は ' + EM.datetime(q.files_deleted_at) + ' に消しました（対応済みから30日）。' }) : null,
           el('div', { class: 'form-actions' }, el('button', { type: 'button', class: 'btn btn--sm', text: done ? '対応済み（戻す）' : '対応済みにする', onclick: function () {
             sb.from('inquiries').update({ status: done ? 'new' : 'done' }).eq('id', q.id).then(function (r) {
               if (r.error) { EM.notice(msg, EM.errorText(r.error), 'error'); return; }
