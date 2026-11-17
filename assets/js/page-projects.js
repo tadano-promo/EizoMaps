@@ -21,7 +21,7 @@
     var SELECT = 'id,title,description,kind,status,budget_amount,due_on,reference_url,' +
                  'started_at,delivered_at,paid_at,created_at,updated_at,client_id,creator_id,' +
                  'terms_amount,terms_due_on,terms_note,terms_at,declined_reason,declined_at,origin,job_post_id,' +
-                 'clients(display_name,company),creators(id,display_name,headline,avatar_url)';
+                 'clients(display_name,company),creators(id,display_name,headline,avatar_url,handle,search_visible)';
 
     /* ---------------- 一覧 ---------------- */
     function loadList() {
@@ -271,6 +271,37 @@
         el('p', { class: 'small muted', text: c ? '分からないことは、そのままメッセージで聞いて大丈夫です。' : '見本の【　】に書き込んで送ってください。いらない項目は消してかまいません。' })
       ]);
     }
+    /* 完了したら SNS にシェア（2026-11-17 翠くん）。案件名・金額は出さない。クリエイターは自分のページ、クライアントはクリエイターのページを紹介 */
+    function shareBox(p, role) {
+      var c = p.creators || {};
+      var shown = c.search_visible !== false;
+      var profile = location.origin + (c.handle ? '/@' + c.handle : '/creators/detail.html?id=' + encodeURIComponent(c.id || ''));
+      // クリエイター：本人のページ／クライアント：クリエイターさんの名前とページでお礼（2026-11-17 翠くん「最初のやつでよかった」）
+      // クリエイターさんが「検索に出さない」設定なら、名前を出さず Eizo Maps のトップ
+      var url = shown && c.id ? profile : location.origin + '/';
+      var text = role === 'creator'
+        ? 'Eizo Maps で、映像の仕事を1件完了しました🎬\nこれまでの実績や評価はこちらから👇'
+        : (shown && c.display_name
+            ? 'Eizo Maps で依頼した映像の制作が完了しました🎬\n' + c.display_name + ' さん、ありがとうございました！'
+            : 'Eizo Maps で依頼した映像の制作が完了しました🎬');
+      var tag = '#EizoMaps';
+      var links = [
+        ['X', 'https://x.com/intent/post?text=' + encodeURIComponent(text + '\n' + tag) + '&url=' + encodeURIComponent(url)],
+        ['Threads', 'https://www.threads.com/intent/post?text=' + encodeURIComponent(text + '\n' + tag) + '&url=' + encodeURIComponent(url)],
+        ['Facebook', 'https://www.facebook.com/sharer/sharer.php?u=' + encodeURIComponent(url)]
+      ];
+      return el('div', { class: 'card share-done' + (role === 'client' ? ' share-done--client' : '') }, [
+        el('p', { class: 'share-done__title', text: '🎉 案件を完了しました' }),
+        el('p', { class: 'small', text: role === 'creator'
+          ? 'おつかれさまでした。実績として SNS にシェアしてみませんか？ あなたの Eizo Maps のページが一緒に載ります。'
+          : 'おつかれさまでした。よければ SNS にシェアしてください。クリエイターさんへのお礼と紹介になり、とても喜ばれます。' }),
+        el('div', { class: 'form-actions' }, links.map(function (l) {
+          return el('a', { class: 'btn btn--sm', href: l[1], target: '_blank', rel: 'noopener noreferrer', text: l[0] + ' にシェア',
+            onclick: function () { EM.track('share', { method: l[0], content_type: 'project_closed', item_id: role }); } });
+        })),
+        el('p', { class: 'small muted', text: '案件の名前や金額は載りません。投稿する前に、文章は自由に書き換えられます。' })
+      ]);
+    }
     function renderFlow(box, p, role) {
       if (p.status === 'declined') {
         box.appendChild(el('div', { class: 'notice' }, [
@@ -281,6 +312,7 @@
         return;
       }
       if (['cancelled', 'draft'].indexOf(p.status) !== -1) return;
+      if (p.status === 'closed') { box.appendChild(shareBox(p, role)); }
       var wrap = el('div', { class: 'flow' }, [steps(p.status), nextBox(p, role)]);
       box.appendChild(wrap);
 
