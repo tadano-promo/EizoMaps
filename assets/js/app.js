@@ -227,6 +227,62 @@
       return u;
     });
   };
+  /* ---------- 画像・動画を付ける（お問い合わせ・問題の報告。2026-11-17 翠くん） ----------
+     ・非公開の置き場 inquiry-files の「自分のフォルダ」に入れる。見られるのは本人と運営だけ
+     ・5つまで・1つ50MBまで・画像（jpg/png/webp/gif/heic）と動画（mp4/mov/webm） */
+  EM.attachBox = function (user) {
+    var MAX = 5, MAXB = 50 * 1024 * 1024;
+    var OK = /^(image\/(jpeg|png|webp|gif|heic|heif)|video\/(mp4|quicktime|webm))$/;
+    var files = [];
+    var input = el('input', { type: 'file', multiple: true, accept: 'image/*,video/mp4,video/quicktime,video/webm', class: 'attach__input' });
+    var list = el('ul', { class: 'attach__list' });
+    var err = el('p', { class: 'small attach__err', hidden: true });
+    var node = el('div', { class: 'field attach' }, [
+      el('span', { class: 'label', text: '画像・動画を付ける（任意・5つまで・1つ50MBまで）' }),
+      user ? el('label', { class: 'btn btn--sm attach__pick' }, [input, document.createTextNode('＋ 画像・動画を選ぶ')]) : el('p', { class: 'small muted' }, [document.createTextNode('画像や動画（スクリーンショットなど）を付けるには、'), el('a', { href: '/auth/?next=' + encodeURIComponent(location.pathname + location.search), text: 'ログイン' }), document.createTextNode('してください。')]),
+      list, err,
+      el('span', { class: 'hint', text: '付けたファイルは、あなたと運営だけが見られます。運営が対応を終えてから30日たつと、ファイルは自動で消えます（文章は残ります）。' })
+    ]);
+    function draw() {
+      EM.clear(list);
+      files.forEach(function (f, i) {
+        list.appendChild(el('li', null, [
+          el('span', { class: 'small', text: (f.type.indexOf('video') === 0 ? '🎬 ' : '🖼 ') + f.name + '（' + (f.size / 1048576).toFixed(1) + 'MB）' }),
+          el('button', { type: 'button', class: 'btn btn--sm btn--ghost', text: '外す', onclick: function () { files.splice(i, 1); draw(); } })
+        ]));
+      });
+    }
+    input.addEventListener('change', function () {
+      var msgs = [];
+      Array.prototype.forEach.call(input.files || [], function (f) {
+        if (files.length >= MAX) { msgs.push('5つまでです。'); return; }
+        if (!OK.test(f.type)) { msgs.push(f.name + '：この形式は付けられません（画像・動画だけ）。'); return; }
+        if (f.size > MAXB) { msgs.push(f.name + '：50MBを超えています。短くするか、軽くしてから付けてください。'); return; }
+        files.push(f);
+      });
+      input.value = '';
+      err.hidden = !msgs.length; err.textContent = msgs.join(' ');
+      draw();
+    });
+    function upload() {
+      if (!files.length || !user) return Promise.resolve([]);
+      var sb = EM.sb();
+      /* 置き場が500MBを超えていたら、ファイルは受け付けない（文章は送れる。2026-11-17） */
+      return sb.rpc('inquiry_space_ok').then(function (r) {
+        if (r.data === false) throw new Error('いまは画像・動画を受け付けられません（置き場がいっぱいです）。ファイルを外して文章だけ送るか、support@eizo-maps.com にメールで送ってください。');
+      }).then(function () { return Promise.all(files.map(function (f) {
+        var ext = (f.name.match(/\.([A-Za-z0-9]{1,5})$/) || [, ''])[1].toLowerCase();
+        var id = (global.crypto && crypto.randomUUID) ? crypto.randomUUID() : String(Date.now()) + Math.random().toString(36).slice(2);
+        var path = user.id + '/' + id + (ext ? '.' + ext : '');
+        return sb.storage.from('inquiry-files').upload(path, f, { contentType: f.type, upsert: false }).then(function (r) {
+          if (r.error) throw new Error(f.name + ' を送れませんでした：' + EM.errorText(r.error));
+          return path;
+        });
+      })); });
+    }
+    return { node: node, upload: upload, count: function () { return files.length; } };
+  };
+
   EM.signOut = function () {
     var sb = EM.sb();
     if (!sb) return Promise.resolve();

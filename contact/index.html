@@ -19,13 +19,51 @@
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.116.0/dist/umd/supabase.js" integrity="sha384-iLddHTLokph6Omwoyid4XKxHaWa6w41BnoEj0q5oOrzmYPpHIKt1wyjReA7s//pP" crossorigin="anonymous" referrerpolicy="no-referrer" defer></script>
 <script src="/assets/js/config.js" defer></script>
 <script src="/assets/js/app.js" defer></script>
+<script src="/assets/js/page-contact.js" defer></script>
 </head>
 <body>
 <main class="section">
   <div class="wrap doc">
     <p class="eyebrow">Contact</p>
     <h1>お問い合わせ</h1>
-    <p>ご質問、不具合のご報告、取材のご依頼などは、下記のメールアドレスまでご連絡ください。通常2〜3営業日以内にご返信します。</p>
+    <p>ご質問・改善のご提案・不具合のご報告は、下のフォームから送れます。画面のスクリーンショットや動画も付けられます。通常2〜3営業日以内にご返信します。</p>
+
+    <div class="notice" id="pageMsg" hidden></div>
+    <form id="inqForm" class="card stack" novalidate>
+      <label class="field">
+        <span class="label">種類</span>
+        <select id="inqKind">
+          <option value="idea">改善のご提案・ご意見</option>
+          <option value="bug">不具合（うまく動かない）</option>
+          <option value="question">質問</option>
+          <option value="other">その他</option>
+        </select>
+      </label>
+      <label class="field">
+        <span class="label">内容（4000文字まで）</span>
+        <textarea id="inqBody" rows="7" maxlength="4000" placeholder="例：案件ページで「この条件で始める」を押したあと、何をすればいいか分かりませんでした。（どの画面で・何をしたら・どうなったか、があると助かります）"></textarea>
+      </label>
+      <div id="inqGuest" class="stack" hidden>
+        <label class="field">
+          <span class="label">お名前（任意）</span>
+          <input type="text" id="inqName" maxlength="60" autocomplete="name">
+        </label>
+        <label class="field">
+          <span class="label">返事を送るメールアドレス（必須）</span>
+          <input type="email" id="inqEmail" maxlength="200" autocomplete="email" inputmode="email" placeholder="you@example.com">
+        </label>
+      </div>
+      <div id="inqAttach"></div>
+      <div class="form-actions">
+        <button class="btn btn--primary" type="submit" id="inqSubmit">送る</button>
+      </div>
+    </form>
+    <div class="card" id="inqDone" hidden>
+      <p><strong>送りました。ありがとうございます。</strong></p>
+      <p class="small muted">いただいた内容は運営が読み、改善に使わせていただきます。お返事が必要なものには、2〜3営業日以内にご連絡します。</p>
+    </div>
+
+    <h2>メールでのお問い合わせ</h2>
 
     <div class="card">
       <h3>一般のお問い合わせ</h3>

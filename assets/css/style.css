@@ -2086,3 +2086,12 @@ body.nav-open .savebar { display: none; }
 .review-scope { display: grid; gap: 6px; }
 .review-sitewarn { color: #ff9d5c; }
 .flow-guide__list { display: grid; gap: 6px; padding-left: 1.4em; }
+/* 画像・動画を付ける（2026-11-17） */
+.attach__list { display: grid; gap: 6px; list-style: none; padding: 0; margin: 0; }
+.attach__list li { display: flex; gap: 8px; align-items: center; justify-content: space-between; border: 1px solid var(--border); border-radius: var(--radius-s); padding: 6px 10px; }
+.attach__list li span { overflow-wrap: anywhere; }
+.attach__err { color: #ff9d5c; }
+.attach__pick { position: relative; overflow: hidden; width: fit-content; cursor: pointer; }
+.attach__pick .attach__input { position: absolute; inset: 0; opacity: 0; cursor: pointer; }
+.attach__list { margin-left: 0 !important; }
+.doc .attach__list, .attach__list { padding-left: 0 !important; }
