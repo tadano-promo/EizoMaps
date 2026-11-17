@@ -173,7 +173,7 @@
         el('div', { class: 'flow-table__row flow-table__head' }, [el('span'), el('span', { text: '依頼したときの希望' }), el('span', { text: 'クリエイターの条件' })]),
         el('div', { class: 'flow-table__row' }, [
           el('span', { class: 'flow-table__k', text: '金額' }),
-          el('span', { text: p.budget_amount != null ? yen(p.budget_amount) : '未定' }),
+          el('span', { text: p.budget_amount != null ? Number(p.budget_amount).toLocaleString('ja-JP') + '円' : '未定' }),
           el('span', null, [el('strong', { class: 'flow-amt', text: p.terms_amount != null ? Number(p.terms_amount).toLocaleString('ja-JP') + '円' : '相談' }), p.terms_amount != null ? el('span', { class: 'small muted', text: '（税込）' }) : null, ' ', p.terms_amount != null ? cmp(p.budget_amount != null, p.terms_amount, p.budget_amount === p.terms_amount) : null])
         ]),
         el('div', { class: 'flow-table__row' }, [
@@ -215,12 +215,12 @@
           text = c ? (p.terms_amount == null
                        ? 'クリエイターから返事が届きましたが、金額が「相談」のままです。メッセージで金額を相談し、クリエイターに金額を入れて出し直してもらってください。'
                        : 'クリエイターから条件が届きました。下の表で「依頼したときの希望」と見比べて、よければ「この条件で始める」を押してください。押すまで仕事は始まりません。')
-                   : 'クライアントさんが条件を確かめて「この条件で始める」を押すのを待っています。始まるまでは、条件を出し直せます。';
+                   : 'クライアントさんが条件を確かめて「この条件で始める」を押すのを待っています。始まるまでは、条件を出し直せます。始まったら、あなたから企画・構成を提案して進めます。';
           break;
         case 'in_progress':
           mine = !c;
-          text = c ? '仕事が進んでいます。クリエイターが納品したら、ここに「納品済み」と出ます。'
-                   : '仕事を進めてください。納品したら、下の「納品済みにする」を押してください。';
+          text = c ? 'ここからはクリエイターが進めます。まずクリエイターから「どんな動画にするか（企画・構成）」の提案が届きます。待つ間に、使ってほしい写真・ロゴ・入れたい言葉・参考にしたい動画があれば、下の「伝えておくこと」から送っておくと早く進みます。'
+                   : 'ここからはあなたが進める番です。クライアントさんは動画づくりに慣れていないことが多いので、まず「どんな動画にするか（企画・構成）」をあなたから提案してください。下の「企画の提案を書く」を押すと、書く順番の見本が入ります。';
           break;
         case 'delivered':
           mine = c;
@@ -238,6 +238,28 @@
         el('p', { text: text })
       ]);
     }
+    // 進行中の「進め方の目安」と、書き出しの見本（2026-11-17 翠くん「クリエイターが主導で進めないといけないのに、使い方が分からないと進められない」）
+    var TPL_CREATOR = '■ 企画の提案\n\n【目的】この動画で伝えたいこと：\n【見てほしい人】\n【使う場所】（例：Instagram のリール）\n【長さ・本数】（例：30秒×1本）\n【構成案】\n1. 最初の3秒：\n2. まん中：\n3. 最後：\n【雰囲気】（例：明るく、テンポよく）\n【いただきたいもの】（例：ロゴ・写真・入れたい言葉）\n【このあとの流れ】構成OK → 制作 → 初稿 ○/○ → 修正（○回まで） → 納品 ○/○\n\nこの方向でよいか、ご意見をください。';
+    var TPL_CLIENT = '■ 伝えておくこと\n\n【いちばん伝えたいこと】\n【見てほしい人】\n【参考にしたい動画】（URL）\n【入れたい言葉・入れてはいけない言葉】\n【お渡しできる素材】（例：ロゴ・写真・商品）\n【気になっていること】';
+    function guideBox(role) {
+      var c = role === 'client';
+      var steps = [
+        ['企画・構成の提案', c ? 'クリエイターから届きます' : 'あなたから出します'],
+        ['方向性の確認', c ? 'よければ「この方向でOK」と返事' : 'クライアントさんのOKをもらう'],
+        ['制作・撮影', c ? '素材を渡す・撮影に立ち会う' : '素材を受け取り、作る'],
+        ['初稿の確認と修正', c ? '直してほしいところを具体的に伝える' : '初稿を送り、修正する'],
+        ['納品', c ? '受け取って確認' : '納品したら「納品済みにする」']
+      ];
+      function fill(t) { var m = EM.$('#messageBody'); if (!m) return; m.value = t; m.scrollIntoView({ block: 'center' }); m.focus(); }
+      return el('div', { class: 'card flow-guide' }, [
+        el('p', { class: 'flow-terms__title', text: '進め方の目安' }),
+        el('ol', { class: 'flow-guide__list' }, steps.map(function (x) { return el('li', null, [el('strong', { text: x[0] }), el('span', { class: 'small muted', text: '　' + x[1] })]); })),
+        el('div', { class: 'form-actions' }, [
+          el('button', { type: 'button', class: 'btn btn--sm' + (c ? '' : ' btn--primary'), text: c ? '伝えておくことを書く' : '企画の提案を書く', onclick: function () { fill(c ? TPL_CLIENT : TPL_CREATOR); } })
+        ]),
+        el('p', { class: 'small muted', text: c ? '分からないことは、そのままメッセージで聞いて大丈夫です。' : '見本の【　】に書き込んで送ってください。いらない項目は消してかまいません。' })
+      ]);
+    }
     function renderFlow(box, p, role) {
       if (p.status === 'declined') {
         box.appendChild(el('div', { class: 'notice' }, [
@@ -252,6 +274,7 @@
       box.appendChild(wrap);
 
       if (['offered', 'proposed'].indexOf(p.status) === -1) {
+        if (p.status === 'in_progress') wrap.appendChild(guideBox(role));
         if (p.terms_at) wrap.appendChild(termsCard(p, '始めたときの条件（あとから変えられません）'));
         return;
       }
@@ -300,7 +323,8 @@
       var f = el('form', { class: 'card stack flow-form', hidden: true, novalidate: true }, [
         el('label', { class: 'field' }, [el('span', { class: 'label', text: '金額（税込・円・必須）' }), amt]),
         el('label', { class: 'field' }, [el('span', { class: 'label', text: '納期' }), due]),
-        el('label', { class: 'field' }, [el('span', { class: 'label', text: '中身・ひとこと（1000文字まで）' }), note]),
+        el('label', { class: 'field' }, [el('span', { class: 'label', text: '中身・ひとこと（1000文字まで）' }), note,
+          el('span', { class: 'hint', text: 'どんな動画にするか（方向性）、本数・長さ、修正の回数を書くと、クライアントさんが判断しやすくなります。' })]),
         el('div', { class: 'form-actions' }, el('button', { type: 'submit', class: 'btn btn--primary', text: 'この条件を送る' }))
       ]);
       f.addEventListener('submit', function (e) {

@@ -31,6 +31,11 @@
     <div class="card" id="projectCard" hidden></div>
 
     <form id="reviewForm" class="stack" novalidate hidden>
+      <div class="notice notice--ok review-scope" id="reviewScope">
+        <p><strong>この評価は、相手の「仕事ぶり」についてです。</strong></p>
+        <p class="small" id="reviewScopeText">連絡の早さ・提案・仕上がり・納期など、一緒に仕事をしてどうだったかを書いてください。</p>
+        <p class="small">Eizo Maps（このサイト）の使いにくさ・分かりにくさは、相手の評価に入れないでください。いちばん下の「Eizo Maps への意見」に書くと、運営だけに届きます。</p>
+      </div>
       <div class="field">
         <span class="label">スコア <span class="muted">（0.0〜5.0・0.1刻み）</span></span>
         <div class="row">
@@ -42,6 +47,11 @@
         <span class="label">コメント <span class="muted">（必須・20文字以上2000文字まで）</span></span>
         <textarea id="comment" minlength="20" maxlength="2000" rows="7" required placeholder="やり取りの進め方、納期、仕上がりなど、これから依頼する人の参考になることを書いてください。"></textarea>
         <span class="hint" id="commentCount">0 文字</span>
+      </label>
+      <p class="small review-sitewarn" id="siteWarn" hidden>サイト（Eizo Maps）のことが書かれているようです。サイトへの意見は、相手の評価ではなく下の「Eizo Maps への意見」に書いてください。</p>
+      <label class="field">
+        <span class="label">Eizo Maps への意見 <span class="muted">（任意・運営だけに届きます・相手の評価には入りません）</span></span>
+        <textarea id="siteFeedback" maxlength="2000" rows="3" placeholder="例：「この条件で始める」を押す必要があると分かりにくかった。"></textarea>
       </label>
 
       <div class="notice">

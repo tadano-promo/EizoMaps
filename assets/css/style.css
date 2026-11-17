@@ -2074,3 +2074,6 @@ body.nav-open .savebar { display: none; }
 .flow-cmp.is-changed { border-color: #ff9d5c; color: #ff9d5c; }
 .flow-warn { color: #ff9d5c; }
 .flow-amt { font-size: 20px; }
+.review-scope { display: grid; gap: 6px; }
+.review-sitewarn { color: #ff9d5c; }
+.flow-guide__list { display: grid; gap: 6px; padding-left: 1.4em; }
