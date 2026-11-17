@@ -80,12 +80,22 @@
         var p = res[0].data;
         if (!p) { EM.notice(msg, 'この案件は見つかりませんでした。', 'error'); EM.$('#detailView').hidden = true; return; }
         var role = res[1].data;
+        names = partyNames(p, role);
         var myReview = (res[2].data || [])[0] || null;   // 自分が投稿した評価だけ
         renderDetail(p, role, myReview);
         return loadMessages();
       });
     }
 
+    /* お互いの名前（2026-11-17 翠くん「途中で名前を呼ぼうと思ったときに呼べなくて不便」） */
+    var names = { me: 'あなた', other: '相手' };
+    function partyNames(p, role) {
+      var cl = p.clients ? (p.clients.company ? p.clients.company + '（' + (p.clients.display_name || '') + '）' : (p.clients.display_name || '')) : '';
+      var cr = (p.creators && p.creators.display_name) || '';
+      return role === 'client' ? { me: cl || 'あなた', other: cr || '相手', otherRole: 'クリエイター', meRole: 'クライアント' }
+           : role === 'creator' ? { me: cr || 'あなた', other: cl || '相手', otherRole: 'クライアント', meRole: 'クリエイター' }
+           : { me: 'あなた', other: '相手' };
+    }
     function renderDetail(p, role, myReview) {
       document.title = p.title + ' — Eizo Maps';
       EM.$('#pageTitle').textContent = p.title;
@@ -347,10 +357,13 @@
       });
       return f;
     }
+    var busy = false;   // ボタンの2回押しよけ
     function respond(p, action, amount, due, note) {
       if (action === 'accept' && !confirm('依頼したときの希望のまま受けますか？\n金額：' + yen(p.budget_amount) + '\n納期：' + (p.due_on ? EM.mdw(p.due_on) : '相談') + '\nクライアントさんが「この条件で始める」を押すと進行中になります。')) return;
+      if (busy) return; busy = true;
       sb.rpc('project_respond', { p_project: p.id, p_action: action, p_amount: amount === undefined ? null : amount, p_due: due || null, p_note: note || null })
         .then(function (r) {
+          busy = false;
           if (r.error) { EM.notice(msg, EM.errorText(r.error), 'error'); return; }
           EM.toast(action === 'decline' ? 'お断りを送りました' : '返事を送りました');
           EM.track('project_reply', { reply_type: action });
@@ -359,7 +372,9 @@
     }
     function startProject(p) {
       if (!confirm('この条件で始めますか？\n金額：' + yen(p.terms_amount) + '\n納期：' + (p.terms_due_on ? EM.mdw(p.terms_due_on) : '相談') + '\n始めたあとは条件を変えられません。')) return;
+      if (busy) return; busy = true;
       sb.rpc('project_start', { p_project: p.id }).then(function (r) {
+        busy = false;
         if (r.error) { EM.notice(msg, EM.errorText(r.error), 'error'); return; }
         EM.toast('始めました。進行中になりました');
         EM.track('project_start', { project_origin: p.origin || 'direct' });
@@ -384,23 +399,40 @@
         .order('created_at')
         .then(function (r) {
           var box = EM.clear(EM.$('#messages'));
+          var whoBox = EM.clear(EM.$('#msgWho'));
+          if (names.otherRole) {
+            whoBox.hidden = false;
+            whoBox.appendChild(el('p', { class: 'small' }, [
+              el('span', { class: 'muted', text: '相手（' + names.otherRole + '）：' }), el('strong', { text: names.other + ' さん' }),
+              el('span', { class: 'muted', text: '　／　あなた：' }), el('span', { text: names.me })
+            ]));
+          }
           var rows = r.data || [];
           if (!rows.length) { box.appendChild(el('div', { class: 'empty', text: 'まだやり取りはありません。' })); return; }
           rows.forEach(function (m) {
-            box.appendChild(el('div', { class: 'card' }, [
-              el('p', { class: 'small muted', text: (m.sender_id === user.id ? '自分' : '相手') + ' / ' + EM.date(m.created_at) }),
+            var mine = m.sender_id === user.id;
+            box.appendChild(el('div', { class: 'card msg' + (mine ? ' msg--mine' : '') }, [
+              el('p', { class: 'small muted' }, [
+                el('strong', { class: 'msg__name', text: mine ? names.me + '（あなた）' : names.other + ' さん' }),
+                document.createTextNode(' / ' + EM.datetime(m.created_at))
+              ]),
               el('p', { text: m.body })
             ]));
           });
         });
     }
 
+    var sending = false;
     EM.$('#messageForm').addEventListener('submit', function (e) {
       e.preventDefault();
       var body = EM.$('#messageBody').value.trim();
-      if (!body) return;
+      if (!body || sending) return;
+      // 2回押しで同じものが2つ届かないように、送っている間はボタンを止める（2026-11-17 同じメッセージが0.1秒差で2つ届いた）
+      sending = true;
+      var btn = EM.$('#messageSend'); btn.disabled = true; btn.textContent = '送信中…';
       sb.from('project_messages').insert({ project_id: projectId, sender_id: user.id, body: body })
         .then(function (r) {
+          sending = false; btn.disabled = false; btn.textContent = '送信';
           if (r.error) { EM.notice(msg, EM.errorText(r.error), 'error'); return; }
           EM.$('#messageBody').value = '';
           loadMessages();

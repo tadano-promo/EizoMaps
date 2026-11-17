@@ -2095,3 +2095,9 @@ body.nav-open .savebar { display: none; }
 .attach__pick .attach__input { position: absolute; inset: 0; opacity: 0; cursor: pointer; }
 .attach__list { margin-left: 0 !important; }
 .doc .attach__list, .attach__list { padding-left: 0 !important; }
+
+/* 案件のやり取り：お互いの名前（2026-11-17） */
+.msg-who{position:sticky;top:var(--header-h);z-index:5;background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:8px 12px;margin-bottom:12px}
+.msg-who p{margin:0}
+.msg__name{color:var(--text);font-weight:700}
+.msg--mine{background:var(--surface2)}

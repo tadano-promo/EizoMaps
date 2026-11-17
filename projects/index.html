@@ -54,6 +54,7 @@
       <hr class="divider">
       <section>
         <h2>やり取り</h2>
+        <div class="msg-who" id="msgWho" hidden></div>
         <div class="stack" id="messages"></div>
         <form id="messageForm" class="stack" novalidate>
           <label class="field">
@@ -61,7 +62,7 @@
             <textarea id="messageBody" maxlength="4000" rows="4" required></textarea>
           </label>
           <div class="form-actions">
-            <button class="btn btn--primary" type="submit">送信</button>
+            <button class="btn btn--primary" type="submit" id="messageSend">送信</button>
           </div>
         </form>
       </section>
