@@ -25,8 +25,11 @@
     syncScore();
 
     var comment = EM.$('#comment');
+    // サイトの使いにくさが相手の評価に混ざらないように（2026-11-17 翠くん）
+    var SITE_WORDS = /(Eizo ?Maps|映像マップ|サイト|アプリ|画面|ボタン|使いにく|使いづら|分かりにく|わかりにく|分かりづら|わかりづら|操作|通知が)/i;
     comment.addEventListener('input', function () {
       EM.$('#commentCount').textContent = comment.value.trim().length + ' 文字';
+      EM.$('#siteWarn').hidden = !SITE_WORDS.test(comment.value);
     });
 
     EM.requireUser().then(function (u) {
@@ -64,6 +67,9 @@
       card.appendChild(el('p', { class: 'small muted', text: '評価する案件' }));
       card.appendChild(el('p', { class: 'pf-title', text: project.title }));
       card.appendChild(el('p', { class: 'small muted', text: '評価する相手：' + who + '（' + (cp.my_role === 'creator' ? 'クライアント' : 'クリエイター') + '）' }));
+      EM.$('#reviewScopeText').textContent = cp.my_role === 'creator'
+        ? '依頼内容の分かりやすさ・連絡の早さ・確認や支払いの進め方など、一緒に仕事をしてどうだったかを書いてください。'
+        : '提案の分かりやすさ・連絡の早さ・仕上がり・納期など、一緒に仕事をしてどうだったかを書いてください。';
       EM.$('#reviewForm').hidden = false;
     }).catch(function (e) { EM.notice(msg, EM.errorText(e), 'error'); });
 
@@ -87,6 +93,8 @@
         if (r.error) { EM.notice(msg, EM.errorText(r.error), 'error'); return; }
         EM.$('#reviewForm').hidden = true;
         EM.notice(msg, '評価を投稿しました。運営が内容を確認したあとに公開されます。', 'ok');
+        var fb = EM.$('#siteFeedback').value.trim();
+        if (fb) sb.from('site_feedback').insert({ project_id: projectId, page: 'review', body: fb.slice(0, 2000) }).then(function () {}, function () {});
       }).catch(function (err) {
         btn.removeAttribute('aria-busy');
         EM.notice(msg, EM.errorText(err), 'error');
