@@ -21,7 +21,7 @@
     var SELECT = 'id,title,description,kind,status,budget_amount,due_on,reference_url,' +
                  'started_at,delivered_at,paid_at,created_at,updated_at,client_id,creator_id,' +
                  'terms_amount,terms_due_on,terms_note,terms_at,declined_reason,declined_at,origin,job_post_id,' +
-                 'final_amount,final_due_on,final_at,rules_version,rules_agreed_at,clients(display_name,company),creators(id,display_name,headline,avatar_url,handle,search_visible)';
+                 'final_amount,final_due_on,final_at,rules_version,rules_agreed_at,withholding,clients(display_name,company),creators(id,display_name,headline,avatar_url,handle,search_visible)';
 
     /* ---------------- 一覧 ---------------- */
     function loadList() {
@@ -621,6 +621,10 @@
         if (p.terms_at) wrap.appendChild(termsCard(p, '始めたときの条件（あとから変えられません）'));
         if (['in_progress', 'delivered', 'paid', 'closed'].indexOf(p.status) !== -1) wrap.appendChild(quotesCard(p, role));
         if (['in_progress', 'delivered', 'paid', 'closed'].indexOf(p.status) !== -1) wrap.appendChild(payoutCard(p, role));
+        // 書類（見積書・発注書・納品書・請求書）（2026-11-18）
+        if (window.EMDocs && ['proposed', 'in_progress', 'delivered', 'paid', 'closed'].indexOf(p.status) !== -1) {
+          wrap.appendChild(EMDocs.card(p, role, { sb: sb, user: user, msg: msg, reload: loadDetail, pendingQuote: pendingQuote, openPause: openPause, quotes: function () { return quotes; } }));
+        }
         return;
       }
       if (p.status === 'offered' && role === 'client') {
