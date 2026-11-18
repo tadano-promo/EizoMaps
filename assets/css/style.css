@@ -2141,3 +2141,42 @@ body[data-mode="client"] .deal-rules{border-left-color:var(--client)}
 .payout-dl{display:grid;grid-template-columns:7em 1fr;gap:6px 10px;margin:8px 0}
 .payout-dl dt{color:var(--muted);font-size:.9rem}
 .payout-dl dd{margin:0;display:flex;align-items:center;gap:8px;flex-wrap:wrap;font-weight:600}
+
+/* 書類（2026-11-18） */
+.doc-make{flex-wrap:wrap}
+.doc-list{list-style:none;padding:0;margin:0;border-top:1px solid var(--border)}
+.doc-list li{display:flex;justify-content:space-between;align-items:center;gap:10px;padding:10px 0;border-bottom:1px solid var(--border);flex-wrap:wrap}
+.doc-list li p{margin:2px 0 0}
+.doc-wh{border:1px dashed var(--border);border-radius:var(--radius-s);padding:8px 12px}
+.doc-wh p{margin:4px 0}
+.doc-stamp-preview{width:72px;height:72px;object-fit:contain;background:#fff;border-radius:6px;display:block;margin:6px 0}
+.docstage{position:fixed;left:-10000px;top:0;z-index:-1}
+.docsheet{width:794px;min-height:1123px;box-sizing:border-box;padding:56px 60px;background:#fff;color:#111;font-family:"Noto Sans JP","Hiragino Sans","Yu Gothic",sans-serif;font-size:13px;line-height:1.6}
+.docsheet h1{font-size:28px;letter-spacing:.3em;margin:0;font-weight:700}
+.docsheet__head{display:flex;justify-content:space-between;align-items:flex-end;border-bottom:2px solid #111;padding-bottom:10px}
+.docsheet__meta p{margin:0;text-align:right;font-size:12px}
+.docsheet__sub{margin:8px 0 0;color:#444;font-size:12px}
+.docsheet__parties{display:flex;justify-content:space-between;gap:24px;margin:28px 0 20px}
+.docsheet__to{flex:1}
+.docsheet__toname{font-size:18px;border-bottom:1px solid #111;padding-bottom:4px;margin:0 0 10px;font-weight:700}
+.docsheet__lead{margin:0 0 12px}
+.docsheet__big{display:flex;justify-content:space-between;align-items:baseline;border:2px solid #111;padding:10px 14px}
+.docsheet__big strong{font-size:22px}
+.docsheet__from{width:250px;position:relative;font-size:12px}
+.docsheet__from p{margin:0}
+.docsheet__fromname{font-size:14px;font-weight:700;margin-bottom:4px!important}
+.docsheet__stamp{position:absolute;right:0;top:0;width:64px;height:64px;object-fit:contain;opacity:.9}
+.docsheet table{width:100%;border-collapse:collapse}
+.docsheet__items th,.docsheet__items td{border:1px solid #999;padding:8px 10px}
+.docsheet__items th{background:#f1f1f1;font-weight:700}
+.docsheet .num{text-align:right;white-space:nowrap}
+.docsheet__sum{width:340px!important;margin:12px 0 0 auto}
+.docsheet__sum th,.docsheet__sum td{border:1px solid #999;padding:6px 10px;font-weight:400;text-align:left}
+.docsheet__sum th{background:#f7f7f7}
+.docsheet__sum tr.is-total th,.docsheet__sum tr.is-total td{font-weight:700;font-size:15px}
+.docsheet__info{margin-top:24px}
+.docsheet__info p{margin:2px 0}
+.docsheet__small{font-size:11px;color:#444}
+.docsheet__label{font-weight:700;margin-top:10px!important}
+.docsheet__payout,.docsheet__note{border:1px solid #bbb;padding:8px 12px;margin-top:12px}
+.docsheet__foot{margin-top:40px;font-size:10px;color:#777;border-top:1px solid #ddd;padding-top:6px}
