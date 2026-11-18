@@ -77,8 +77,12 @@
         sb.rpc('project_my_role', { p_project_id: projectId }),
         sb.from('reviews').select('id,status,score').eq('project_id', projectId).eq('reviewer_id', user.id),
         sb.from('project_quotes').select('id,version,amount,due_on,note,status,decline_reason,created_at,decided_at,no_pause').eq('project_id', projectId).order('version'),
-        sb.from('project_pauses').select('id,started_at,ended_at,end_reason,shifted_days,due_before,due_after').eq('project_id', projectId).order('started_at')
+        sb.from('project_pauses').select('id,started_at,ended_at,end_reason,shifted_days,due_before,due_after').eq('project_id', projectId).order('started_at'),
+        sb.rpc('payout_get', { p_project: projectId }),
+        sb.from('creator_payout_profiles').select('bank_name,branch_name,account_type,account_number,holder_kana').eq('user_id', user.id).maybeSingle()
       ]).then(function (res) {
+        payout = (res[5] && res[5].data && res[5].data[0]) || null;
+        payoutProfile = (res[6] && res[6].data) || null;
         quotes = (res[3] && res[3].data) || [];
         pauses = (res[4] && res[4].data) || [];
         if (res[0].error) throw res[0].error;
@@ -523,6 +527,81 @@
         EM.toast(action === 'accept' ? '確定しました' : '見送りを送りました'); EM.track('quote_decide', { reply_type: action }); loadDetail();
       });
     }
+    /* ---- 振込先（2026-11-18 翠くん「入金済みで隠す」） ----
+       金額が決まったら、クリエイターが入れてクライアントさんに知らせる。見られるのはその案件の2人だけ。
+       入金済み・完了・キャンセルで中身はデータベースから消える。メッセージとメールに口座番号は書かない */
+    var payout = null, payoutProfile = null;
+    function payoutCard(p, role) {
+      var c = role === 'client';
+      var amt = p.final_amount != null ? p.final_amount : p.terms_amount;
+      var card = el('div', { class: 'card flow-terms payout-card' }, [el('p', { class: 'flow-terms__title', text: 'お支払い（振込先）' })]);
+      if (payout && payout.wiped_at) {
+        card.appendChild(el('p', { class: 'small muted', text: '入金済みになったので、振込先は消しました（' + EM.date(payout.sent_at) + ' に届いたもの）。' }));
+        return card;
+      }
+      if (['paid', 'closed'].indexOf(p.status) !== -1) { card.appendChild(el('p', { class: 'small muted', text: '入金済みです。' })); return card; }
+      card.appendChild(el('p', { class: 'quote-now' }, [el('span', { class: 'small muted', text: 'お支払いの金額' }), el('strong', { text: amt != null ? yen(amt) : '未定' })]));
+      var ready = amt != null && !pendingQuote() && !openPause();
+      if (payout) {
+        var rows = [['銀行', payout.bank_name], ['支店', payout.branch_name], ['種類', payout.account_type], ['口座番号', payout.account_number], ['名義（カナ）', payout.holder_kana]];
+        card.appendChild(el('dl', { class: 'payout-dl' }, rows.reduce(function (a, r) {
+          a.push(el('dt', { text: r[0] }));
+          a.push(el('dd', null, [document.createTextNode(r[1] || ''), c ? el('button', { type: 'button', class: 'btn btn--sm btn--ghost', text: 'コピー', onclick: function () {
+            try { navigator.clipboard.writeText(r[1] || ''); EM.toast(r[0] + 'をコピーしました'); } catch (e) {}
+          } }) : null]));
+          return a;
+        }, [])));
+        if (payout.note) card.appendChild(el('p', { class: 'small', text: 'ひとこと：' + payout.note }));
+        card.appendChild(el('p', { class: 'small muted', text: EM.date(payout.sent_at) + ' に届きました。見られるのはこの案件の2人だけです。「入金済み」になると、この振込先は消えます。' }));
+        if (c) card.appendChild(el('p', { class: 'small', text: 'お振り込みが済んだら、下の「入金済みにする」を押してください。振込手数料をどちらが持つかは、決まっていなければメッセージで確かめてください。' }));
+      } else if (c) {
+        card.appendChild(el('p', { class: 'small muted', text: ready ? 'クリエイターさんから振込先が届くと、ここに表示されます。' : '金額が決まると、クリエイターさんから振込先が届きます。' }));
+      }
+      if (!c && ['in_progress', 'delivered'].indexOf(p.status) !== -1) {
+        if (!ready) {
+          card.appendChild(el('p', { class: 'small muted', text: '確定待ちの見積もりや一時停止があるあいだは、振込先を送れません。金額が決まってから送ってください。' }));
+        } else {
+          var f = payoutForm(p, payout || payoutProfile);
+          if (payout) { f.hidden = true; card.appendChild(el('div', { class: 'form-actions' }, el('button', { type: 'button', class: 'btn btn--sm', text: '振込先を直して送り直す', onclick: function () { f.hidden = !f.hidden; } }))); }
+          else card.appendChild(el('p', { class: 'small', text: '金額が決まりました。振込先を入れて、クライアントさんに知らせましょう。' }));
+          card.appendChild(f);
+        }
+      }
+      return card;
+    }
+    function payoutForm(p, pre) {
+      pre = pre || {};
+      var bank = el('input', { type: 'text', maxlength: '40', placeholder: '例：〇〇銀行', value: pre.bank_name || '', autocomplete: 'off' });
+      var branch = el('input', { type: 'text', maxlength: '40', placeholder: '例：渋谷支店', value: pre.branch_name || '', autocomplete: 'off' });
+      var type = el('select', null, ['普通', '当座', '貯蓄'].map(function (t) { return el('option', { value: t, text: t, selected: (pre.account_type || '普通') === t }); }));
+      var num = el('input', { type: 'text', inputmode: 'numeric', maxlength: '7', placeholder: '7けた', value: pre.account_number || '', autocomplete: 'off' });
+      var holder = el('input', { type: 'text', maxlength: '60', placeholder: '例：ヤマダ タロウ', value: pre.holder_kana || '', autocomplete: 'off' });
+      var note = el('input', { type: 'text', maxlength: '300', placeholder: '例：振込手数料はご負担をお願いします（任意）' });
+      var save = el('input', { type: 'checkbox', checked: !!payoutProfile });
+      var f = el('form', { class: 'stack flow-form', novalidate: true }, [
+        el('div', { class: 'row' }, [el('label', { class: 'field' }, [el('span', { class: 'label', text: '銀行名' }), bank]), el('label', { class: 'field' }, [el('span', { class: 'label', text: '支店名' }), branch])]),
+        el('div', { class: 'row' }, [el('label', { class: 'field' }, [el('span', { class: 'label', text: '口座の種類' }), type]), el('label', { class: 'field' }, [el('span', { class: 'label', text: '口座番号（7けた）' }), num])]),
+        el('label', { class: 'field' }, [el('span', { class: 'label', text: '口座の名義（カナ）' }), holder]),
+        el('label', { class: 'field' }, [el('span', { class: 'label', text: 'ひとこと（任意）' }), note]),
+        el('label', { class: 'checkbox' }, [save, el('span', { text: 'この振込先を保存して、次の案件から使う（見られるのは自分だけです）' })]),
+        el('p', { class: 'hint', text: '見られるのは、この案件のクライアントさんだけです。やり取りのメッセージやメールには口座番号を書きません。「入金済み」になると、この案件の振込先はデータベースから消えます。' }),
+        el('div', { class: 'form-actions' }, el('button', { type: 'submit', class: 'btn btn--primary', text: 'この振込先を知らせる' }))
+      ]);
+      f.addEventListener('submit', function (e) {
+        e.preventDefault();
+        var n = num.value.replace(/[０-９]/g, function (d) { return String.fromCharCode(d.charCodeAt(0) - 0xFEE0); }).replace(/[^0-9]/g, '');
+        if (!bank.value.trim() || !branch.value.trim() || !holder.value.trim()) { EM.notice(msg, '銀行名・支店名・口座の名義を入れてください。', 'error'); return; }
+        if (!/^[0-9]{7}$/.test(n)) { EM.notice(msg, '口座番号は7けたの数字で入れてください。', 'error'); num.focus(); return; }
+        if (!confirm('この振込先をクライアントさんに知らせますか？\n' + bank.value.trim() + '　' + branch.value.trim() + '\n' + type.value + '　' + n + '\n' + holder.value.trim())) return;
+        if (busy) return; busy = true;
+        sb.rpc('payout_send', { p_project: p.id, p_bank: bank.value, p_branch: branch.value, p_type: type.value, p_number: n, p_holder: holder.value, p_note: note.value || null, p_save: save.checked }).then(function (r) {
+          busy = false;
+          if (r.error) { EM.notice(msg, EM.errorText(r.error), 'error'); return; }
+          EM.toast('振込先を知らせました'); EM.track('payout_send', {}); loadDetail();
+        });
+      });
+      return f;
+    }
     function renderFlow(box, p, role) {
       if (p.status === 'declined') {
         box.appendChild(el('div', { class: 'notice' }, [
@@ -541,6 +620,7 @@
         if (p.status === 'in_progress') wrap.appendChild(guideBox(role));
         if (p.terms_at) wrap.appendChild(termsCard(p, '始めたときの条件（あとから変えられません）'));
         if (['in_progress', 'delivered', 'paid', 'closed'].indexOf(p.status) !== -1) wrap.appendChild(quotesCard(p, role));
+        if (['in_progress', 'delivered', 'paid', 'closed'].indexOf(p.status) !== -1) wrap.appendChild(payoutCard(p, role));
         return;
       }
       if (p.status === 'offered' && role === 'client') {

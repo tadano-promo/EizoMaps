@@ -2138,3 +2138,6 @@ body[data-mode="client"] .deal-rules{border-left-color:var(--client)}
 .due-mode legend{padding:0 4px}
 .due-mode .checkbox{margin:6px 0;align-items:flex-start}
 .due-fix{margin:6px 0 0 1.6em}
+.payout-dl{display:grid;grid-template-columns:7em 1fr;gap:6px 10px;margin:8px 0}
+.payout-dl dt{color:var(--muted);font-size:.9rem}
+.payout-dl dd{margin:0;display:flex;align-items:center;gap:8px;flex-wrap:wrap;font-weight:600}
