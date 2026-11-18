@@ -306,7 +306,8 @@
       opts.lead ? el('p', { class: 'small', text: opts.lead }) : null,
       el('ol', null, EM.DEAL_RULES.map(function (r) {
         return el('li', null, [el('strong', { text: r[0] }), opts.compact ? null : el('span', { class: 'small muted', text: r[1] })]);
-      }))
+      })),
+      el('p', { class: 'small muted' }, [document.createTextNode('くわしくは '), el('a', { href: '/terms/#deal-rules', target: '_blank', rel: 'noopener', text: '利用規約 第4条の5' }), document.createTextNode(' に書いています。')])
     ]);
   };
 
