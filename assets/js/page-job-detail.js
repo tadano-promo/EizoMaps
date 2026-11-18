@@ -148,6 +148,7 @@
         ]),
         el('label', { class: 'field' }, [el('span', { class: 'label', text: 'ひとこと（必須・10〜2000文字）' }), note]),
         el('div', { class: 'field' }, [el('span', { class: 'label', text: '見てほしい作品（3つまで）' }), workBox]),
+        EM.dealRulesBox({ title: '仕事を始めるときの決まり', lead: '提案が選ばれて仕事が始まるときは、クライアントさんがこの決まりに同意してから始めます。', compact: true }),
         el('div', { class: 'form-actions' }, el('button', { type: 'submit', class: 'btn btn--primary', text: '提案を送る' }))
       ]);
       f.addEventListener('submit', function (e) {

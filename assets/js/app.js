@@ -288,6 +288,28 @@
   };
 
   /* 文章の中の URL を押せるリンクにする（案件のやり取り。2026-11-17 相手の方「リンクを貼れたら」） */
+  /* ---------- 取引の決まり（2026-11-18 翠くん「取引開始時にちゃんと知らせる」「想定力大事」） ----------
+     どの画面でも同じ文を出すため、ここ1か所にまとめる。版を変えたら、データベースの project_start の版も変える */
+  EM.DEAL_RULES_VERSION = '2026-11-18';
+  EM.DEAL_RULES = [
+    ['始めたときの金額と納期は、記録に残ります', '「この条件で始める」を押した時点の金額と納期は、あとから書き換えられません。'],
+    ['途中で金額が変わるときは「見積もりの出し直し」で', 'クリエイターが新しい見積もりを出し、クライアントが「確定」するまで、金額は変わりません。'],
+    ['見積もりを「見送る」と、作業は一時停止・納期はその分うしろへ', '話がまとまるまで作業は止まり、納期は止まった日数だけ自動でうしろにずれます。例：3日止まったら、納期 11/30 → 12/3。'],
+    ['納期を動かせない事情は、始める前に伝える', 'イベントや公開日などで納期を1日もずらせないときは、始める前にメッセージで伝え、条件のメモに書いてもらってください。'],
+    ['ぜんぶ記録に残り、お互いに見られます', '見積もり・返事・止まった日数は、あとから消したり書き換えたりできません。']
+  ];
+  // opts.title / opts.lead / opts.compact（説明を省く）
+  EM.dealRulesBox = function (opts) {
+    opts = opts || {};
+    return el('div', { class: 'deal-rules' }, [
+      el('p', { class: 'deal-rules__title', text: opts.title || 'この案件の決まり' }),
+      opts.lead ? el('p', { class: 'small', text: opts.lead }) : null,
+      el('ol', null, EM.DEAL_RULES.map(function (r) {
+        return el('li', null, [el('strong', { text: r[0] }), opts.compact ? null : el('span', { class: 'small muted', text: r[1] })]);
+      }))
+    ]);
+  };
+
   EM.linkify = function (text) {
     var out = [], re = /https?:\/\/[^\s<>「」（）()、。]+/g, last = 0, m;
     while ((m = re.exec(text))) {
@@ -1107,6 +1129,10 @@
   document.addEventListener('DOMContentLoaded', function () {
     if (!document.body.hasAttribute('data-no-chrome')) EM.mountChrome();
     EM.checkAccount();
+    // <div data-deal-rules="クライアント向けの一言"> に決まりを入れる（依頼・募集のフォームなど）
+    Array.prototype.forEach.call(document.querySelectorAll('[data-deal-rules]'), function (n) {
+      n.appendChild(EM.dealRulesBox({ title: '仕事を始めるときの決まり', lead: n.getAttribute('data-deal-rules') || null }));
+    });
   });
 
   /* ---------- 退会の手続き中かどうか／また登録した人に前の評価をつなぐ（2026-11-15） ----------

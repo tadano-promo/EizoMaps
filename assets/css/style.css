@@ -2126,3 +2126,11 @@ body.nav-open .savebar { display: none; }
 .quote-pauses{border:1px dashed #f5a524;border-radius:var(--radius-s);padding:8px 12px;margin:0 0 10px}
 .quote-pauses p{margin:0 0 4px}.quote-pauses ul{margin:0;padding-left:1.2em}
 .decline-warn p{margin:6px 0 0}.decline-warn{display:block}
+/* 取引の決まり（2026-11-18） */
+.deal-rules{border:1px solid var(--border);border-left:3px solid var(--accent);border-radius:var(--radius-s);padding:12px 14px;margin:12px 0;background:var(--surface)}
+body[data-mode="client"] .deal-rules{border-left-color:var(--client)}
+.deal-rules__title{font-weight:700;margin:0 0 6px}
+.deal-rules ol{margin:6px 0 0;padding-left:1.3em}
+.deal-rules li{margin:6px 0}
+.deal-rules li .small{display:block;margin-top:2px}
+.deal-agree{margin:8px 0 4px;align-items:flex-start}
