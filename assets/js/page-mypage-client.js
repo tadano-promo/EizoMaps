@@ -59,9 +59,13 @@
         (r[1].data || []).forEach(function (x) { if (x.project_id) reviewed[x.project_id] = true; });
         renderToReview(rows.filter(function (p) { return EM.canReview(p.status) && !reviewed[p.id]; }));
         renderActive(box, rows.filter(function (p) { return ACTIVE.indexOf(p.status) !== -1; }));
+        return EM.projectFlags(rows.map(function (p) { return p.id; })).then(function (m) {
+          flags = m; renderActive(box, rows.filter(function (p) { return ACTIVE.indexOf(p.status) !== -1; }));
+        });
       });
     }
 
+    var flags = {};   // 案件の札（2026-11-18）
     function projectCard(p, extra) {
       var who = (p.creators && p.creators.display_name) || '';
       return el('div', { class: 'card cl-proj' }, [
@@ -69,7 +73,7 @@
           el('p', { class: 'pf-title', text: p.title }),
           el('p', { class: 'small muted', text: [who ? who + ' さん' : '', p.kind, EM.budgetLabel(p.budget_amount)].filter(Boolean).join(' / ') })
         ]),
-        el('div', { class: 'row' }, [EM.statusBadge(p.status), el('span', { class: 'small muted', text: EM.date(p.updated_at) })].concat(extra || []))
+        el('div', { class: 'row' }, [EM.statusBadge(p.status)].concat(EM.projectBadges(p, flags[p.id])).concat([el('span', { class: 'small muted', text: EM.date(p.updated_at) })]).concat(extra || []))
       ]);
     }
 

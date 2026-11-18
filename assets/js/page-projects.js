@@ -36,9 +36,16 @@
         var rows = res[2].data || [];
         renderList(EM.$('#asClient'),  rows.filter(function (p) { return p.client_id === myClientId; }),  'client');
         renderList(EM.$('#asCreator'), rows.filter(function (p) { return p.creator_id === myCreatorId; }), 'creator');
+        // 札（あなたの番・一時停止中など）は読み終わったら描き直す
+        return EM.projectFlags(rows.map(function (p) { return p.id; })).then(function (m) {
+          flags = m;
+          renderList(EM.$('#asClient'),  rows.filter(function (p) { return p.client_id === myClientId; }),  'client');
+          renderList(EM.$('#asCreator'), rows.filter(function (p) { return p.creator_id === myCreatorId; }), 'creator');
+        });
       });
     }
 
+    var flags = {};
     function renderList(box, rows, role) {
       EM.clear(box);
       if (!rows.length) {
@@ -58,10 +65,10 @@
               el('p', { class: 'small muted', text: [who, p.kind, EM.budgetLabel(p.budget_amount)].filter(Boolean).join(' / ') })
             ]),
             el('div', { class: 'row' }, [
-              EM.statusBadge(p.status),
-        openPause() && ['in_progress', 'delivered'].indexOf(p.status) !== -1 ? el('span', { class: 'tag tag--pause', text: '一時停止中' }) : null,
+              EM.statusBadge(p.status)
+            ].concat(EM.projectBadges(p, flags[p.id])).concat([
               el('span', { class: 'small muted', text: EM.date(p.updated_at) })
-            ])
+            ]))
           ])
         ]));
       });

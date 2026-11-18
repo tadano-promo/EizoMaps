@@ -288,6 +288,43 @@
   };
 
   /* 文章の中の URL を押せるリンクにする（案件のやり取り。2026-11-17 相手の方「リンクを貼れたら」） */
+  /* ---------- 案件の札（2026-11-18 翠くん「1から順に」） ----------
+     一覧・トップ・マイページで、開かなくても「どれに返事が要るか」が分かるようにする。
+     EM.projectFlags(ids) で状況をまとめて読み、EM.projectBadges(p, flag) で札にする。あなたの番の札を先に並べる */
+  EM.projectFlags = function (ids) {
+    ids = (ids || []).filter(Boolean);
+    if (!ids.length) return Promise.resolve({});
+    return EM.sb().rpc('my_project_flags', { p_ids: ids.slice(0, 200) }).then(function (r) {
+      var m = {}; (r.data || []).forEach(function (f) { m[f.project_id] = f; }); return m;
+    }).catch(function () { return {}; });
+  };
+  EM.projectBadgeList = function (p, f) {
+    if (!f) return [];
+    var c = f.my_role === 'client', out = [], st = p.status;
+    var going = st === 'in_progress' || st === 'delivered';
+    function add(text, kind) { out.push({ text: text, kind: kind }); }   // kind: mine（あなたの番）／wait（相手の番）／pause／info
+    if (f.paused_since && going) {
+      var d = Math.max(0, Math.floor((Date.now() + 9 * 3600000) / 86400000) - Math.floor((new Date(f.paused_since).getTime() + 9 * 3600000) / 86400000));
+      add('一時停止中（' + (d + 1) + '日目）', 'pause');
+    }
+    if (f.pending_version && going) add(c ? '見積もり（' + f.pending_version + '回目）の返事' : '見積もりの確定待ち', c ? 'mine' : 'wait');
+    if (st === 'offered') add(c ? 'クリエイターの返事待ち' : '依頼への返事', c ? 'wait' : 'mine');
+    if (st === 'proposed') add(c ? '始めるか決める' : 'クライアントさんの返事待ち', c ? 'mine' : 'wait');
+    if (st === 'delivered' && !f.pending_version && !f.paused_since) add(c ? '納品の確認と入金' : '入金待ち', c ? 'mine' : 'wait');
+    if (c && f.payout_sent && going) add('振込先が届いています', 'info');
+    if (c && going && f.withholding === 'unknown') add('源泉徴収を選ぶ', 'mine');
+    var order = { mine: 0, pause: 1, info: 2, wait: 3 };
+    return out.sort(function (a, b) { return order[a.kind] - order[b.kind]; });
+  };
+  // opts.max：出す数（トップの小さい一覧では1つ）
+  EM.projectBadges = function (p, f, opts) {
+    var list = EM.projectBadgeList(p, f);
+    if (opts && opts.max) list = list.slice(0, opts.max);
+    return list.map(function (b) {
+      return el('span', { class: 'tag pj-flag pj-flag--' + b.kind, text: b.kind === 'mine' ? b.text + '・あなたの番' : b.text });
+    });
+  };
+
   /* ---------- 取引の決まり（2026-11-18 翠くん「取引開始時にちゃんと知らせる」「想定力大事」） ----------
      どの画面でも同じ文を出すため、ここ1か所にまとめる。版を変えたら、データベースの project_start の版も変える */
   EM.DEAL_RULES_VERSION = '2026-11-18';

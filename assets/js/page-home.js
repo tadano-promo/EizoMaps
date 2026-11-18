@@ -125,6 +125,9 @@
           .eq('client_id', cid).order('updated_at', { ascending: false }).limit(100);
       }).then(function (pr) {
         cdata.projects = (pr && !pr.error && pr.data) || [];
+        return EM.projectFlags(cdata.projects.map(function (p) { return p.id; }));
+      }).then(function (m) {
+        cdata.flags = m || {};
         renderWidgets();
       }).catch(function () {
         var box = EM.$('#homeWidgets');
@@ -172,6 +175,8 @@
         EM.$('#homeHello').textContent = name ? 'おかえりなさい、' + name + ' さん' : 'おかえりなさい';
         data.events = (!r[1].error && r[1].data) || [];
         data.projects = (!r[2].error && r[2].data) || [];
+        data.flags = {};
+        EM.projectFlags(data.projects.map(function (p) { return p.id; })).then(function (m) { data.flags = m; renderWidgets(); });
         if (!r[3].error && r[3].data) home = r[3].data;
         home.widgets = normWidgets(home.widgets);
         home.todos = Array.isArray(home.todos) ? home.todos : [];
@@ -259,7 +264,7 @@
             EM.statusBadge(p.status),
             el('span', { class: 'home-me__title', text: p.title }),
             el('span', { class: 'home-me__when', text: cWho(p) })
-          ]));
+          ].concat(EM.projectBadges(p, (cdata.flags || {})[p.id], { max: 1 }))));
         });
         body.appendChild(el('div', { class: 'wg__foot' }, el('a', { class: 'small', href: '/projects/', text: '依頼した案件をすべて見る →' })));
       },
@@ -446,7 +451,7 @@
             EM.statusBadge(p.status),
             el('span', { class: 'home-me__title', text: p.title }),
             p.due_on ? el('span', { class: 'home-me__when mono', text: '納期 ' + EM.mdw(p.due_on) }) : null
-          ]));
+          ].concat(EM.projectBadges(p, (data.flags || {})[p.id], { max: 1 }))));
         });
         body.appendChild(el('div', { class: 'wg__foot' }, el('a', { class: 'small', href: '/projects/', text: '案件管理を開く →' })));
       },

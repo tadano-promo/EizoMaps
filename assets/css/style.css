@@ -2180,3 +2180,11 @@ body[data-mode="client"] .deal-rules{border-left-color:var(--client)}
 .docsheet__label{font-weight:700;margin-top:10px!important}
 .docsheet__payout,.docsheet__note{border:1px solid #bbb;padding:8px 12px;margin-top:12px}
 .docsheet__foot{margin-top:40px;font-size:10px;color:#777;border-top:1px solid #ddd;padding-top:6px}
+/* 案件の札（2026-11-18） */
+.pj-flag{white-space:nowrap}
+.pj-flag--mine{border-color:var(--accent);color:var(--accent);font-weight:700}
+body[data-mode="client"] .pj-flag--mine{border-color:var(--client);color:var(--client)}
+.pj-flag--pause{border-color:#f5a524;color:#f5a524}
+.pj-flag--info{border-color:#3ecf8e;color:#3ecf8e}
+.pj-flag--wait{color:var(--muted)}
+.home-me__row .pj-flag{font-size:.75rem;padding:1px 6px}
