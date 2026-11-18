@@ -58,8 +58,8 @@
         var who = role === 'client'
           ? (p.creators && p.creators.display_name) || ''
           : (p.clients && (p.clients.company ? p.clients.company + '（' + p.clients.display_name + '）' : p.clients.display_name)) || '';
-        box.appendChild(el('a', { class: 'card', href: '/projects/?id=' + encodeURIComponent(p.id) }, [
-          el('div', { class: 'share-row' }, [
+        box.appendChild(el('a', { class: 'card pj-card', href: '/projects/?id=' + encodeURIComponent(p.id) }, [
+          el('div', { class: 'pj-row' }, [
             el('div', null, [
               el('p', { class: 'pf-title', text: p.title }),
               el('p', { class: 'small muted', text: [who, p.kind, EM.budgetLabel(p.budget_amount)].filter(Boolean).join(' / ') })
