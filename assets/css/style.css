@@ -2125,3 +2125,4 @@ body.nav-open .savebar { display: none; }
 .tag--pause{border-color:#f5a524;color:#f5a524}
 .quote-pauses{border:1px dashed #f5a524;border-radius:var(--radius-s);padding:8px 12px;margin:0 0 10px}
 .quote-pauses p{margin:0 0 4px}.quote-pauses ul{margin:0;padding-left:1.2em}
+.decline-warn p{margin:6px 0 0}.decline-warn{display:block}

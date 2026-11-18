@@ -77,7 +77,7 @@
         sb.rpc('project_my_role', { p_project_id: projectId }),
         sb.from('reviews').select('id,status,score').eq('project_id', projectId).eq('reviewer_id', user.id),
         sb.from('project_quotes').select('id,version,amount,due_on,note,status,decline_reason,created_at,decided_at').eq('project_id', projectId).order('version'),
-        sb.from('project_pauses').select('id,started_at,ended_at,end_reason').eq('project_id', projectId).order('started_at')
+        sb.from('project_pauses').select('id,started_at,ended_at,end_reason,shifted_days,due_before,due_after').eq('project_id', projectId).order('started_at')
       ]).then(function (res) {
         quotes = (res[3] && res[3].data) || [];
         pauses = (res[4] && res[4].data) || [];
@@ -224,8 +224,8 @@
       if (pend && !pz && ['in_progress', 'delivered'].indexOf(p.status) !== -1) {
         return el('div', { class: 'flow-next ' + (c ? 'is-mine' : 'is-wait') }, [
           el('p', { class: 'flow-next__who', text: c ? 'あなたの番です' : '相手の番です（待つだけでOK）' }),
-          el('p', { text: c ? 'クリエイターから見積もり（' + pend.version + '回目）が届いています。下の「金額の記録」で、いまの金額と見比べて「この金額で確定する」か「見送る」を押してください。見送ると、話し合いのあいだ作業はいったん止まります。'
-                           : '見積もり（' + pend.version + '回目）を出しました。クライアントさんの返事を待つあいだも、作業と納期はそのままです。見送られたときは、話し合いのあいだ作業を止めて大丈夫です。' })
+          el('p', { text: c ? 'クリエイターから見積もり（' + pend.version + '回目）が届いています。下の「金額の記録」で、いまの金額と見比べて「この金額で確定する」か「見送る」を押してください。見送ると、話し合いのあいだ作業はいったん止まり、納期は止まった日数だけうしろにずれます。'
+                           : '見積もり（' + pend.version + '回目）を出しました。クライアントさんの返事を待つあいだも、作業と納期はそのままです。見送られたときは、話し合いのあいだ作業を止めて大丈夫です（納期は止まった日数だけ自動でうしろにずれます）。' })
         ]);
       }
       if (pz && ['in_progress', 'delivered'].indexOf(p.status) !== -1) {
@@ -240,8 +240,8 @@
         return el('div', { class: 'flow-next flow-pause ' + (mine2 ? 'is-mine' : 'is-wait') }, [
           el('p', { class: 'flow-next__who', text: '一時停止中：作業はいったん止まっています' + since }),
           el('p', { class: 'flow-pause__lead', text: c
-            ? '金額が決まるまで、クリエイターさんは作業を止めています。納期もその分うしろにずれることがあります。あわてず、納得できるまで話し合ってください。'
-            : '金額が決まるまで、作業は止めて大丈夫です。止まっていた日数は記録に残り、クライアントさんにも同じものが見えています。' }),
+            ? '金額が決まるまで、クリエイターさんは作業を止めています。納期は、止まった日数だけ自動でうしろにずれます' + (dueNow(p) ? '（いま再開すると ' + EM.mdw(dueNow(p)) + ' → ' + EM.mdw(addDays(dueNow(p), pauseDays(pz))) + '）' : '') + '。あわてず、納得できるまで話し合ってください。'
+            : '金額が決まるまで、作業は止めて大丈夫です。納期は、止まった日数だけ自動でうしろにずれるので、損はしません' + (dueNow(p) ? '（いま再開すると ' + EM.mdw(dueNow(p)) + ' → ' + EM.mdw(addDays(dueNow(p), pauseDays(pz))) + '）' : '') + '。' }),
           el('p', { class: 'flow-next__who', text: mine2 ? 'あなたの番です' : '相手の番です（待つだけでOK）' }),
           el('p', { text: t2 })
         ]);
@@ -339,7 +339,11 @@
        始めたときの条件＝1回目。クリエイターが2回目・3回目…を出し、クライアントさんが確定する。経緯はぜんぶ残る */
     var quotes = [], pauses = [];
     function openPause() { for (var i = 0; i < pauses.length; i++) if (!pauses[i].ended_at) return pauses[i]; return null; }
-    function pauseDays(z) { var a = new Date(z.started_at).getTime(), b = z.ended_at ? new Date(z.ended_at).getTime() : Date.now(); return Math.max(1, Math.ceil((b - a) / 86400000)); }
+    // 日本時間の日付で数える（11/21 に止まって 11/23 に再開 → 2日）。データベースの pause_days と同じ数え方
+    function jstDay(t) { return Math.floor((new Date(t).getTime() + 9 * 3600000) / 86400000); }
+    function pauseDays(z) { return Math.max(0, jstDay(z.ended_at || Date.now()) - jstDay(z.started_at)); }
+    function dueNow(p) { return p.final_due_on || p.terms_due_on || null; }
+    function addDays(ymd, n) { var d = new Date(ymd + 'T00:00:00Z'); d.setUTCDate(d.getUTCDate() + n); return d.toISOString().slice(0, 10); }
     function pendingQuote() { for (var i = 0; i < quotes.length; i++) if (quotes[i].status === 'proposed') return quotes[i]; return null; }
     var QST = { proposed: ['確定待ち', 'tag--accent'], accepted: ['確定', 'tag--ok'], declined: ['見送り', ''], replaced: ['出し直しで取り下げ', ''], withdrawn: ['取り下げ', ''] };
     function quotesCard(p, role) {
@@ -372,12 +376,18 @@
           now != null ? el('span', { class: 'small muted', text: '（税込）' }) : null,
           p.final_at ? el('span', { class: 'small muted', text: '　' + EM.date(p.final_at) + ' に確定' }) : null
         ]),
+        el('p', { class: 'quote-now' }, [
+          el('span', { class: 'small muted', text: 'いまの納期' }),
+          el('strong', { text: dueNow(p) ? EM.mdw(dueNow(p)) : '相談' }),
+          (p.terms_due_on && dueNow(p) && dueNow(p) !== p.terms_due_on) ? el('span', { class: 'small muted', text: '（始めたときは ' + EM.mdw(p.terms_due_on) + '）' }) : null
+        ]),
         list,
         pauses.length ? el('div', { class: 'quote-pauses' }, [
           el('p', { class: 'small', text: '一時停止の記録（合計 ' + pauses.reduce(function (n, z) { return n + pauseDays(z); }, 0) + '日）' }),
           el('ul', null, pauses.map(function (z) {
             return el('li', { class: 'small muted', text: EM.mdw(z.started_at.slice(0, 10)) + ' 〜 ' + (z.ended_at ? EM.mdw(z.ended_at.slice(0, 10)) : 'いま') + '（' + pauseDays(z) + '日）'
-              + (z.end_reason === 'accepted' ? '・確定して再開' : z.end_reason === 'withdrawn' ? '・取り下げて再開' : z.end_reason === 'closed' ? '・案件の終わりで解除' : '・話し合い中') });
+              + (z.end_reason === 'accepted' ? '・確定して再開' : z.end_reason === 'withdrawn' ? '・取り下げて再開' : z.end_reason === 'closed' ? '・案件の終わりで解除' : '・話し合い中')
+              + (z.shifted_days > 0 && z.due_before && z.due_after ? '・納期 ' + EM.mdw(z.due_before) + ' → ' + EM.mdw(z.due_after) : '') });
           }))
         ]) : null,
         el('p', { class: 'small muted', text: '出した見積もりと返事は、すべてここと「やり取り」に残ります。あとから消したり書き換えたりはできません。' })
@@ -385,9 +395,20 @@
       if (!open) return card;
       if (c && pend) {
         var why = el('textarea', { rows: '2', maxlength: '500', placeholder: '例：予算を少し超えてしまうため。（書かなくても大丈夫です）' });
+        // 見送る前に、納期がずれることを必ず見せる（2026-11-18 翠くん「クリエイターが損しないように、クライアント側には事前に伝える」）
+        var dn = dueNow(p);
         var dec = el('div', { class: 'stack', hidden: true }, [
+          el('div', { class: 'notice notice--warn decline-warn' }, [
+            el('strong', { text: '見送る前に確かめてください' }),
+            el('p', { text: '見送ると、金額が決まるまで作業は一時停止になり、納期は止まった日数だけ自動でうしろにずれます。' }),
+            dn ? el('p', { text: '例：今日見送って、3日後に話がまとまったら → 納期 ' + EM.mdw(dn) + ' が ' + EM.mdw(addDays(dn, 3)) + ' になります。' }) : null,
+            el('p', { text: 'イベントや公開日などで納期を動かせないときは、見送る前にメッセージで伝えて、納期の入った見積もりを出し直してもらってください。' })
+          ]),
           el('label', { class: 'field' }, [el('span', { class: 'label', text: '見送る理由（相手に届きます・任意）' }), why]),
-          el('div', { class: 'form-actions' }, el('button', { type: 'button', class: 'btn btn--danger', text: '見送りを送る', onclick: function () { decideQuote(pend, 'decline', why.value.trim()); } }))
+          el('div', { class: 'form-actions' }, el('button', { type: 'button', class: 'btn btn--danger', text: '納期がずれることを分かったうえで、見送る', onclick: function () {
+            if (!confirm('見送りますか？\n金額が決まるまで作業は一時停止になり、納期は止まった日数だけうしろにずれます。')) return;
+            decideQuote(pend, 'decline', why.value.trim());
+          } }))
         ]);
         card.appendChild(el('div', { class: 'form-actions' }, [
           el('button', { type: 'button', class: 'btn btn--primary', text: 'この金額で確定する（' + Number(pend.amount).toLocaleString('ja-JP') + '円）', onclick: function () { decideQuote(pend, 'accept'); } }),
