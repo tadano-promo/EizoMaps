@@ -2134,3 +2134,7 @@ body[data-mode="client"] .deal-rules{border-left-color:var(--client)}
 .deal-rules li{margin:6px 0}
 .deal-rules li .small{display:block;margin-top:2px}
 .deal-agree{margin:8px 0 4px;align-items:flex-start}
+.due-mode{border:1px solid var(--border);border-radius:var(--radius-s);padding:10px 12px}
+.due-mode legend{padding:0 4px}
+.due-mode .checkbox{margin:6px 0;align-items:flex-start}
+.due-fix{margin:6px 0 0 1.6em}
