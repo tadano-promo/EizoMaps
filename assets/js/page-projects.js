@@ -36,9 +36,16 @@
         var rows = res[2].data || [];
         renderList(EM.$('#asClient'),  rows.filter(function (p) { return p.client_id === myClientId; }),  'client');
         renderList(EM.$('#asCreator'), rows.filter(function (p) { return p.creator_id === myCreatorId; }), 'creator');
+        // 札（あなたの番・一時停止中など）は読み終わったら描き直す
+        return EM.projectFlags(rows.map(function (p) { return p.id; })).then(function (m) {
+          flags = m;
+          renderList(EM.$('#asClient'),  rows.filter(function (p) { return p.client_id === myClientId; }),  'client');
+          renderList(EM.$('#asCreator'), rows.filter(function (p) { return p.creator_id === myCreatorId; }), 'creator');
+        });
       });
     }
 
+    var flags = {};
     function renderList(box, rows, role) {
       EM.clear(box);
       if (!rows.length) {
@@ -51,17 +58,17 @@
         var who = role === 'client'
           ? (p.creators && p.creators.display_name) || ''
           : (p.clients && (p.clients.company ? p.clients.company + '（' + p.clients.display_name + '）' : p.clients.display_name)) || '';
-        box.appendChild(el('a', { class: 'card', href: '/projects/?id=' + encodeURIComponent(p.id) }, [
-          el('div', { class: 'share-row' }, [
+        box.appendChild(el('a', { class: 'card pj-card', href: '/projects/?id=' + encodeURIComponent(p.id) }, [
+          el('div', { class: 'pj-row' }, [
             el('div', null, [
               el('p', { class: 'pf-title', text: p.title }),
               el('p', { class: 'small muted', text: [who, p.kind, EM.budgetLabel(p.budget_amount)].filter(Boolean).join(' / ') })
             ]),
             el('div', { class: 'row' }, [
-              EM.statusBadge(p.status),
-        openPause() && ['in_progress', 'delivered'].indexOf(p.status) !== -1 ? el('span', { class: 'tag tag--pause', text: '一時停止中' }) : null,
+              EM.statusBadge(p.status)
+            ].concat(EM.projectBadges(p, flags[p.id])).concat([
               el('span', { class: 'small muted', text: EM.date(p.updated_at) })
-            ])
+            ]))
           ])
         ]));
       });
