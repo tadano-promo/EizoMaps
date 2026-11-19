@@ -257,7 +257,9 @@
       if (!parsed) { preview(); if (!parsed) return; }
       var title = EM.$('#title').value.trim();
       if (!title) { EM.notice(msg, 'タイトルを入力してください。', 'error'); return; }
-      if (!EM.$('#rightsOk').checked) { EM.notice(msg, '「この作品を載せる許可があります」にチェックを入れてください。許可がない作品は載せられません。', 'error'); return; }
+      // 許可が要るのは「公開（プロフィールに表示）」だけ。限定リンク・パスワードページは許可がまだでも載せられる（2026-11-19 翠くん）
+      var rightsOk = EM.$('#rightsOk').checked;
+      if (EM.$('#visibility').value === 'public' && !rightsOk) { EM.notice(msg, '「公開（プロフィールに表示）」にするには、「この作品を載せる許可があります」にチェックを入れてください。許可がまだの作品は「限定リンクのみ」か「パスワードページだけ」にすれば載せられます。', 'error'); return; }
       var tf = EM.$('#thumbFile').files && EM.$('#thumbFile').files[0];
       if (tf && checkImage(tf)) { EM.notice(msg, checkImage(tf), 'error'); return; }
 
@@ -279,7 +281,7 @@
         thumbnail_url: parsed.thumbnail_url || null,
         visibility: EM.$('#visibility').value,
         release_on: EM.$('#releaseOn').value || null,
-        rights_confirmed_at: new Date().toISOString(),   // 実際の日時はサーバーの時計で入る
+        rights_confirmed_at: rightsOk ? new Date().toISOString() : null,   // 実際の日時はサーバーの時計で入る
         sort_order: items.length
       }).select('id').single().then(function (r) {
         if (r.error) throw r.error;
@@ -405,6 +407,9 @@
       if (p.takedown_hold) parts.push(el('span', { class: 'tag tag--danger', text: '一時非公開（削除の申し立てあり）' }));
       if (p.release_on && p.release_on > todayJst()) parts.push(el('span', { class: 'tag tag--warn', text: '解禁前：' + fmtDay(p.release_on) + ' から表示' }));
       if (!p.rights_confirmed_at) {
+        parts.push(el('span', { class: 'tag tag--warn', text: p.visibility === 'public'
+          ? '許可の確認がまだなので、プロフィールには出ていません'
+          : '許可の確認まだ（限定リンク・パスワードページだけ）' }));
         parts.push(el('button', { class: 'btn btn--sm btn--ghost', type: 'button', text: '載せる許可を確認する',
           onclick: function () { confirmRights(p); } }));
       }
@@ -512,6 +517,11 @@
       sel.value = p.visibility;
       sel.addEventListener('change', function () {
         var next = sel.value;
+        if (next === 'public' && !p.rights_confirmed_at) {
+          sel.value = p.visibility;
+          EM.notice(msg, '「' + p.title + '」は、載せる許可の確認がまだです。プロフィールに出すには、先に「載せる許可を確認する」を押してください。', 'error');
+          return;
+        }
         if (next === 'stock_only' && inShareLinks(p) &&
             !confirm('この作品は限定共有リンクに入っています。「パスワードページだけ」にすると、共有リンクには表示されなくなります。よろしいですか？')) {
           sel.value = p.visibility; return;
