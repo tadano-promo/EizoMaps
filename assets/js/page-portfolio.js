@@ -472,6 +472,15 @@
       var box = EM.$('#pfList');
       EM.clear(box);
       EM.$('#pfCount').textContent = '（' + items.length + ' / ' + LIMIT + '件）';
+      // ショーリールの説明（2026-11-20 翠くん「ショーリール分かりにくい」）
+      var reel = items.filter(function (x) { return x.is_showreel; })[0];
+      box.appendChild(el('div', { class: 'notice reel-help' }, [
+        el('p', { class: 'small' }, [el('strong', { text: 'ショーリールとは：' }),
+          document.createTextNode('あなたの「まずこれを見てほしい」1本です。業界では、作品のいいところをつないだ2分ほどのまとめ動画を使うのが一般的です。選ぶと、プロフィールの名前の下に「▶ ショーリール（まとめ動画）」ボタンが出て、押した人に全画面で流れます。')]),
+        el('p', { class: 'small' }, reel
+          ? [el('span', { class: 'muted', text: '今のショーリール：' }), document.createTextNode(reel.title + (reel.visibility !== 'public' || !reel.rights_confirmed_at ? '（いまはプロフィールに出ていないので、ボタンも出ません）' : ''))]
+          : [el('span', { class: 'muted', text: '今のショーリール：まだ選んでいません。作品の「ショーリールにする」で選べます（公開の作品だけ）。' })])
+      ]));
       if (!items.length) { box.appendChild(el('div', { class: 'empty', text: 'まだ作品がありません。右上の「＋ 作品を追加」から登録できます。' })); return; }
 
       items.forEach(function (p, idx) {
@@ -487,7 +496,7 @@
           el('div', null, [
             el('h3', { class: 'pf-title', text: p.title }),
             p.pinned ? el('p', { class: 'small' }, el('span', { class: 'tag tag--accent', text: '代表作（プロフィールの先頭と商談モードに出ます）' })) : null,
-            p.is_showreel ? el('p', { class: 'small' }, el('span', { class: 'tag tag--accent', text: 'ショーリール（プロフィールの「▶ SHOWREEL」で流れます）' })) : null,
+            p.is_showreel ? el('p', { class: 'small' }, el('span', { class: 'tag tag--accent', text: 'ショーリール（プロフィールの「▶ ショーリール（まとめ動画）」ボタンで流れます）' })) : null,
             el('p', { class: 'small muted', text: visLabel(p.visibility) + ' / ' + EM.date(p.created_at) }),
             statusRow(p),
             inStock(p) ? el('p', { class: 'small' }, el('span', { class: 'tag tag--accent', text: 'ストックページで使用中' })) : null,
@@ -504,7 +513,7 @@
                 onclick: function () { togglePin(p); } }),
               el('button', { class: 'btn btn--sm' + (p.is_showreel ? ' btn--primary' : ''), type: 'button',
                 text: p.is_showreel ? 'ショーリールを外す' : 'ショーリールにする',
-                title: 'プロフィールの上の「▶ SHOWREEL」ボタンで、この作品が全画面で流れます（1本だけ）',
+                title: 'プロフィールの名前の下の「▶ ショーリール（まとめ動画）」ボタンで、この作品が全画面で流れます（1本だけ）',
                 onclick: function () {
                   if (!p.is_showreel && p.visibility !== 'public') { EM.notice(msg, 'ショーリールにできるのは、公開（プロフィールに表示）の作品だけです。', 'error'); return; }
                   upd(p.id, { is_showreel: !p.is_showreel }).then(function (r) {

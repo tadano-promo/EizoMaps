@@ -2194,3 +2194,87 @@ body[data-mode="client"] .pj-flag--mine{border-color:var(--client);color:var(--c
 a.pj-card{display:block;color:inherit;text-decoration:none}
 .pj-row{display:flex;flex-wrap:wrap;gap:10px 16px;justify-content:space-between;align-items:center}
 .pj-row p{margin:0 0 4px}
+
+/* =====================================================================
+   ZAPPING（作品を次々見るページ）2026-11-20
+   テレビとリモコンの見た目。スマホを縦に持つとテレビの枠の中、横向きなら枠なし
+   ===================================================================== */
+.zap-body { background: #07070b; }
+.zap { max-width: 980px; margin: 0 auto; padding: 10px 14px 28px; display: flex; flex-direction: column; gap: 10px; min-height: 100dvh; }
+.zap-top { display: flex; align-items: center; gap: 12px; }
+.zap-top .logo { font-size: 20px; }
+.zap-top__name { font-family: 'Bebas Neue', sans-serif; font-size: 22px; letter-spacing: .14em; color: var(--accent); margin-right: auto; }
+.zap-remote { display: grid; grid-template-columns: repeat(5, 1fr); gap: 8px; padding: 8px; background: linear-gradient(#1d1d24, #141419); border: 1px solid #2a2a33; border-radius: 16px; }
+.zap-btn { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px; min-height: 52px; padding: 6px 4px; border-radius: 12px; border: 1px solid #33333d; background: linear-gradient(#2a2a32, #1c1c22); color: var(--text); cursor: pointer; box-shadow: 0 2px 0 #0b0b0f; -webkit-tap-highlight-color: transparent; }
+.zap-btn:active { transform: translateY(1px); box-shadow: 0 1px 0 #0b0b0f; }
+.zap-btn:hover { border-color: var(--accent); }
+.zap-btn.is-on { color: var(--accent); }
+.zap-btn__ic { display: inline-flex; }
+.zap-btn__ic svg { width: 22px; height: 22px; }
+.zap-btn__lb { font-size: 11px; color: var(--muted); }
+.zap-btn.is-on .zap-btn__lb { color: var(--accent); }
+#zPrev, #zNext { color: var(--accent); }
+
+.zap-tv { background: linear-gradient(#202027, #16161b); border: 1px solid #2c2c35; border-radius: 22px; padding: 0 12px; box-shadow: 0 18px 40px rgba(0,0,0,.55), inset 0 1px 0 rgba(255,255,255,.04); }
+.zap-tv__bezel--top { height: 14px; }
+.zap-tv__bezel--bottom { display: flex; align-items: center; gap: 10px; height: 46px; }
+.zap-led { font-family: 'DM Mono', monospace; font-size: 13px; color: #b8ff5a; text-shadow: 0 0 8px rgba(184,255,90,.6); letter-spacing: .08em; min-width: 64px; }
+.zap-brand { margin: 0 auto; font-size: 12px; letter-spacing: .3em; color: #6b6b78; text-transform: uppercase; }
+.zap-full { display: inline-flex; align-items: center; gap: 4px; font-size: 12px; padding: 6px 10px; border-radius: 999px; border: 1px solid #33333d; background: #1c1c22; color: var(--text); cursor: pointer; }
+.zap-full svg { width: 16px; height: 16px; }
+
+.zap-screen { position: relative; width: 100%; aspect-ratio: 16 / 9; background: #000; border-radius: 10px; overflow: hidden; box-shadow: inset 0 0 40px rgba(0,0,0,.9); }
+.zap-tv.is-vertical .zap-screen { aspect-ratio: 9 / 13; max-height: 68dvh; margin: 0 auto; }
+.zap-frame, .zap-frame__box { position: absolute; inset: 0; }
+.zap-frame__box iframe { position: absolute; inset: 0; width: 100%; height: 100%; border: 0; }
+/* 縦の作品は全部を使わず、少し小さくして下寄せ */
+.zap-frame__box.is-vertical { inset: auto 0 0 0; height: 94%; aspect-ratio: 9 / 16; width: auto; margin: 0 auto; }
+.zap-noise { position: absolute; inset: 0; width: 100%; height: 100%; image-rendering: pixelated; opacity: 0; pointer-events: none; transition: opacity .12s; z-index: 3; }
+.zap-noise.is-on { opacity: .9; }
+.zap-touch { position: absolute; inset: 0; z-index: 4; background: transparent; border: 0; cursor: pointer; -webkit-tap-highlight-color: transparent; }
+.zap-osd { position: absolute; top: 10px; left: 12px; z-index: 5; font-family: 'DM Mono', monospace; font-size: 18px; color: #b8ff5a; text-shadow: 0 0 6px rgba(0,0,0,.9), 0 0 10px rgba(184,255,90,.5); opacity: 0; transition: opacity .25s; pointer-events: none; }
+.zap-osd.is-on { opacity: 1; }
+.zap-vol { position: absolute; left: 50%; bottom: 14px; transform: translateX(-50%); z-index: 5; display: flex; align-items: center; gap: 10px; padding: 6px 12px; border-radius: 8px; background: rgba(0,0,0,.6); color: #b8ff5a; font-family: 'DM Mono', monospace; font-size: 12px; opacity: 0; transition: opacity .25s; pointer-events: none; }
+.zap-vol.is-on { opacity: 1; }
+.zap-vol__bars { display: inline-flex; gap: 3px; }
+.zap-vol__bars i { width: 8px; height: 14px; background: #2b3a1a; border-radius: 1px; }
+.zap-vol__bars i.on { background: #b8ff5a; box-shadow: 0 0 6px rgba(184,255,90,.6); }
+.zap-play { position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%); z-index: 6; width: 72px; height: 72px; border-radius: 50%; border: 1px solid rgba(255,255,255,.3); background: rgba(0,0,0,.55); color: #fff; display: flex; align-items: center; justify-content: center; cursor: pointer; }
+.zap-play svg { width: 30px; height: 30px; }
+.zap-fsbar { position: absolute; top: 0; left: 0; right: 0; z-index: 6; display: flex; justify-content: flex-end; gap: 8px; padding: 12px; background: linear-gradient(rgba(0,0,0,.75), transparent); }
+.zap-fsbar .zap-btn { min-height: 44px; min-width: 52px; }
+.zap-empty { position: absolute; inset: 0; z-index: 7; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 6px; text-align: center; padding: 20px; background: rgba(0,0,0,.55); color: var(--text); }
+
+.zap-info { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 10px; padding: 12px 14px; border: 1px solid var(--border); border-radius: 14px; background: var(--surface); }
+.zap-info:empty { display: none; }
+.zap-info__main { display: flex; align-items: center; gap: 12px; min-width: 0; flex: 1 1 260px; }
+.zap-info__av { width: 42px; height: 42px; border-radius: 50%; object-fit: cover; flex: none; }
+.zap-info__av--ph { display: inline-flex; align-items: center; justify-content: center; background: #24242b; color: var(--muted); font-weight: 700; }
+.zap-info__text { min-width: 0; }
+.zap-info__text p { margin: 0; }
+.zap-info__title { font-weight: 700; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.zap-info__actions { display: flex; gap: 8px; flex-wrap: wrap; }
+.zap-note { margin: 0; }
+
+/* 全画面：飾りをふっと消して、画面だけにする（iPhone は画面いっぱいに広げる形で代わりに） */
+body.zap-is-full { overflow: hidden; }
+body.zap-is-full .zap-screen { position: fixed; inset: 0; z-index: 1000; width: 100vw; height: 100dvh; max-height: none; aspect-ratio: auto; border-radius: 0; }
+body.zap-is-full .zap-frame__box.is-vertical { height: 100%; }
+.zap-screen:fullscreen { width: 100vw; height: 100vh; aspect-ratio: auto; max-height: none; border-radius: 0; }
+
+/* スマホを横に持ったとき：テレビの枠なし。画面をできるだけ大きく */
+@media (orientation: landscape) and (max-height: 520px) {
+  .zap { max-width: none; padding: 6px 10px; gap: 6px; }
+  .zap-top, .zap-info, .zap-note { display: none; }
+  .zap-remote { padding: 4px; gap: 6px; border-radius: 10px; }
+  .zap-btn { min-height: 34px; flex-direction: row; gap: 6px; }
+  .zap-tv { background: none; border: 0; box-shadow: none; padding: 0; }
+  .zap-tv__bezel { display: none; }
+  .zap-screen, .zap-tv.is-vertical .zap-screen { aspect-ratio: auto; height: calc(100dvh - 60px); max-height: none; border-radius: 6px; }
+}
+/* パソコン：テレビを画面の高さに収める */
+@media (min-width: 900px) {
+  .zap-screen { max-height: 62dvh; }
+  /* パソコンではテレビはいつも横長。縦の作品はテレビの真ん中に映す */
+  .zap-screen, .zap-tv.is-vertical .zap-screen { aspect-ratio: 16 / 9; max-height: 62dvh; width: min(100%, calc(62dvh * 16 / 9)); margin: 0 auto; }
+}

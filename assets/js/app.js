@@ -703,6 +703,7 @@
   var NAV_PUBLIC = [
     ['/', 'ホーム'],
     ['/creators/', 'クリエイターを探す'],
+    ['/zapping/', 'ZAPPING（作品を次々見る）'],
     ['/jobs/', '募集を見る'],
     ['/features/', '便利な機能'],
     ['/pricing/', '料金'],
