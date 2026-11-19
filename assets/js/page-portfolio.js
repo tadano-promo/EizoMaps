@@ -16,10 +16,24 @@
     ];
     /* ---------- クライアントに見せる情報（担当・目的・業種・尺・取引先） ---------- */
     var PURPOSES = ['広告・CM', '会社・ブランド紹介', '採用', '商品・サービス紹介', 'SNS用', 'イベント', '研修・マニュアル', 'MV・エンタメ', 'ドキュメンタリー', 'その他'];
-    var INDUSTRIES = ['食品・飲料', '化粧品・美容', '自動車', '保険・金融', 'テーマパーク・レジャー', '飲食', 'IT・通信', '不動産・住宅', '医療・介護', '教育', '人材', '小売・EC', '行政・自治体', 'エンタメ・音楽', 'ファッション', '製造・BtoB', 'その他'];
+    // 業種（2026-11-19 翠くん「業種すくなくない？」。電通さん「日本の広告費」の21業種をもとに、映像の仕事で多いものを足してまとめた）
+    // 前からある17個の名前は変えない（入れてある作品がそのまま使えるように）。DBの決まりは 071 と同じ
+    var INDUSTRIES = [
+      ['暮らしの商品', ['食品・飲料', '酒類', '化粧品・美容', '日用品・トイレタリー', '医薬品・ヘルスケア', 'ファッション', '家電・AV機器', '家具・インテリア', '趣味・スポーツ用品・おもちゃ', 'ゲーム・アプリ']],
+      ['乗り物・住まい・おでかけ', ['自動車', '交通・旅行・ホテル', 'テーマパーク・レジャー', '不動産・住宅']],
+      ['お店・サービス', ['飲食', '小売・EC', '美容室・サロン', 'ブライダル・冠婚葬祭', '保険・金融', 'IT・通信', '人材', '教育', '医療・介護', '士業・コンサル']],
+      ['会社・団体', ['製造・BtoB', '建設', 'エネルギー・インフラ', '行政・自治体', '団体・NPO']],
+      ['エンタメ・メディア', ['エンタメ・音楽', '映画・アニメ', 'スポーツ（チーム・大会）', '出版・メディア', 'VTuber・配信者']],
+      ['', ['その他']]
+    ];
     function selectOf(list, value, aria) {
       var s = el('select', { 'aria-label': aria }, [el('option', { value: '', text: '未設定' })]);
-      list.forEach(function (v) { s.appendChild(el('option', { value: v, text: v, selected: v === value })); });
+      list.forEach(function (v) {
+        if (Array.isArray(v)) {  // [まとまりの名前, [項目…]]
+          var opts = v[1].map(function (x) { return el('option', { value: x, text: x, selected: x === value }); });
+          if (v[0]) s.appendChild(el('optgroup', { label: v[0] }, opts)); else opts.forEach(function (o) { s.appendChild(o); });
+        } else s.appendChild(el('option', { value: v, text: v, selected: v === value }));
+      });
       return s;
     }
     function detailEditor(p) {
