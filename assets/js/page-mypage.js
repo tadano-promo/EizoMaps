@@ -140,6 +140,9 @@
       EM.$('#handleSumVal').textContent = h;
       var a = EM.$('#handleSumUrl');
       a.href = '/@' + h; a.textContent = url.replace(/^https?:\/\//, '');
+      // クライアントから見える自分のページを別タブで開く（2026-11-20 翠くん「テストビューがなくなった気がする」）
+      var v = EM.$('#viewAsClientBtn');
+      if (v) { v.href = '/@' + h; v.hidden = !creator.is_published; v.title = '公開しているプロフィールを、クライアントが見るのと同じ形で別のタブに開きます'; }
       EM.$('#handleSummary').hidden = false;
       EM.$('#handleEditor').hidden = true;
       EM.$('#handleIntro').hidden = true;
@@ -372,6 +375,8 @@
         var link = EM.$('#viewPublicLink');
         link.href = creator.handle ? '/@' + creator.handle : '/creators/detail.html?id=' + encodeURIComponent(creator.id);
         link.hidden = !creator.is_published;
+        var v = EM.$('#viewAsClientBtn');
+        if (v) v.hidden = !creator.is_published || !creator.handle;
       });
       return p1.then(function () {
         if (!accountDirty) return null;

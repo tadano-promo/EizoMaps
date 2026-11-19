@@ -575,7 +575,7 @@
           ['/projects/', '案件管理'], ['/help/', '使い方・ヘルプ']
         ].map(function (l) { return el('a', { class: 'btn btn--sm', href: l[0], text: l[1] }); }));
         if (creator && creator.is_published) {
-          nav.appendChild(el('a', { class: 'btn btn--sm', href: creator.handle ? '/@' + creator.handle : '/creators/detail.html?id=' + encodeURIComponent(creator.id), text: '自分の公開ページを見る' }));
+          nav.appendChild(el('a', { class: 'btn btn--sm', href: creator.handle ? '/@' + creator.handle : '/creators/detail.html?id=' + encodeURIComponent(creator.id), target: '_blank', rel: 'noopener', text: 'クライアントからの見え方 ↗' }));
         }
         body.appendChild(nav);
       }
