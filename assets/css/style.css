@@ -1128,6 +1128,7 @@ a.vcal__day:hover .vcal__dnum { color: var(--accent); text-decoration: underline
 .savebar__btn:disabled { opacity: .45; cursor: default; }
 body.has-savebar main { padding-bottom: 96px; }
 body.has-savebar .toast { bottom: 96px; }
+.toast--error { border-color: #ff8b6b; max-width: min(92vw, 640px); line-height: 1.6; }
 .autosave-state { font-size: 12px; color: var(--muted); margin: 6px 0 0; }
 .autosave-state.is-busy { color: var(--accent); }
 .pw-row { display: flex; gap: 8px; align-items: stretch; }

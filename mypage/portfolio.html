@@ -28,10 +28,10 @@
   <div class="wrap">
     <p class="eyebrow">Portfolio</p>
     <div class="page-head">
-      <h1>ポートフォリオ管理</h1>
+      <h1 id="pfHeading">ポートフォリオ管理</h1>
       <a class="btn btn--sm btn--primary page-head__add" id="workAddBtn" href="#addForm">＋ 作品を追加</a>
     </div>
-    <p class="lead">ここが作品棚です。1回登録した作品は、プロフィール・限定共有リンク・ストックページのどれにも使えます。</p>
+    <p class="lead" id="pfLead">ここが作品棚です。1回登録した作品は、プロフィール・限定共有リンク・ストックページのどれにも使えます。</p>
     <div class="notice" id="pageMsg" hidden></div>
 
     <section class="card add-panel" id="addCard" hidden>
@@ -92,10 +92,12 @@
         </label>
         <div class="form-actions">
           <button class="btn btn--primary" type="submit" id="addBtn">登録する</button>
+          <a class="btn btn--ghost" href="/mypage/portfolio.html" id="editCancel" hidden>保存せずに一覧に戻る</a>
         </div>
       </form>
     </section>
 
+    <div id="pfListArea">
     <hr class="divider">
     <div class="row row--between">
       <h2>登録済みの作品 <span class="muted small" id="pfCount"></span></h2>
@@ -127,6 +129,7 @@
       </section>
       <div class="stack" id="shareList"></div>
     </section>
+    </div>
   </div>
 </main>
 </body>
