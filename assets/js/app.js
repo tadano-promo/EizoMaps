@@ -703,7 +703,7 @@
   var NAV_PUBLIC = [
     ['/', 'ホーム'],
     ['/creators/', 'クリエイターを探す'],
-    ['/zapping/', 'ZAPPING（作品を次々見る）'],
+    ['/zapping/', 'ZAPPING'],
     ['/jobs/', '募集を見る'],
     ['/features/', '便利な機能'],
     ['/pricing/', '料金'],
@@ -717,7 +717,7 @@
     ['/schedule/', 'スケジュール'],
     ['/schedule/gantt.html', 'ガントチャート'],
     ['/templates/', '定型文のひな形'],
-    ['/estimate/', '実行表（見積もり）'],
+    ['/estimate/', '実行表'],
     ['/projects/', '案件管理'],
     ['/jobs/mine.html', '送った提案'],
     ['/report/', '問題報告']

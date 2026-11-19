@@ -43,6 +43,16 @@
     }
     q.addEventListener('input', apply);
 
+    // #showreel のように項目の名前つきで開いたときは、その項目を開いて見せる（各画面の「?」から飛んでくる）
+    function openHash() {
+      var id = decodeURIComponent((location.hash || '').slice(1));
+      if (!id) return;
+      var d = document.getElementById(id);
+      if (d && d.classList.contains('faq')) { d.open = true; setTimeout(function () { d.scrollIntoView({ block: 'start' }); }, 50); }
+    }
+    openHash();
+    window.addEventListener('hashchange', openHash);
+
     // ?q=… で開いたときは、その言葉で絞り込んだ状態で表示する
     try {
       var p = new URLSearchParams(location.search).get('q');

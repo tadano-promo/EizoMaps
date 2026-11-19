@@ -198,7 +198,7 @@
       EM.getUser().then(function (u) { if (u && u.id === c.user_id) dmBtn.hidden = true; });
       actions.appendChild(el('button', { class: 'btn btn--ghost', type: 'button', text: '商談で見せる', title: '画面共有用に、要点だけを大きく表示します', onclick: openPitch }));
       // ショーリール（作品の1本を本人が選ぶ）。作品が届いてから出す
-      actions.insertBefore(el('button', { class: 'btn btn--reel', type: 'button', id: 'reelBtn', hidden: true, text: '▶ ショーリール（まとめ動画）',
+      actions.insertBefore(el('button', { class: 'btn btn--reel', type: 'button', id: 'reelBtn', hidden: true, text: '▶ SHOWREEL',
         title: 'このクリエイターが「まずこれを見てほしい」と選んだ1本を、全画面で再生します',
         onclick: function () { var i = S.works.map(function (x) { return x.is_showreel; }).indexOf(true); if (i >= 0) openWork(i); } }), actions.firstChild);
       if (pref === 'dm' && dm) {

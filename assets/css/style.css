@@ -2278,3 +2278,9 @@ body.zap-is-full .zap-frame__box.is-vertical { height: 100%; }
   /* パソコンではテレビはいつも横長。縦の作品はテレビの真ん中に映す */
   .zap-screen, .zap-tv.is-vertical .zap-screen { aspect-ratio: 16 / 9; max-height: 62dvh; width: min(100%, calc(62dvh * 16 / 9)); margin: 0 auto; }
 }
+
+/* 名前の横の「?」：押すとヘルプのその項目が開く（2026-11-20） */
+.help-q { display: inline-flex; align-items: center; justify-content: center; width: 20px; height: 20px; border-radius: 50%; border: 1px solid var(--border); color: var(--muted); font-size: 12px; font-weight: 700; text-decoration: none; vertical-align: middle; font-family: 'Noto Sans JP', sans-serif; letter-spacing: 0; }
+.help-q:hover { border-color: var(--accent); color: var(--accent); }
+h1 .help-q { width: 26px; height: 26px; font-size: 15px; }
+.faq { scroll-margin-top: 80px; }
