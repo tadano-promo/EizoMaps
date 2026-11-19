@@ -2241,7 +2241,7 @@ a.pj-card{display:block;color:inherit;text-decoration:none}
 .zap-vol__bars i.on { background: #b8ff5a; box-shadow: 0 0 6px rgba(184,255,90,.6); }
 .zap-play { position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%); z-index: 6; width: 72px; height: 72px; border-radius: 50%; border: 1px solid rgba(255,255,255,.3); background: rgba(0,0,0,.55); color: #fff; display: flex; align-items: center; justify-content: center; cursor: pointer; }
 .zap-play svg { width: 30px; height: 30px; }
-.zap-fsbar { position: absolute; top: 0; left: 0; right: 0; z-index: 6; display: flex; justify-content: center; gap: 8px; padding: 12px; background: linear-gradient(rgba(0,0,0,.75), transparent); }
+.zap-fsbar { position: absolute; top: 0; left: 0; right: 0; z-index: 6; display: flex; justify-content: flex-end; gap: 8px; padding: 12px; background: linear-gradient(rgba(0,0,0,.75), transparent); }
 .zap-fsbar .zap-btn { min-height: 44px; min-width: 52px; }
 .zap-empty { position: absolute; inset: 0; z-index: 7; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 6px; text-align: center; padding: 20px; background: rgba(0,0,0,.55); color: var(--text); }
 

@@ -31,12 +31,13 @@
   </header>
 
   <!-- リモコン（ボタンは5個） -->
+  <!-- 前・次は右はし（スマホを右手で持ったまま、親指で変えられるように。2026-11-20 翠くん） -->
   <nav class="zap-remote" aria-label="リモコン">
-    <button class="zap-btn" type="button" id="zPrev" aria-label="前の作品"><span class="zap-btn__ic" data-ic="prev"></span><span class="zap-btn__lb">前</span></button>
-    <button class="zap-btn" type="button" id="zNext" aria-label="次の作品"><span class="zap-btn__ic" data-ic="next"></span><span class="zap-btn__lb">次</span></button>
+    <button class="zap-btn is-on" type="button" id="zMute" aria-label="ミュートを切り替える" aria-pressed="true"><span class="zap-btn__ic" data-ic="mute"></span><span class="zap-btn__lb">消音</span></button>
     <button class="zap-btn" type="button" id="zVolDown" aria-label="音量を下げる"><span class="zap-btn__ic" data-ic="voldown"></span><span class="zap-btn__lb">−</span></button>
     <button class="zap-btn" type="button" id="zVolUp" aria-label="音量を上げる"><span class="zap-btn__ic" data-ic="volup"></span><span class="zap-btn__lb">＋</span></button>
-    <button class="zap-btn is-on" type="button" id="zMute" aria-label="ミュートを切り替える" aria-pressed="true"><span class="zap-btn__ic" data-ic="mute"></span><span class="zap-btn__lb">消音</span></button>
+    <button class="zap-btn" type="button" id="zPrev" aria-label="前の作品"><span class="zap-btn__ic" data-ic="prev"></span><span class="zap-btn__lb">前</span></button>
+    <button class="zap-btn" type="button" id="zNext" aria-label="次の作品"><span class="zap-btn__ic" data-ic="next"></span><span class="zap-btn__lb">次</span></button>
   </nav>
 
   <!-- テレビ -->
@@ -52,12 +53,12 @@
       <button class="zap-play" type="button" id="zPlay" aria-label="再生・停止" hidden><span class="zap-btn__ic" data-ic="pause"></span></button>
       <!-- 全画面のときだけ出す、上の操作 -->
       <div class="zap-fsbar" id="zFsBar" hidden>
-        <button class="zap-btn" type="button" data-z="prev" aria-label="前の作品"><span class="zap-btn__ic" data-ic="prev"></span></button>
-        <button class="zap-btn" type="button" data-z="next" aria-label="次の作品"><span class="zap-btn__ic" data-ic="next"></span></button>
+        <button class="zap-btn" type="button" data-z="exit" aria-label="全画面をやめる"><span class="zap-btn__ic" data-ic="exit"></span></button>
+        <button class="zap-btn" type="button" data-z="mute" aria-label="ミュートを切り替える"><span class="zap-btn__ic" data-ic="mute"></span></button>
         <button class="zap-btn" type="button" data-z="voldown" aria-label="音量を下げる"><span class="zap-btn__ic" data-ic="voldown"></span></button>
         <button class="zap-btn" type="button" data-z="volup" aria-label="音量を上げる"><span class="zap-btn__ic" data-ic="volup"></span></button>
-        <button class="zap-btn" type="button" data-z="mute" aria-label="ミュートを切り替える"><span class="zap-btn__ic" data-ic="mute"></span></button>
-        <button class="zap-btn" type="button" data-z="exit" aria-label="全画面をやめる"><span class="zap-btn__ic" data-ic="exit"></span></button>
+        <button class="zap-btn" type="button" data-z="prev" aria-label="前の作品"><span class="zap-btn__ic" data-ic="prev"></span></button>
+        <button class="zap-btn" type="button" data-z="next" aria-label="次の作品"><span class="zap-btn__ic" data-ic="next"></span></button>
       </div>
       <div class="zap-empty" id="zEmpty" hidden></div>
     </div>
