@@ -164,20 +164,27 @@
 
   /* ---------- 通知 ---------- */
   var toastTimer = null;
-  EM.toast = function (msg) {
+  EM.toast = function (msg, kind) {
     var old = document.querySelector('.toast');
     if (old) old.remove();
-    var t = el('div', { class: 'toast', role: 'status', text: msg });
+    var err = kind === 'error';
+    var t = el('div', { class: 'toast' + (err ? ' toast--error' : ''), role: err ? 'alert' : 'status', text: msg });
     document.body.appendChild(t);
     clearTimeout(toastTimer);
-    toastTimer = setTimeout(function () { t.remove(); }, 3200);
+    toastTimer = setTimeout(function () { t.remove(); }, err ? 7000 : 3200);
   };
 
+  // うまくいかなかったお知らせが、画面の外（ページの上のほう）に出て気づけないことがあった（2026-11-19 翠くん「ボタンが反映されない」）。
+  // まちがいのお知らせで、お知らせ欄が今見えていないときは、画面の下にも同じ文を出す
   EM.notice = function (node, msg, kind) {
     if (!node) return;
     node.className = 'notice' + (kind === 'error' ? ' notice--error' : kind === 'ok' ? ' notice--ok' : '');
     node.textContent = msg || '';
     node.hidden = !msg;
+    if (msg && kind === 'error') {
+      var r = node.getBoundingClientRect();
+      if (r.bottom < 60 || r.top > (window.innerHeight || 800) - 40) EM.toast(msg, 'error');
+    }
   };
 
   /* ---------- エラーメッセージの日本語化 ---------- */

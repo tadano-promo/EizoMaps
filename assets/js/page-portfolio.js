@@ -123,7 +123,7 @@
         el('div', { class: 'form-actions' }, el('button', { class: 'btn btn--sm btn--primary', type: 'button', text: '保存する', onclick: function () {
           var v;
           try { v = ed.value(); } catch (e) { EM.notice(msg, e.message, 'error'); return; }
-          sb.from('portfolios').update(v).eq('id', p.id).then(function (r) {
+          upd(p.id, v).then(function (r) {
             if (r.error) EM.notice(msg, EM.errorText(r.error), 'error');
             else { EM.notice(msg, ''); EM.toast('保存しました'); reload(); }
           });
@@ -136,6 +136,15 @@
       return v;
     }
     var LIMIT = 120;
+
+    // 作品を書き換える共通の入口。書き換えた行が返ってこない（0件）ときも「保存できなかった」として知らせる
+    // （前に、ボタンを押しても何も起きないように見えることがあったため。2026-11-19）
+    function upd(id, patch) {
+      return sb.from('portfolios').update(patch).eq('id', id).select('id').then(function (r) {
+        if (!r.error && (!r.data || !r.data.length)) r = { error: new Error('保存できませんでした。ページを読み込み直して、もう一度お試しください。') };
+        return r;
+      });
+    }
 
     EM.requireUser().then(function (u) {
       if (!u) return;
@@ -155,8 +164,116 @@
       }
       creator = r.data;
       renderTagPresets();
-      return reload();
+      return reload().then(afterLoad);
     }).catch(function (e) { EM.notice(msg, EM.errorText(e), 'error'); });
+
+    /* ---------------- 詳しく編集する（2026-11-19 翠くん「登録し終わったものも、新規の画面をもう一回出して詳細をいじれるように」） ---------------- */
+    // /mypage/portfolio.html?edit=<作品のID> で開く。追加と同じ入力欄に、今の内容を入れて出す
+    var editing = null;
+    function afterLoad() {
+      try {
+        var saved = sessionStorage.getItem('pfSaved');
+        if (saved) { sessionStorage.removeItem('pfSaved'); EM.toast('「' + saved + '」を保存しました'); }
+      } catch (e) {}
+      var id = new URLSearchParams(location.search).get('edit');
+      if (!id) {
+        if (location.hash && /^#pf-/.test(location.hash)) { var t = document.getElementById(location.hash.slice(1)); if (t) t.scrollIntoView({ block: 'center' }); }
+        return;
+      }
+      var p = items.filter(function (x) { return x.id === id; })[0];
+      if (!p) { EM.notice(msg, 'この作品は見つかりませんでした。削除されたか、別のアカウントの作品です。', 'error'); return; }
+      enterEdit(p);
+    }
+    function enterEdit(p) {
+      editing = p;
+      document.title = '作品を編集する — Eizo Maps';
+      EM.$('#pfHeading').textContent = '作品を編集する';
+      EM.$('#pfLead').textContent = '「' + p.title + '」の内容を直せます。直したら下の「保存する」を押してください。';
+      EM.$('#pfListArea').hidden = true;
+      workAdd.hidden = true;
+      EM.$('#addCard').hidden = false;
+      EM.$('#addBtn').textContent = '保存する';
+      EM.$('#editCancel').hidden = false;
+      // URL・表紙
+      urlInput.value = p.video_url || '';
+      parsed = { provider: p.provider, video_id: p.video_id, video_url: p.video_url, thumbnail_url: p.thumbnail_url };
+      drawPreview();
+      EM.$('#thumbPickBtn').textContent = p.thumbnail_url ? '画像を変える' : '画像を選ぶ';
+      // 文字
+      EM.$('#title').value = p.title || '';
+      EM.$('#description').value = p.description || '';
+      // タグ
+      pickedTags = (p.portfolio_tags || []).map(function (t) { return t.tag; });
+      EM.$$('#tagChips .chip').forEach(function (b) { b.setAttribute('aria-pressed', pickedTags.indexOf(b.textContent) !== -1 ? 'true' : 'false'); });
+      // クライアントに見せる情報
+      var box = EM.$('#addDetailFields');
+      EM.clear(box); addDet = detailEditor(p); box.appendChild(addDet.node);
+      EM.$('#addDetail').open = true;
+      // 公開範囲・解禁日・許可
+      EM.$('#visibility').value = p.visibility;
+      EM.$('#releaseOn').value = p.release_on || '';
+      var rights = EM.$('#rightsOk');
+      if (p.rights_confirmed_at) {
+        rights.checked = true; rights.disabled = true;
+        rights.parentNode.querySelector('strong').textContent = 'この作品を載せる許可があります（' + EM.date(p.rights_confirmed_at) + ' に確認済み）';
+      } else { rights.checked = false; rights.disabled = false; }
+      if (p.takedown_hold) EM.notice(msg, 'この作品は削除の申し立てにより一時非公開です。内容は直せますが、運営が確認するまであなた以外には見えません。', 'error');
+      window.scrollTo(0, 0);
+    }
+    function saveEdit() {
+      var p = editing;
+      if (!parsed) { preview(); if (!parsed) { EM.notice(msg, '作品のURLを入れてください。', 'error'); return; } }
+      var title = EM.$('#title').value.trim();
+      if (!title) { EM.notice(msg, 'タイトルを入力してください。', 'error'); return; }
+      var vis = EM.$('#visibility').value;
+      var rightsNew = !p.rights_confirmed_at && EM.$('#rightsOk').checked;
+      if (vis === 'public' && !p.rights_confirmed_at && !rightsNew) {
+        EM.notice(msg, '「公開（プロフィールに表示）」にするには、「この作品を載せる許可があります」にチェックを入れてください。許可がまだの作品は「限定リンクのみ」か「パスワードページだけ」にすれば載せられます。', 'error'); return;
+      }
+      if (vis === 'stock_only' && p.visibility !== 'stock_only' && inShareLinks(p) &&
+          !confirm('この作品は限定共有リンクに入っています。「パスワードページだけ」にすると、共有リンクには表示されなくなります。よろしいですか？')) return;
+      var tf = EM.$('#thumbFile').files && EM.$('#thumbFile').files[0];
+      if (tf && checkImage(tf)) { EM.notice(msg, checkImage(tf), 'error'); return; }
+      var det;
+      try { det = addDet.value(); } catch (err) { EM.notice(msg, err.message, 'error'); return; }
+      var urlChanged = parsed.video_url !== p.video_url;
+      var patch = {
+        title: title,
+        description: EM.$('#description').value.trim() || null,
+        role: det.role, media: det.media, purpose: det.purpose, industry: det.industry, length_label: det.length_label,
+        work_year: det.work_year, credits: det.credits,
+        client_display: det.client_display, client_name: det.client_name,
+        visibility: vis,
+        release_on: EM.$('#releaseOn').value || null
+      };
+      if (urlChanged) {
+        patch.provider = parsed.provider; patch.video_id = parsed.video_id; patch.video_url = parsed.video_url;
+        patch.thumbnail_url = parsed.thumbnail_url || null;   // URLを変えたら表紙も新しい動画のものにする（画像を選んだときはそれ）
+      }
+      if (rightsNew) patch.rights_confirmed_at = new Date().toISOString();   // 実際の日時はサーバーの時計で入る
+      var btn = EM.$('#addBtn');
+      btn.setAttribute('aria-busy', 'true');
+      var oldTags = (p.portfolio_tags || []).map(function (t) { return t.tag; });
+      var tagsChanged = oldTags.slice().sort().join('|') !== pickedTags.slice().sort().join('|');
+      upd(p.id, patch).then(function (r) {
+        if (r.error) throw r.error;
+      }).then(function () {
+        return tf ? uploadThumb(p.id, tf) : null;
+      }).then(function () {
+        if (!tagsChanged) return null;
+        return sb.from('portfolio_tags').delete().eq('portfolio_id', p.id).then(function (r) {
+          if (r.error) throw r.error;
+          if (!pickedTags.length) return null;
+          return sb.from('portfolio_tags').insert(pickedTags.map(function (t) { return { portfolio_id: p.id, tag: t }; })).then(function (r2) { if (r2.error) throw r2.error; });
+        });
+      }).then(function () {
+        try { sessionStorage.setItem('pfSaved', title); } catch (e) {}
+        location.href = '/mypage/portfolio.html#pf-' + p.id;
+      }).catch(function (err) {
+        btn.removeAttribute('aria-busy');
+        EM.notice(msg, EM.errorText(err), 'error');
+      });
+    }
 
     function reload() {
       return Promise.all([
@@ -221,6 +338,11 @@
     urlInput.addEventListener('blur', preview);
 
     function preview() {
+      // 編集中で URL を変えていないときは、今の作品のまま（自分で選んだ表紙を上書きしない）
+      if (editing && urlInput.value.trim() === (editing.video_url || '')) {
+        parsed = { provider: editing.provider, video_id: editing.video_id, video_url: editing.video_url, thumbnail_url: editing.thumbnail_url };
+        EM.notice(msg, ''); drawPreview(); return;
+      }
       parsed = EM.parseVideoUrl(urlInput.value, true);
       var box = EM.$('#previewBox'), thumb = EM.$('#previewThumb');
       if (!parsed) {
@@ -254,6 +376,7 @@
 
     EM.$('#addForm').addEventListener('submit', function (e) {
       e.preventDefault();
+      if (editing) { saveEdit(); return; }
       if (!parsed) { preview(); if (!parsed) return; }
       var title = EM.$('#title').value.trim();
       if (!title) { EM.notice(msg, 'タイトルを入力してください。', 'error'); return; }
@@ -326,7 +449,7 @@
       return sb.storage.from('avatars').upload(path, f, { upsert: true, contentType: f.type }).then(function (r) {
         if (r.error) throw r.error;
         var url = sb.storage.from('avatars').getPublicUrl(path).data.publicUrl;
-        return sb.from('portfolios').update({ thumbnail_url: url }).eq('id', portfolioId);
+        return upd(portfolioId, { thumbnail_url: url });
       }).then(function (r) { if (r && r.error) throw r.error; });
     }
     function thumbButton(p) {
@@ -359,7 +482,7 @@
         var tags = el('div', { class: 'tags' });
         (p.portfolio_tags || []).forEach(function (t) { tags.appendChild(el('span', { class: 'tag', text: t.tag })); });
 
-        box.appendChild(el('div', { class: 'card pf-item' }, [
+        box.appendChild(el('div', { class: 'card pf-item', id: 'pf-' + p.id }, [
           thumb,
           el('div', null, [
             el('h3', { class: 'pf-title', text: p.title }),
@@ -372,6 +495,7 @@
             tags,
             detailBox(p),
             el('div', { class: 'pf-actions' }, [
+              el('a', { class: 'btn btn--sm btn--primary', href: '/mypage/portfolio.html?edit=' + encodeURIComponent(p.id), text: '詳しく編集する' }),
               el('button', { class: 'btn btn--sm', type: 'button', text: '↑', 'aria-label': '上へ移動', disabled: idx === 0, onclick: function () { move(idx, -1); } }),
               el('button', { class: 'btn btn--sm', type: 'button', text: '↓', 'aria-label': '下へ移動', disabled: idx === items.length - 1, onclick: function () { move(idx, 1); } }),
               el('button', { class: 'btn btn--sm' + (p.pinned ? ' btn--primary' : ''), type: 'button',
@@ -383,7 +507,7 @@
                 title: 'プロフィールの上の「▶ SHOWREEL」ボタンで、この作品が全画面で流れます（1本だけ）',
                 onclick: function () {
                   if (!p.is_showreel && p.visibility !== 'public') { EM.notice(msg, 'ショーリールにできるのは、公開（プロフィールに表示）の作品だけです。', 'error'); return; }
-                  sb.from('portfolios').update({ is_showreel: !p.is_showreel }).eq('id', p.id).then(function (r) {
+                  upd(p.id, { is_showreel: !p.is_showreel }).then(function (r) {
                     if (r.error) { EM.notice(msg, EM.errorText(r.error), 'error'); return; }
                     EM.notice(msg, ''); EM.toast(p.is_showreel ? 'ショーリールを外しました' : 'ショーリールにしました'); reload();
                   });
@@ -426,7 +550,7 @@
 
     function confirmRights(p) {
       if (!confirm('「' + p.title + '」について確認します。\n\n自主制作の作品か、クライアント・制作会社さんから「実績として出してよい」と言われている作品ですか？\n守秘義務（NDA）がある場合は、許可された範囲・時期だけ載せていますか？\n\n「OK」を押すと、確認した日時が記録されます。')) return;
-      sb.from('portfolios').update({ rights_confirmed_at: new Date().toISOString() }).eq('id', p.id).then(function (r) {
+      upd(p.id, { rights_confirmed_at: new Date().toISOString() }).then(function (r) {
         if (r.error) EM.notice(msg, EM.errorText(r.error), 'error');
         else { EM.toast('確認を記録しました'); reload(); }
       });
@@ -435,7 +559,7 @@
     function releaseButton(p) {
       var input = el('input', { type: 'date', class: 'select--sm', 'aria-label': '解禁日', value: p.release_on || '' });
       input.addEventListener('change', function () {
-        sb.from('portfolios').update({ release_on: input.value || null }).eq('id', p.id).then(function (r) {
+        upd(p.id, { release_on: input.value || null }).then(function (r) {
           if (r.error) { EM.notice(msg, EM.errorText(r.error), 'error'); input.value = p.release_on || ''; }
           else { EM.toast(input.value ? '解禁日を ' + fmtDay(input.value) + ' にしました' : '解禁日を外しました'); reload(); }
         });
@@ -486,7 +610,7 @@
 
     function togglePin(p) {
       if (!p.pinned && p.visibility !== 'public') { EM.notice(msg, '代表作に固定できるのは、公開（プロフィールに表示）の作品だけです。', 'error'); return; }
-      sb.from('portfolios').update({ pinned: !p.pinned }).eq('id', p.id).then(function (r) {
+      upd(p.id, { pinned: !p.pinned }).then(function (r) {
         if (r.error) { EM.notice(msg, EM.errorText(r.error), 'error'); return; }
         EM.notice(msg, ''); EM.toast(p.pinned ? '固定を外しました' : '代表作に固定しました'); reload();
       });
@@ -497,9 +621,12 @@
       if (j < 0 || j >= items.length) return;
       var a = items[idx], b = items[j];
       Promise.all([
-        sb.from('portfolios').update({ sort_order: j }).eq('id', a.id),
-        sb.from('portfolios').update({ sort_order: idx }).eq('id', b.id)
-      ]).then(reload).catch(function (e) { EM.notice(msg, EM.errorText(e), 'error'); });
+        upd(a.id, { sort_order: j }),
+        upd(b.id, { sort_order: idx })
+      ]).then(function (rs) {
+        rs.forEach(function (r) { if (r.error) throw r.error; });
+        return reload();
+      }).catch(function (e) { EM.notice(msg, EM.errorText(e), 'error'); reload(); });
     }
 
     function inStock(p) { return (p.stock_items || []).length > 0; }
@@ -526,7 +653,7 @@
             !confirm('この作品は限定共有リンクに入っています。「パスワードページだけ」にすると、共有リンクには表示されなくなります。よろしいですか？')) {
           sel.value = p.visibility; return;
         }
-        sb.from('portfolios').update({ visibility: next }).eq('id', p.id).then(function (r) {
+        upd(p.id, { visibility: next }).then(function (r) {
           if (r.error) { sel.value = p.visibility; EM.notice(msg, EM.errorText(r.error), 'error'); }
           else { EM.toast('見せ方を変えました'); reload(); }
         });
