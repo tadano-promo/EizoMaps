@@ -55,6 +55,21 @@
     return rows;
   };
 
+  // 作品の情報の表とタグ（ストックページ・限定共有リンク・ストックページの編集画面でも、プロフィールと同じ中身を出す。2026-11-20）
+  EM.workFactsBox = function (p) {
+    var rows = EM.workFacts(p);
+    var tags = (p.tags || (p.portfolio_tags || []).map(function (t) { return t.tag; }) || []).filter(Boolean);
+    if (!rows.length && !tags.length) return null;
+    var box = el('div', { class: 'work-facts' });
+    if (rows.length) {
+      var dl = el('dl', { class: 'player__facts work-facts__dl' });
+      rows.forEach(function (r) { dl.appendChild(el('dt', { text: r[0] })); dl.appendChild(el('dd', { class: 'pre', text: r[1] })); });
+      box.appendChild(dl);
+    }
+    if (tags.length) box.appendChild(el('div', { class: 'tags' }, tags.map(function (t) { return el('span', { class: 'tag', text: t }); })));
+    return box;
+  };
+
   function playerMedia(p) {
     var url = EM.embedUrl(p.provider, p.video_id);
     if (!url) {

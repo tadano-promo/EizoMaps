@@ -1752,6 +1752,7 @@ body.is-player { overflow: hidden; }
 .player__facts { display: grid; grid-template-columns: max-content 1fr; gap: 8px 16px; margin: 18px 0; font-size: 14px; border-top: 1px solid var(--border); padding-top: 14px; }
 .player__facts dt { color: var(--muted); }
 .player__facts dd { margin: 0; overflow-wrap: anywhere; }
+.work-facts__dl { margin: 6px 0 8px; }
 .player__desc { color: var(--muted); }
 .player__info .btn--primary { margin: 6px 0 18px; }
 .player__navs { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 18px; }
