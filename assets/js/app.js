@@ -1076,7 +1076,13 @@
       var mode = u ? EM.applyViewMode(type) : null;
       if (mode === 'redirect') return;
       var hl = document.getElementById('headerLogin');
-      if (hl && u) { hl.textContent = 'マイページ'; hl.setAttribute('href', mode === 'client' ? '/mypage/client/' : '/mypage/'); }
+      // マイページを開いているときは、同じページへのボタンでは意味がないので「ホーム」にする（2026-11-19 翠くん）
+      if (hl && u) {
+        var myHref = mode === 'client' ? '/mypage/client/' : '/mypage/';
+        var here = location.pathname.replace(/index\.html$/, '');
+        if (here === myHref) { hl.textContent = 'ホーム'; hl.setAttribute('href', '/'); }
+        else { hl.textContent = 'マイページ'; hl.setAttribute('href', myHref); }
+      }
       if (u) mountTools(document.getElementById('headerTools'), mode);
       if (u) mountModeBand(type, mode, header);
       var slot = document.getElementById('navUserSlot');
@@ -1091,7 +1097,7 @@
           if (!n) return;
           var a = ul.querySelector('a[href="/messages/"]');
           if (a) a.appendChild(el('span', { class: 'nav-badge', text: String(n), 'aria-label': '未読 ' + n + '件' }));
-          if (hl) hl.appendChild(el('span', { class: 'nav-badge', text: String(n), 'aria-label': '未読のメッセージ ' + n + '件' }));
+          if (hl && hl.getAttribute('href') !== '/') hl.appendChild(el('span', { class: 'nav-badge', text: String(n), 'aria-label': '未読のメッセージ ' + n + '件' }));
         });
         // 自分の作品に削除の申し立てが届いていたら、どの画面でも上に知らせる（10/31 タキさん）
         if (sbm && location.pathname.indexOf('/mypage/portfolio') !== 0) sbm.rpc('my_takedown_requests').then(function (r) {
