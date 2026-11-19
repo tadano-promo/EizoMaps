@@ -49,7 +49,8 @@
         items.appendChild(el('article', { class: 'card' }, [
           EM.workMedia(p),
           el('h3', { class: 'pf-title', text: p.title }),
-          p.description ? el('p', { class: 'small muted', text: p.description }) : null
+          p.description ? el('p', { class: 'small muted pre', text: p.description }) : null,
+          EM.workFactsBox ? EM.workFactsBox(p) : null
         ]));
       });
     }).catch(function (e) { EM.notice(msg, EM.errorText(e), 'error'); });

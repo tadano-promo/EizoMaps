@@ -29,7 +29,7 @@
 
     var PAGE_COLS = 'id,creator_id,slug,title,intro,password_updated_at,is_active,view_count,created_at,updated_at';
     var ITEM_COLS = 'id,kind,title,description,provider,video_id,url,thumbnail_url,width,sort_order,created_at,portfolio_id,' +
-                    'portfolios(id,title,description,provider,video_id,video_url,thumbnail_url,visibility)';
+                    'portfolios(id,title,description,provider,video_id,video_url,thumbnail_url,visibility,work_year,media,purpose,industry,length_label,client_display,client_name,role,credits,portfolio_tags(tag))';
     var VIS_LABEL = { 'public': '誰でも見られる', 'link_only': '限定リンクのみ', 'stock_only': 'パスワードページだけ' };
 
     var KINDS = [
@@ -908,7 +908,7 @@
       var body = el('div', { class: 'stack stock-edit__body' });
       if (it.pf) {
         body.appendChild(el('p', { class: 'stock-shared-note',
-          text: '作品棚の作品です（見せ方：' + (VIS_LABEL[it.pf.visibility] || it.pf.visibility) + '）。タイトルと説明は作品棚と共通なので、ここで直すとポートフォリオにも反映されます。' }));
+          text: '作品棚の作品です（見せ方：' + (VIS_LABEL[it.pf.visibility] || it.pf.visibility) + '）。タイトルと説明は作品棚と共通なので、ここで直すとポートフォリオにも反映されます。年・媒体・業種・担当・クレジットなどの情報とタグも作品棚と同じものが、このページに出ます。' }));
       }
       if (it.kind !== 'note') {
         body.appendChild(el('label', { class: 'field' }, [
@@ -924,6 +924,15 @@
       }
       if (it.url) {
         body.appendChild(el('p', { class: 'small muted mono stock-edit__url', text: it.url }));
+      }
+      // 作品棚の情報（ここでは見るだけ。直すのは作品棚の「詳しく編集する」）
+      if (it.pf) {
+        var facts = EM.workFactsBox ? EM.workFactsBox(it.pf) : null;
+        body.appendChild(el('div', { class: 'stack' }, [
+          el('span', { class: 'label', text: 'このページに出る作品の情報（作品棚と同じ）' }),
+          facts || el('p', { class: 'small muted', text: 'まだ入っていません。年・媒体・業種・担当・クレジットなどを入れると、このページにも出ます。' }),
+          el('a', { class: 'btn btn--sm', href: '/mypage/portfolio.html?edit=' + encodeURIComponent(it.pf.id), text: '作品棚で詳しく編集する' })
+        ]));
       }
       var card = el('div', { class: 'card stock-edit', dataset: { item: it.id } }, [
         el('div', { class: 'row-item' }, [head, ops]),

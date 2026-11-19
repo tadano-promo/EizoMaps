@@ -192,7 +192,8 @@
         return el('div', { class: 'card stack' }, [
           EM.linkCover(it.url, it.thumbnail_url),
           it.title ? el('h3', { text: it.title }) : null,
-          it.description ? multiline(it.description, 'small muted') : null
+          it.description ? multiline(it.description, 'small muted') : null,
+          EM.workFactsBox ? EM.workFactsBox(it) : null
         ]);
       }
       var embed = EM.embedUrl(it.provider, it.video_id);
@@ -228,6 +229,7 @@
         frame,
         it.title ? el('h3', { text: it.title }) : null,
         it.description ? multiline(it.description, 'small muted') : null,
+        EM.workFactsBox ? EM.workFactsBox(it) : null,
         EM.safeUrl(it.url) ? el('a', {
           class: 'small muted stock-src', href: EM.safeUrl(it.url),
           target: '_blank', rel: 'noopener noreferrer', text: '元の投稿を開く'
