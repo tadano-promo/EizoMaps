@@ -552,6 +552,8 @@
         });
       }
       function skeleton(kind) {
+        if (kind === 'script') return el('span', { class: 'look-sk look-sk--script' }, [el('i', { class: 'a' }), el('i', { class: 'b' }), el('i', { class: 'c' })]);
+        if (kind === 'film') return el('span', { class: 'look-sk look-sk--film' }, [el('i', { class: 'a' }), el('i', { class: 'b' }), el('i', { class: 'c' }), el('i', { class: 'd' })]);
         if (kind === 'clapper') return el('span', { class: 'look-sk look-sk--clap' }, [el('i', { class: 'a' }), el('i', { class: 'b' }), el('i', { class: 'c' })]);
         if (kind === 'poster') return el('span', { class: 'look-sk look-sk--poster' }, [el('i', { class: 'a' }), el('i', { class: 'b' }), el('i', { class: 'c' })]);
         if (kind === 'endroll') return el('span', { class: 'look-sk look-sk--roll' }, [el('i', { class: 'a' }), el('i', { class: 'b' }), el('i', { class: 'c' }), el('i', { class: 'd' })]);
@@ -571,6 +573,12 @@
           cols.appendChild(el('button', { class: 'look-color look-color--' + C[0] + (on ? ' is-on' : ''), type: 'button', role: 'radio', 'aria-checked': on ? 'true' : 'false', title: C[1],
             onclick: function () { save({ profile_color: C[0] }); } }, el('span', { text: C[1] })));
         });
+        var pats = EM.$('#lookPatterns'); EM.clear(pats);
+        (EM.PROFILE_PATTERNS || []).forEach(function (P) {
+          var on = (creator.profile_pattern || 'plain') === P[0];
+          pats.appendChild(el('button', { class: 'look-pat look-pat--' + P[0] + (on ? ' is-on' : ''), type: 'button', role: 'radio', 'aria-checked': on ? 'true' : 'false', title: P[1],
+            onclick: function () { save({ profile_pattern: P[0] }); } }, el('span', { text: P[1] })));
+        });
         EM.$('#lookColorWrap').hidden = (creator.profile_layout || 'standard') === 'standard';
         var pv = EM.$('#lookPreview'); EM.clear(pv);
         var lk = EM.profileLook ? EM.profileLook(cur()) : null;
@@ -587,7 +595,7 @@
       var busy = false;
       function save(patch) {
         if (busy) return;
-        var before = { profile_layout: creator.profile_layout, profile_color: creator.profile_color };
+        var before = { profile_layout: creator.profile_layout, profile_color: creator.profile_color, profile_pattern: creator.profile_pattern };
         Object.assign(creator, patch); draw();   // 先に見た目を変える
         busy = true;
         sb.from('creators').update(patch).eq('id', creator.id).select('id').then(function (r) {
