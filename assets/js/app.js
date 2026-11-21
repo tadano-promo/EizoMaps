@@ -571,6 +571,77 @@
     ]);
   };
 
+  /* ---------- プロフィールの見た目：ほかの小道具（2026-11-22） ---------- */
+  EM.PROFILE_LAYOUTS = [['standard', 'スタンダード'], ['staffpass', 'STAFF PASS'], ['clapper', 'カチンコ'], ['poster', 'ポスター'], ['endroll', 'エンドロール']];
+  function lookColor(c) { return /^(yellow|blue|green|red|mono)$/.test(c.profile_color || '') ? c.profile_color : 'yellow'; }
+  function lookName(c, opts, cls) { return opts.h1 ? el('h1', { class: cls, text: c.display_name || '' }) : el('p', { class: cls, text: c.display_name || '' }); }
+  function lookArea(c) { return [c.area_pref, c.area_city].filter(Boolean).join(' '); }
+  function today() { var d = new Date(); return d.getFullYear() + '.' + String(d.getMonth() + 1).padStart(2, '0') + '.' + String(d.getDate()).padStart(2, '0'); }
+
+  // カチンコ：上のしま模様の板と、黒板に名前・肩書きなどを書いた形
+  EM.clapperLook = function (c, opts) {
+    opts = opts || {}; c = c || {};
+    function cell(k, v, wide) { return el('div', { class: 'clap__cell' + (wide ? ' clap__cell--wide' : '') }, [el('span', { class: 'clap__k', text: k }), el('span', { class: 'clap__v', text: v || '—' })]); }
+    return el('div', { class: 'clap clap--' + lookColor(c) }, [
+      el('div', { class: 'clap__sticks', 'aria-hidden': 'true' }, [el('span', { class: 'clap__stick clap__stick--top' }), el('span', { class: 'clap__stick' })]),
+      el('div', { class: 'clap__board' }, [
+        el('div', { class: 'clap__row' }, [el('span', { class: 'clap__prod', text: 'EIZO MAPS' }), el('span', { class: 'clap__date mono', text: today() })]),
+        el('div', { class: 'clap__namebox' }, [el('span', { class: 'clap__k', text: 'NAME' }), lookName(c, opts, 'clap__name')]),
+        el('div', { class: 'clap__grid' }, [
+          cell('ROLE', c.headline || '', true),
+          cell('AREA', lookArea(c)),
+          cell('CAREER', c.years_of_experience != null ? c.years_of_experience + ' Y' : ''),
+          cell('ID', c.handle ? '@' + c.handle : '', true)
+        ]),
+        opts.extra || null
+      ])
+    ]);
+  };
+
+  // 映画のポスター：写真を大きく、名前をタイトルのように。下に小さなクレジットの文字
+  EM.posterLook = function (c, opts) {
+    opts = opts || {}; c = c || {};
+    var av = EM.safeUrl(c.avatar_url);
+    var bill = ['A EIZO MAPS CREATOR', lookArea(c), c.years_of_experience != null ? 'CAREER ' + c.years_of_experience + ' YEARS' : '', c.handle ? '@' + c.handle : ''].filter(Boolean).join('　·　');
+    return el('div', { class: 'poster poster--' + lookColor(c) + (av ? '' : ' poster--noimg') }, [
+      av ? el('img', { class: 'poster__img', src: av, alt: '', loading: 'lazy' }) : el('span', { class: 'poster__initial', 'aria-hidden': 'true', text: String(c.display_name || '?').slice(0, 1) }),
+      el('div', { class: 'poster__shade', 'aria-hidden': 'true' }),
+      el('div', { class: 'poster__top' }, [el('span', { class: 'poster__tag', text: c.headline || 'VIDEO CREATOR' })]),
+      el('div', { class: 'poster__bottom' }, [
+        lookName(c, opts, 'poster__name'),
+        el('p', { class: 'poster__bill', text: bill }),
+        opts.extra || null,
+        el('p', { class: 'poster__soon', text: 'NOW SHOWING' })
+      ])
+    ]);
+  };
+
+  // エンドロール：黒い画面を、名前と経歴が下から上へゆっくり流れる（動きを減らす設定の人には流さない）
+  EM.endrollLook = function (c, opts) {
+    opts = opts || {}; c = c || {};
+    function pair(k, v) { return v ? el('div', { class: 'roll__pair' }, [el('span', { class: 'roll__k', text: k }), el('span', { class: 'roll__v', text: v })]) : null; }
+    var inner = el('div', { class: 'roll__inner' }, [
+      el('p', { class: 'roll__head', text: 'STAFF' }),
+      pair('ROLE', c.headline || ''),
+      el('div', { class: 'roll__pair roll__pair--name' }, [el('span', { class: 'roll__k', text: 'NAME' }), lookName(c, opts, 'roll__name')]),
+      pair('AREA', lookArea(c)),
+      pair('CAREER', c.years_of_experience != null ? c.years_of_experience + ' YEARS' : ''),
+      pair('ID', c.handle ? '@' + c.handle : ''),
+      el('p', { class: 'roll__end', text: 'EIZO MAPS' })
+    ]);
+    return el('div', { class: 'roll roll--' + lookColor(c) }, [el('div', { class: 'roll__screen' }, inner), opts.extra || null]);
+  };
+
+  // 見た目の名前から、ひとつ作る（スタンダードは null。呼んだ側が今までの形を出す）
+  EM.profileLook = function (c, opts) {
+    var k = (c && c.profile_layout) || 'standard';
+    if (k === 'staffpass') return EM.staffPass(c, opts);
+    if (k === 'clapper') return EM.clapperLook(c, opts);
+    if (k === 'poster') return EM.posterLook(c, opts);
+    if (k === 'endroll') return EM.endrollLook(c, opts);
+    return null;
+  };
+
   EM.avatar = function (url, name, big) {
     var safe = EM.safeUrl(url);
     if (safe) return el('img', { class: 'avatar' + (big ? ' avatar--lg' : ''), src: safe, alt: '', loading: 'lazy', referrerpolicy: 'no-referrer' });
