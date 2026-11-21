@@ -25,6 +25,7 @@
       creator = res[1].data || null;
       if (res[2].data) EM.$('#accountType').value = res[2].data.account_type;
 
+      if (creator) setTimeout(mountLook, 0);   // 入力欄に値が入ってから試し見を描く
       if (creator) {
         EM.$('#displayName').value   = creator.display_name || '';
         EM.$('#headline').value      = creator.headline || '';
@@ -533,5 +534,72 @@
 
     EM.$('#logoutBtn').addEventListener('click', function () { EM.signOut(); });
     EM.mountNotifyToggle(EM.$('#notifyBox'));
+
+    /* ---------- ページの見た目（スタンダード／STAFF PASS と色）えらぶとすぐ保存 ---------- */
+    function mountLook() {
+      var box = EM.$('#lookBox');
+      if (!box || !creator || !creator.id) return;
+      box.hidden = false;
+      var LAYOUTS = [['standard', 'スタンダード'], ['staffpass', 'STAFF PASS']];
+      function cur() {
+        // 試し見は、いま入力欄に入っている名前・肩書きも使う（保存前でも見た目が分かるように）
+        return Object.assign({}, creator, {
+          display_name: (EM.$('#displayName') && EM.$('#displayName').value.trim()) || creator.display_name,
+          headline: EM.$('#headline') ? EM.$('#headline').value.trim() : creator.headline,
+          area_pref: EM.$('#areaPref') ? EM.$('#areaPref').value : creator.area_pref,
+          area_city: EM.$('#areaCity') ? EM.$('#areaCity').value.trim() : creator.area_city,
+          years_of_experience: EM.$('#years') && EM.$('#years').value !== '' ? Number(EM.$('#years').value) : creator.years_of_experience
+        });
+      }
+      function skeleton(kind) {
+        if (kind === 'staffpass') return el('span', { class: 'look-sk look-sk--pass' }, [el('i', { class: 'a' }), el('i', { class: 'b' }), el('i', { class: 'c' }), el('i', { class: 'd' })]);
+        return el('span', { class: 'look-sk look-sk--std' }, [el('i', { class: 'a' }), el('i', { class: 'b' }), el('i', { class: 'c' })]);
+      }
+      function draw() {
+        var lay = EM.$('#lookLayouts'); EM.clear(lay);
+        LAYOUTS.forEach(function (L) {
+          var on = (creator.profile_layout || 'standard') === L[0];
+          lay.appendChild(el('button', { class: 'look-opt' + (on ? ' is-on' : ''), type: 'button', role: 'radio', 'aria-checked': on ? 'true' : 'false',
+            onclick: function () { save({ profile_layout: L[0] }); } }, [skeleton(L[0]), el('span', { class: 'look-opt__name', text: L[1] })]));
+        });
+        var cols = EM.$('#lookColors'); EM.clear(cols);
+        (EM.PROFILE_COLORS || []).forEach(function (C) {
+          var on = (creator.profile_color || 'yellow') === C[0];
+          cols.appendChild(el('button', { class: 'look-color look-color--' + C[0] + (on ? ' is-on' : ''), type: 'button', role: 'radio', 'aria-checked': on ? 'true' : 'false', title: C[1],
+            onclick: function () { save({ profile_color: C[0] }); } }, el('span', { text: C[1] })));
+        });
+        EM.$('#lookColorWrap').hidden = (creator.profile_layout || 'standard') !== 'staffpass';
+        var pv = EM.$('#lookPreview'); EM.clear(pv);
+        if ((creator.profile_layout || 'standard') === 'staffpass') pv.appendChild(EM.staffPass(cur()));
+        else pv.appendChild(el('div', { class: 'row profile-head look-std' }, [
+          EM.avatar(creator.avatar_url, cur().display_name, true),
+          el('div', { class: 'profile-head__text' }, [
+            el('p', { class: 'look-std__name', text: cur().display_name || '' }),
+            creator.handle ? el('p', { class: 'profile-handle mono', text: '@' + creator.handle }) : null,
+            el('p', { class: 'small', text: cur().headline || '' })
+          ])
+        ]));
+      }
+      var busy = false;
+      function save(patch) {
+        if (busy) return;
+        var before = { profile_layout: creator.profile_layout, profile_color: creator.profile_color };
+        Object.assign(creator, patch); draw();   // 先に見た目を変える
+        busy = true;
+        sb.from('creators').update(patch).eq('id', creator.id).select('id').then(function (r) {
+          busy = false;
+          if (r.error || !r.data || !r.data.length) throw r.error || new Error('保存できませんでした。ページを読み込み直して、もう一度お試しください。');
+          EM.toast('ページの見た目を変えました');
+        }).catch(function (e) {
+          busy = false;
+          Object.assign(creator, before); draw();
+          EM.toast(EM.errorText(e), 'error');
+        });
+      }
+      draw();
+      ['#displayName', '#headline', '#areaPref', '#areaCity', '#years'].forEach(function (s) {
+        var x = EM.$(s); if (x) x.addEventListener('input', function () { if ((creator.profile_layout || 'standard') === 'staffpass') draw(); });
+      });
+    }
   });
 })(window.EM);

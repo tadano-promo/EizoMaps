@@ -2284,3 +2284,75 @@ body.zap-is-full .zap-frame__box.is-vertical { height: 100%; }
 .help-q:hover { border-color: var(--accent); color: var(--accent); }
 h1 .help-q { width: 26px; height: 26px; font-size: 15px; }
 .faq { scroll-margin-top: 80px; }
+
+/* =====================================================================
+   STAFF PASS（プロフィールの見た目：撮影現場のスタッフ証）2026-11-22
+   ===================================================================== */
+.spass { --sp: #e8ff47; --sp-ink: #111; position: relative; width: 100%; max-width: 340px; margin: 0 auto; padding-top: 58px; }
+.spass--yellow { --sp: #e8ff47; --sp-ink: #111; }
+.spass--blue   { --sp: #4f8cff; --sp-ink: #fff; }
+.spass--green  { --sp: #2fbf71; --sp-ink: #fff; }
+.spass--red    { --sp: #ff5a4e; --sp-ink: #fff; }
+.spass--mono   { --sp: #1b1b1f; --sp-ink: #fff; }
+.spass__strap { position: absolute; top: 0; left: 50%; transform: translateX(-50%); width: 34px; height: 46px; background: var(--sp); border-radius: 2px 2px 0 0; overflow: hidden; box-shadow: inset 0 0 0 1px rgba(0,0,0,.15); }
+.spass__strap span { position: absolute; left: 50%; top: 0; transform: translateX(-50%) rotate(90deg); transform-origin: center; white-space: nowrap; font: 700 8px/34px 'DM Mono', monospace; letter-spacing: .2em; color: var(--sp-ink); opacity: .7; }
+.spass__clip { position: absolute; top: 38px; left: 50%; transform: translateX(-50%); width: 58px; height: 24px; border-radius: 6px; background: linear-gradient(#e4e6ea, #9ea2aa); box-shadow: 0 2px 4px rgba(0,0,0,.35), inset 0 1px 0 #fff; z-index: 2; }
+.spass__clip::after { content: ''; position: absolute; left: 50%; bottom: 5px; transform: translateX(-50%); width: 26px; height: 5px; border-radius: 3px; background: #6d717a; }
+.spass__card { position: relative; background: #f5f2ea; color: #16161a; border-radius: 16px; overflow: hidden; box-shadow: 0 18px 40px rgba(0,0,0,.45), 0 0 0 1px rgba(255,255,255,.06); transform: rotate(-1.2deg); transition: transform .3s; }
+.spass:hover .spass__card { transform: rotate(0); }
+.spass__card::before { content: ''; position: absolute; top: 10px; left: 50%; transform: translateX(-50%); width: 40px; height: 8px; border-radius: 4px; background: #d7d2c6; box-shadow: inset 0 1px 2px rgba(0,0,0,.25); }
+.spass__band { display: flex; align-items: flex-end; justify-content: space-between; gap: 10px; margin-top: 26px; padding: 14px 18px 12px; background: var(--sp); color: var(--sp-ink); }
+.spass__title { font-family: 'Bebas Neue', sans-serif; font-size: 44px; line-height: .9; letter-spacing: .02em; }
+.spass__sub { font: 700 9px/1.4 'DM Mono', monospace; letter-spacing: .14em; text-align: right; }
+.spass__body { display: flex; gap: 14px; padding: 16px 18px 6px; align-items: flex-start; }
+.spass__photo { flex: none; width: 104px; height: 128px; border-radius: 6px; overflow: hidden; background: #ddd8cc; display: flex; align-items: center; justify-content: center; border: 3px solid var(--sp); }
+.spass__photo img { width: 100%; height: 100%; object-fit: cover; }
+.spass__photo span { font-size: 40px; font-weight: 700; color: #8a8579; }
+.spass__main { min-width: 0; flex: 1; }
+.spass__k { display: block; font: 700 9px 'DM Mono', monospace; letter-spacing: .16em; color: #8a8579; }
+.spass__name { margin: 2px 0 8px; font-size: 22px; line-height: 1.25; font-weight: 700; color: #16161a; overflow-wrap: anywhere; letter-spacing: 0; }
+.spass__fields { margin: 0; display: grid; gap: 4px; }
+.spass__row { display: grid; grid-template-columns: 54px 1fr; gap: 6px; padding-bottom: 4px; border-bottom: 1px dashed #cfc9bb; font-size: 12px; }
+.spass__row dt { font: 700 9px/1.9 'DM Mono', monospace; letter-spacing: .14em; color: #8a8579; }
+.spass__row dd { margin: 0; color: #16161a; overflow-wrap: anywhere; }
+.spass__row.mono dd { font-family: 'DM Mono', monospace; }
+.spass__avail { margin: 6px 18px 0; font-size: 12px; }
+.spass__foot { display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 12px 18px 16px; }
+.spass__barcode { flex: 1; height: 26px; background: repeating-linear-gradient(90deg, #16161a 0 2px, transparent 2px 4px, #16161a 4px 5px, transparent 5px 8px, #16161a 8px 11px, transparent 11px 12px); opacity: .85; }
+.spass__code { font-size: 10px; letter-spacing: .12em; color: #6b6659; }
+.profile-pass { padding: 8px 0 18px; }
+
+/* マイページ：ページの見た目をえらぶ */
+.look-grid { display: grid; grid-template-columns: 1fr; gap: 16px; align-items: start; }
+@media (min-width: 760px) { .look-grid { grid-template-columns: 1fr 320px; } }
+.look-layouts { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; }
+.look-opt { display: flex; flex-direction: column; align-items: center; gap: 8px; padding: 12px; border-radius: 14px; border: 1px solid var(--border); background: var(--surface); color: var(--text); cursor: pointer; }
+.look-opt.is-on { border-color: var(--accent); box-shadow: 0 0 0 1px var(--accent); }
+.look-opt__name { font-size: 13px; font-weight: 700; }
+.look-sk { position: relative; display: block; width: 100%; height: 86px; border-radius: 8px; background: #1f1f25; overflow: hidden; }
+.look-sk i { position: absolute; display: block; background: #4a4a55; border-radius: 3px; }
+.look-sk--std .a { left: 14px; top: 18px; width: 30px; height: 30px; border-radius: 50%; }
+.look-sk--std .b { left: 54px; top: 22px; width: 50%; height: 8px; }
+.look-sk--std .c { left: 54px; top: 36px; width: 35%; height: 6px; }
+.look-sk--pass { background: #1f1f25; }
+.look-sk--pass .a { left: 50%; top: 4px; width: 8px; height: 14px; margin-left: -4px; background: var(--accent); }
+.look-sk--pass .b { left: 50%; top: 16px; width: 64px; height: 66px; margin-left: -32px; background: #f5f2ea; border-radius: 6px; }
+.look-sk--pass .c { left: 50%; top: 22px; width: 64px; height: 12px; margin-left: -32px; background: var(--accent); border-radius: 0; }
+.look-sk--pass .d { left: 50%; top: 40px; width: 18px; height: 22px; margin-left: -26px; background: #b7b1a4; }
+.look-colors { display: flex; flex-wrap: wrap; gap: 8px; }
+.look-color { display: inline-flex; align-items: center; gap: 6px; padding: 6px 12px 6px 8px; border-radius: 999px; border: 1px solid var(--border); background: var(--surface); color: var(--text); font-size: 12px; cursor: pointer; }
+.look-color::before { content: ''; width: 16px; height: 16px; border-radius: 50%; border: 1px solid rgba(255,255,255,.25); }
+.look-color--yellow::before { background: #e8ff47; }
+.look-color--blue::before { background: #4f8cff; }
+.look-color--green::before { background: #2fbf71; }
+.look-color--red::before { background: #ff5a4e; }
+.look-color--mono::before { background: #1b1b1f; }
+.look-color.is-on { border-color: var(--accent); box-shadow: 0 0 0 1px var(--accent); }
+.look-preview { padding: 10px 6px 14px; border-radius: 14px; background: linear-gradient(#15151a, #0d0d11); border: 1px solid var(--border); }
+.look-std { padding: 18px 10px; }
+.look-std__name { font-size: 20px; font-weight: 700; margin: 0; }
+.spass .spass__fields { display: grid; grid-template-columns: 1fr; gap: 4px; margin: 0; }
+.spass .spass__row dt, .spass .spass__row dd { margin: 0; }
+.look-preview .spass__photo { width: 80px; height: 100px; }
+.look-preview .spass__body { gap: 10px; padding: 14px 14px 6px; }
+.look-preview .spass__row { grid-template-columns: 46px 1fr; }
