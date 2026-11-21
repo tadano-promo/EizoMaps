@@ -2356,3 +2356,80 @@ h1 .help-q { width: 26px; height: 26px; font-size: 15px; }
 .look-preview .spass__photo { width: 80px; height: 100px; }
 .look-preview .spass__body { gap: 10px; padding: 14px 14px 6px; }
 .look-preview .spass__row { grid-template-columns: 46px 1fr; }
+
+/* ---------- 見た目：カチンコ・ポスター・エンドロール（2026-11-22） ---------- */
+.clap, .poster, .roll { --sp: #e8ff47; --sp-ink: #111; }
+.clap--blue, .poster--blue, .roll--blue { --sp: #4f8cff; --sp-ink: #fff; }
+.clap--green, .poster--green, .roll--green { --sp: #2fbf71; --sp-ink: #fff; }
+.clap--red, .poster--red, .roll--red { --sp: #ff5a4e; --sp-ink: #fff; }
+.clap--mono, .poster--mono, .roll--mono { --sp: #e9e9ee; --sp-ink: #111; }
+.look-avail { margin: 8px 0 0; font-size: 12px; }
+
+/* カチンコ */
+.clap { width: 100%; max-width: 380px; margin: 0 auto; filter: drop-shadow(0 16px 30px rgba(0,0,0,.5)); }
+.clap__sticks { position: relative; height: 44px; }
+.clap__stick { position: absolute; left: 0; right: 0; bottom: 0; height: 22px; border-radius: 4px 4px 0 0; background: repeating-linear-gradient(-55deg, #111 0 18px, var(--sp) 18px 36px); }
+.clap__stick--top { bottom: 22px; transform-origin: 0 100%; transform: rotate(-9deg); border-radius: 4px; animation: clapSnap 3.6s ease-in-out infinite; }
+@keyframes clapSnap { 0%, 78%, 100% { transform: rotate(-9deg); } 84% { transform: rotate(0); } 88% { transform: rotate(-3deg); } 92% { transform: rotate(0); } }
+@media (prefers-reduced-motion: reduce) { .clap__stick--top { animation: none; } }
+.clap__board { background: #1d1f1d; color: #f3f3ee; border-radius: 0 0 10px 10px; padding: 14px 16px 16px; border: 2px solid #2c2f2c; font-family: 'DM Mono', monospace; }
+.clap__row { display: flex; justify-content: space-between; align-items: baseline; border-bottom: 2px solid rgba(255,255,255,.75); padding-bottom: 6px; }
+.clap__prod { font-family: 'Bebas Neue', sans-serif; font-size: 22px; letter-spacing: .12em; color: var(--sp); }
+.clap--mono .clap__prod { color: #fff; }
+.clap__date { font-size: 12px; opacity: .8; }
+.clap__namebox { padding: 10px 0; border-bottom: 2px solid rgba(255,255,255,.75); }
+.clap__k { display: block; font-size: 9px; letter-spacing: .18em; opacity: .65; }
+.clap__name { margin: 2px 0 0; font-family: 'Noto Sans JP', sans-serif; font-size: 28px; font-weight: 700; line-height: 1.2; color: #fff; overflow-wrap: anywhere; letter-spacing: 0; }
+.clap__grid { display: grid; grid-template-columns: 1fr 1fr; }
+.clap__cell { padding: 8px 8px 8px 0; border-bottom: 1px solid rgba(255,255,255,.35); min-width: 0; }
+.clap__cell--wide { grid-column: 1 / -1; }
+.clap__cell:nth-child(2) { border-right: 1px solid rgba(255,255,255,.35); }
+.clap__cell:nth-child(3) { padding-left: 10px; }
+.clap__cell:last-child { border-bottom: 0; }
+.clap__v { display: block; margin-top: 2px; font-family: 'Noto Sans JP', sans-serif; font-size: 13px; overflow-wrap: anywhere; }
+
+/* 映画のポスター */
+.poster { position: relative; width: 100%; max-width: 320px; aspect-ratio: 2 / 3; margin: 0 auto; border-radius: 8px; overflow: hidden; background: #111; box-shadow: 0 18px 40px rgba(0,0,0,.55); }
+.poster__img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; filter: contrast(1.05) saturate(.9); }
+.poster__initial { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; font-family: 'Bebas Neue', sans-serif; font-size: 220px; color: var(--sp); opacity: .9; background: radial-gradient(circle at 50% 35%, #2a2a30, #0b0b0e 70%); }
+.poster__shade { position: absolute; inset: 0; background: linear-gradient(rgba(0,0,0,.55), transparent 22%, transparent 45%, rgba(0,0,0,.92) 78%); }
+.poster__top { position: absolute; top: 14px; left: 0; right: 0; text-align: center; padding: 0 16px; }
+.poster__tag { font-size: 11px; letter-spacing: .22em; color: #fff; text-transform: uppercase; }
+.poster__bottom { position: absolute; left: 0; right: 0; bottom: 0; padding: 0 16px 14px; text-align: center; }
+.poster__name { margin: 0; font-family: 'Bebas Neue', 'Noto Sans JP', sans-serif; font-size: 54px; line-height: .95; color: var(--sp); letter-spacing: .02em; overflow-wrap: anywhere; text-shadow: 0 2px 12px rgba(0,0,0,.6); }
+.poster--mono .poster__name { color: #fff; }
+.poster__bill { margin: 10px 0 0; font-family: 'Bebas Neue', sans-serif; font-size: 12px; letter-spacing: .14em; color: rgba(255,255,255,.82); line-height: 1.3; }
+.poster__soon { margin: 8px 0 0; font: 700 10px 'DM Mono', monospace; letter-spacing: .3em; color: rgba(255,255,255,.6); }
+.poster .look-avail { color: #fff; }
+
+/* エンドロール */
+.roll { width: 100%; max-width: 420px; margin: 0 auto; }
+.roll__screen { position: relative; height: 300px; overflow: hidden; border-radius: 10px; background: #000; box-shadow: 0 18px 40px rgba(0,0,0,.55), inset 0 0 60px rgba(0,0,0,.9); -webkit-mask-image: linear-gradient(transparent, #000 18%, #000 82%, transparent); mask-image: linear-gradient(transparent, #000 18%, #000 82%, transparent); }
+.roll__inner { position: absolute; left: 0; right: 0; top: 0; padding: 40px 16px; text-align: center; animation: rollUp 16s linear infinite; }
+@keyframes rollUp { from { transform: translateY(260px); } to { transform: translateY(-100%); } }
+@media (prefers-reduced-motion: reduce) { .roll__inner { animation: none; position: static; } .roll__screen { height: auto; } }
+.roll:hover .roll__inner { animation-play-state: paused; }
+.roll__head { margin: 0 0 22px; font: 700 11px 'DM Mono', monospace; letter-spacing: .4em; color: var(--sp); }
+.roll--mono .roll__head { color: #fff; }
+.roll__pair { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin: 0 0 14px; align-items: baseline; }
+.roll__k { text-align: right; font: 500 10px 'DM Mono', monospace; letter-spacing: .2em; color: rgba(255,255,255,.55); }
+.roll__v { text-align: left; font-size: 14px; color: #f2f2f2; overflow-wrap: anywhere; }
+.roll__name { margin: 0; text-align: left; font-size: 24px; font-weight: 700; line-height: 1.2; color: #fff; letter-spacing: .04em; overflow-wrap: anywhere; }
+.roll__end { margin: 40px 0 0; font-family: 'Bebas Neue', sans-serif; font-size: 26px; letter-spacing: .3em; color: var(--sp); }
+.roll--mono .roll__end { color: #fff; }
+
+/* えらぶ欄：5つになったので3列に */
+.look-layouts { grid-template-columns: repeat(3, 1fr); }
+@media (max-width: 520px) { .look-layouts { grid-template-columns: repeat(2, 1fr); } }
+.look-sk--clap .a { left: 14px; right: 14px; top: 12px; height: 12px; background: repeating-linear-gradient(-55deg, #111 0 8px, var(--accent) 8px 16px); border-radius: 2px; }
+.look-sk--clap .b { left: 14px; right: 14px; top: 26px; height: 50px; background: #2c302c; border-radius: 0 0 4px 4px; }
+.look-sk--clap .c { left: 22px; top: 40px; width: 50%; height: 7px; background: #cfd3cc; }
+.look-sk--poster .a { left: 50%; top: 6px; width: 50px; height: 74px; margin-left: -25px; background: linear-gradient(#3a3a44, #0c0c10); border-radius: 3px; }
+.look-sk--poster .b { left: 50%; top: 52px; width: 36px; height: 9px; margin-left: -18px; background: var(--accent); }
+.look-sk--poster .c { left: 50%; top: 66px; width: 40px; height: 3px; margin-left: -20px; background: #9a9aa6; }
+.look-sk--roll { background: #000; }
+.look-sk--roll i { left: 50%; height: 4px; background: #c9c9d1; }
+.look-sk--roll .a { top: 18px; width: 40px; margin-left: -20px; background: var(--accent); }
+.look-sk--roll .b { top: 34px; width: 56px; margin-left: -28px; }
+.look-sk--roll .c { top: 46px; width: 48px; margin-left: -24px; }
+.look-sk--roll .d { top: 58px; width: 36px; margin-left: -18px; }

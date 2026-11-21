@@ -540,7 +540,7 @@
       var box = EM.$('#lookBox');
       if (!box || !creator || !creator.id) return;
       box.hidden = false;
-      var LAYOUTS = [['standard', 'スタンダード'], ['staffpass', 'STAFF PASS']];
+      var LAYOUTS = EM.PROFILE_LAYOUTS || [['standard', 'スタンダード'], ['staffpass', 'STAFF PASS']];
       function cur() {
         // 試し見は、いま入力欄に入っている名前・肩書きも使う（保存前でも見た目が分かるように）
         return Object.assign({}, creator, {
@@ -552,6 +552,9 @@
         });
       }
       function skeleton(kind) {
+        if (kind === 'clapper') return el('span', { class: 'look-sk look-sk--clap' }, [el('i', { class: 'a' }), el('i', { class: 'b' }), el('i', { class: 'c' })]);
+        if (kind === 'poster') return el('span', { class: 'look-sk look-sk--poster' }, [el('i', { class: 'a' }), el('i', { class: 'b' }), el('i', { class: 'c' })]);
+        if (kind === 'endroll') return el('span', { class: 'look-sk look-sk--roll' }, [el('i', { class: 'a' }), el('i', { class: 'b' }), el('i', { class: 'c' }), el('i', { class: 'd' })]);
         if (kind === 'staffpass') return el('span', { class: 'look-sk look-sk--pass' }, [el('i', { class: 'a' }), el('i', { class: 'b' }), el('i', { class: 'c' }), el('i', { class: 'd' })]);
         return el('span', { class: 'look-sk look-sk--std' }, [el('i', { class: 'a' }), el('i', { class: 'b' }), el('i', { class: 'c' })]);
       }
@@ -568,9 +571,10 @@
           cols.appendChild(el('button', { class: 'look-color look-color--' + C[0] + (on ? ' is-on' : ''), type: 'button', role: 'radio', 'aria-checked': on ? 'true' : 'false', title: C[1],
             onclick: function () { save({ profile_color: C[0] }); } }, el('span', { text: C[1] })));
         });
-        EM.$('#lookColorWrap').hidden = (creator.profile_layout || 'standard') !== 'staffpass';
+        EM.$('#lookColorWrap').hidden = (creator.profile_layout || 'standard') === 'standard';
         var pv = EM.$('#lookPreview'); EM.clear(pv);
-        if ((creator.profile_layout || 'standard') === 'staffpass') pv.appendChild(EM.staffPass(cur()));
+        var lk = EM.profileLook ? EM.profileLook(cur()) : null;
+        if (lk) pv.appendChild(lk);
         else pv.appendChild(el('div', { class: 'row profile-head look-std' }, [
           EM.avatar(creator.avatar_url, cur().display_name, true),
           el('div', { class: 'profile-head__text' }, [
@@ -598,7 +602,7 @@
       }
       draw();
       ['#displayName', '#headline', '#areaPref', '#areaCity', '#years'].forEach(function (s) {
-        var x = EM.$(s); if (x) x.addEventListener('input', function () { if ((creator.profile_layout || 'standard') === 'staffpass') draw(); });
+        var x = EM.$(s); if (x) x.addEventListener('input', function () { if ((creator.profile_layout || 'standard') !== 'standard') draw(); });
       });
     }
   });

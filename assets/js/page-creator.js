@@ -112,9 +112,10 @@
       var site = EM.safeUrl(c.website_url);
 
       EM.clear(box);
-      if (c.profile_layout === 'staffpass' && EM.staffPass) {
-        // 見た目：STAFF PASS（名前の部分だけ。下の作品・評価・依頼ボタンは同じ）
-        box.appendChild(el('div', { class: 'profile-pass' }, EM.staffPass(c, { h1: true, extra: el('p', { id: 'availBadge', class: 'spass__avail', hidden: true }) })));
+      var look = EM.profileLook ? EM.profileLook(c, { h1: true, extra: el('p', { id: 'availBadge', class: 'look-avail', hidden: true }) }) : null;
+      if (look) {
+        // 見た目：STAFF PASS・カチンコ・ポスター・エンドロール（名前の部分だけ。下の作品・評価・依頼ボタンは同じ）
+        box.appendChild(el('div', { class: 'profile-pass' }, look));
       } else {
         box.appendChild(el('div', { class: 'row profile-head' }, [
           EM.avatar(c.avatar_url, c.display_name, true),
