@@ -542,30 +542,31 @@
     var id = c.handle ? '@' + c.handle : '';
     var code = (c.handle || c.display_name || 'EIZOMAPS').toUpperCase().replace(/[^A-Z0-9_]/g, '').slice(0, 16) || 'EIZOMAPS';
     return el('div', { class: 'spass spass--' + color }, [
-      el('div', { class: 'spass__strap', 'aria-hidden': 'true' }, el('span', { text: 'EIZO MAPS · EIZO MAPS · EIZO MAPS · EIZO MAPS' })),
-      el('div', { class: 'spass__clip', 'aria-hidden': 'true' }),
       el('div', { class: 'spass__card' }, [
-        el('div', { class: 'spass__band pat-area' }, [
-          el('span', { class: 'spass__title', text: 'STAFF PASS' }),
-          el('span', { class: 'spass__sub' }, [document.createTextNode('EIZO MAPS'), el('br'), document.createTextNode('ALL AREAS')])
+        el('div', { class: 'spass__band pat-area', 'aria-hidden': 'true' }, el('span', { class: 'spass__title', text: 'STAFF PASS' })),
+        el('div', { class: 'spass__head' }, [
+          el('span', { class: 'spass__sub' }, [document.createTextNode('EIZO MAPS PRODUCTION'), el('br'), document.createTextNode('CREW ID')]),
+          el('span', { class: 'spass__holo', 'aria-hidden': 'true' })
         ]),
-        el('div', { class: 'spass__body' }, [
-          photo,
-          el('div', { class: 'spass__main' }, [
-            el('span', { class: 'spass__k', text: 'NAME' }),
-            name,
-            el('dl', { class: 'spass__fields' }, [
-              row('ROLE', c.headline || ''),
-              row('AREA', [c.area_pref, c.area_city].filter(Boolean).join(' ')),
-              row('CAREER', c.years_of_experience != null ? c.years_of_experience + ' YEARS' : ''),
-              row('ID', id, 'mono')
+        el('div', null, [
+          el('div', { class: 'spass__body' }, [
+            photo,
+            el('div', { class: 'spass__main' }, [
+              el('span', { class: 'spass__k', text: 'NAME' }),
+              name,
+              el('dl', { class: 'spass__fields' }, [
+                row('ROLE', c.headline || ''),
+                row('AREA', [c.area_pref, c.area_city].filter(Boolean).join(' ')),
+                row('CAREER', c.years_of_experience != null ? c.years_of_experience + ' YEARS' : ''),
+                row('ID', id, 'mono')
+              ])
             ])
+          ]),
+          opts.extra || null,
+          el('div', { class: 'spass__foot', 'aria-hidden': 'true' }, [
+            el('span', { class: 'spass__code mono', text: 'NO. ' + code }),
+            el('span', { class: 'spass__access', text: 'ALL ACCESS' })
           ])
-        ]),
-        opts.extra || null,
-        el('div', { class: 'spass__foot', 'aria-hidden': 'true' }, [
-          el('span', { class: 'spass__barcode' }),
-          el('span', { class: 'spass__code mono', text: code })
         ])
       ])
     ]);
