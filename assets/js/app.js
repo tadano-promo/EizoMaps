@@ -545,7 +545,7 @@
       el('div', { class: 'spass__strap', 'aria-hidden': 'true' }, el('span', { text: 'EIZO MAPS · EIZO MAPS · EIZO MAPS · EIZO MAPS' })),
       el('div', { class: 'spass__clip', 'aria-hidden': 'true' }),
       el('div', { class: 'spass__card' }, [
-        el('div', { class: 'spass__band' }, [
+        el('div', { class: 'spass__band pat-area' }, [
           el('span', { class: 'spass__title', text: 'STAFF PASS' }),
           el('span', { class: 'spass__sub' }, [document.createTextNode('EIZO MAPS'), el('br'), document.createTextNode('ALL AREAS')])
         ]),
@@ -572,7 +572,10 @@
   };
 
   /* ---------- プロフィールの見た目：ほかの小道具（2026-11-22） ---------- */
-  EM.PROFILE_LAYOUTS = [['standard', 'スタンダード'], ['staffpass', 'STAFF PASS'], ['clapper', 'カチンコ'], ['poster', 'ポスター'], ['endroll', 'エンドロール']];
+  EM.PROFILE_LAYOUTS = [['standard', 'スタンダード'], ['staffpass', 'STAFF PASS'], ['clapper', 'カチンコ'], ['poster', 'ポスター'], ['endroll', 'エンドロール'], ['script', '台本'], ['film', 'フィルム']];
+  // 柄（型の上に重ねる模様。2026-11-22 翠くん「色や柄を変えれるように」）
+  EM.PROFILE_PATTERNS = [['plain', '無地'], ['stripe', 'ストライプ'], ['dot', 'ドット'], ['grid', '方眼'], ['grain', 'ざらつき']];
+  function lookPat(c) { return /^(plain|stripe|dot|grid|grain)$/.test(c.profile_pattern || '') ? c.profile_pattern : 'plain'; }
   function lookColor(c) { return /^(yellow|blue|green|red|mono)$/.test(c.profile_color || '') ? c.profile_color : 'yellow'; }
   function lookName(c, opts, cls) { return opts.h1 ? el('h1', { class: cls, text: c.display_name || '' }) : el('p', { class: cls, text: c.display_name || '' }); }
   function lookArea(c) { return [c.area_pref, c.area_city].filter(Boolean).join(' '); }
@@ -584,7 +587,7 @@
     function cell(k, v, wide) { return el('div', { class: 'clap__cell' + (wide ? ' clap__cell--wide' : '') }, [el('span', { class: 'clap__k', text: k }), el('span', { class: 'clap__v', text: v || '—' })]); }
     return el('div', { class: 'clap clap--' + lookColor(c) }, [
       el('div', { class: 'clap__sticks', 'aria-hidden': 'true' }, [el('span', { class: 'clap__stick clap__stick--top' }), el('span', { class: 'clap__stick' })]),
-      el('div', { class: 'clap__board' }, [
+      el('div', { class: 'clap__board pat-area' }, [
         el('div', { class: 'clap__row' }, [el('span', { class: 'clap__prod', text: 'EIZO MAPS' }), el('span', { class: 'clap__date mono', text: today() })]),
         el('div', { class: 'clap__namebox' }, [el('span', { class: 'clap__k', text: 'NAME' }), lookName(c, opts, 'clap__name')]),
         el('div', { class: 'clap__grid' }, [
@@ -606,6 +609,7 @@
     return el('div', { class: 'poster poster--' + lookColor(c) + (av ? '' : ' poster--noimg') }, [
       av ? el('img', { class: 'poster__img', src: av, alt: '', loading: 'lazy' }) : el('span', { class: 'poster__initial', 'aria-hidden': 'true', text: String(c.display_name || '?').slice(0, 1) }),
       el('div', { class: 'poster__shade', 'aria-hidden': 'true' }),
+      el('div', { class: 'poster__pat pat-area', 'aria-hidden': 'true' }),
       el('div', { class: 'poster__top' }, [el('span', { class: 'poster__tag', text: c.headline || 'VIDEO CREATOR' })]),
       el('div', { class: 'poster__bottom' }, [
         lookName(c, opts, 'poster__name'),
@@ -629,17 +633,67 @@
       pair('ID', c.handle ? '@' + c.handle : ''),
       el('p', { class: 'roll__end', text: 'EIZO MAPS' })
     ]);
-    return el('div', { class: 'roll roll--' + lookColor(c) }, [el('div', { class: 'roll__screen' }, inner), opts.extra || null]);
+    return el('div', { class: 'roll roll--' + lookColor(c) }, [el('div', { class: 'roll__screen pat-area' }, inner), opts.extra || null]);
   };
 
   // 見た目の名前から、ひとつ作る（スタンダードは null。呼んだ側が今までの形を出す）
+  // 台本の表紙：左に色の背（とじしろ）、真ん中に名前を題名のように
+  EM.scriptLook = function (c, opts) {
+    opts = opts || {}; c = c || {};
+    var meta = [
+      ['職種', c.headline || ''],
+      ['地域', lookArea(c)],
+      ['経験', c.years_of_experience != null ? c.years_of_experience + '年' : ''],
+      ['連絡先', c.handle ? '@' + c.handle : '']
+    ].filter(function (x) { return x[1]; });
+    return el('div', { class: 'script script--' + lookColor(c) }, [
+      el('div', { class: 'script__spine pat-area', 'aria-hidden': 'true' }, [el('i'), el('i'), el('i')]),
+      el('div', { class: 'script__cover' }, [
+        el('div', { class: 'script__top' }, [el('span', { text: 'EIZO MAPS 作品' }), el('span', { text: '第1稿' })]),
+        el('p', { class: 'script__pre', text: 'プロフィール' }),
+        el('div', { class: 'script__title' }, [el('span', { 'aria-hidden': 'true', text: '「' }), lookName(c, opts, 'script__name'), el('span', { 'aria-hidden': 'true', text: '」' })]),
+        el('dl', { class: 'script__meta' }, meta.map(function (m) { return el('div', null, [el('dt', { text: m[0] }), el('dd', { text: m[1] })]); })),
+        opts.extra || null,
+        el('span', { class: 'script__stamp', 'aria-hidden': 'true', text: '決定稿' })
+      ])
+    ]);
+  };
+
+  // フィルム：上下に穴の並んだフィルムの帯に、写真・名前・経歴の3コマ
+  EM.filmLook = function (c, opts) {
+    opts = opts || {}; c = c || {};
+    var av = EM.safeUrl(c.avatar_url);
+    function holes() { var h = el('div', { class: 'film__holes', 'aria-hidden': 'true' }); for (var i = 0; i < 14; i++) h.appendChild(el('i')); return h; }
+    return el('div', { class: 'film film--' + lookColor(c) }, [
+      el('div', { class: 'film__strip pat-area' }, [
+        holes(),
+        el('div', { class: 'film__frames' }, [
+          el('div', { class: 'film__frame film__frame--photo' }, av ? el('img', { src: av, alt: '', loading: 'lazy' }) : el('span', { class: 'film__initial', text: String(c.display_name || '?').slice(0, 1) })),
+          el('div', { class: 'film__frame film__frame--name' }, [el('span', { class: 'film__k', text: 'NAME' }), lookName(c, opts, 'film__name'), c.handle ? el('span', { class: 'film__id mono', text: '@' + c.handle }) : null]),
+          el('div', { class: 'film__frame film__frame--info' }, [
+            c.headline ? el('p', { class: 'film__role', text: c.headline }) : null,
+            lookArea(c) ? el('p', { class: 'film__sub', text: lookArea(c) }) : null,
+            c.years_of_experience != null ? el('p', { class: 'film__sub', text: 'CAREER ' + c.years_of_experience + ' YEARS' }) : null
+          ])
+        ]),
+        holes(),
+        el('span', { class: 'film__edge mono', 'aria-hidden': 'true', text: 'EIZO MAPS  ▸ 1  ▸ 2  ▸ 3' })
+      ]),
+      opts.extra || null
+    ]);
+  };
+
+  // 見た目の名前から、ひとつ作る（スタンダードは null。呼んだ側が今までの形を出す）。柄のクラスもここで付ける
   EM.profileLook = function (c, opts) {
-    var k = (c && c.profile_layout) || 'standard';
-    if (k === 'staffpass') return EM.staffPass(c, opts);
-    if (k === 'clapper') return EM.clapperLook(c, opts);
-    if (k === 'poster') return EM.posterLook(c, opts);
-    if (k === 'endroll') return EM.endrollLook(c, opts);
-    return null;
+    var k = (c && c.profile_layout) || 'standard', node = null;
+    if (k === 'staffpass') node = EM.staffPass(c, opts);
+    else if (k === 'clapper') node = EM.clapperLook(c, opts);
+    else if (k === 'poster') node = EM.posterLook(c, opts);
+    else if (k === 'endroll') node = EM.endrollLook(c, opts);
+    else if (k === 'script') node = EM.scriptLook(c, opts);
+    else if (k === 'film') node = EM.filmLook(c, opts);
+    if (node) node.classList.add('pat-' + lookPat(c));
+    return node;
   };
 
   EM.avatar = function (url, name, big) {

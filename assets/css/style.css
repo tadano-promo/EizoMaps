@@ -2433,3 +2433,70 @@ h1 .help-q { width: 26px; height: 26px; font-size: 15px; }
 .look-sk--roll .b { top: 34px; width: 56px; margin-left: -28px; }
 .look-sk--roll .c { top: 46px; width: 48px; margin-left: -24px; }
 .look-sk--roll .d { top: 58px; width: 36px; margin-left: -18px; }
+
+/* ---------- 柄（型の上に重ねる模様）2026-11-22 ----------
+   柄を出す場所に .pat-area。明るい場所は黒の模様、暗い場所は白の模様（--pi） */
+.pat-area { position: relative; --pi: rgba(0,0,0,.13); }
+.pat-area::before { content: ''; position: absolute; inset: 0; pointer-events: none; border-radius: inherit; }
+.pat-area > * { position: relative; }
+.clap__board.pat-area, .roll__screen.pat-area, .poster__pat.pat-area, .film__strip.pat-area { --pi: rgba(255,255,255,.08); }
+.spass--mono .spass__band.pat-area { --pi: rgba(255,255,255,.12); }
+.pat-stripe .pat-area::before { background-image: repeating-linear-gradient(45deg, var(--pi) 0 6px, transparent 6px 14px); }
+.pat-dot .pat-area::before { background-image: radial-gradient(var(--pi) 1.4px, transparent 1.6px); background-size: 10px 10px; }
+.pat-grid .pat-area::before { background-image: linear-gradient(var(--pi) 1px, transparent 1px), linear-gradient(90deg, var(--pi) 1px, transparent 1px); background-size: 14px 14px; }
+.pat-grain .pat-area::before { background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 .5 0 0 0 0 .5 0 0 0 0 .5 0 0 0 .55 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E"); mix-blend-mode: overlay; opacity: .9; }
+.poster__pat { position: absolute; inset: 0; }
+.poster__pat.pat-area { position: absolute; }
+
+/* 台本の表紙 */
+.script { --sp: #e8ff47; display: flex; width: 100%; max-width: 360px; margin: 0 auto; filter: drop-shadow(0 16px 30px rgba(0,0,0,.5)); }
+.script--blue { --sp: #4f8cff; } .script--green { --sp: #2fbf71; } .script--red { --sp: #ff5a4e; } .script--mono { --sp: #2a2a30; }
+.script__spine { flex: none; width: 34px; background: var(--sp); border-radius: 6px 0 0 6px; display: flex; flex-direction: column; justify-content: space-around; align-items: center; padding: 30px 0; }
+.script__spine i { display: block; width: 10px; height: 10px; border-radius: 50%; background: #0d0d11; box-shadow: inset 0 1px 2px rgba(255,255,255,.3); }
+.script__cover { position: relative; flex: 1; min-width: 0; background: #fbfaf6; color: #1a1a1a; border-radius: 0 6px 6px 0; padding: 18px 20px 22px; overflow: hidden; }
+.script__top { display: flex; justify-content: space-between; font-size: 11px; color: #6d6a62; border-bottom: 1px solid #1a1a1a; padding-bottom: 6px; }
+.script__pre { margin: 26px 0 4px; text-align: center; font-size: 12px; letter-spacing: .4em; color: #6d6a62; }
+.script__title { display: flex; justify-content: center; align-items: baseline; gap: 2px; font-family: 'Hiragino Mincho ProN', 'Yu Mincho', 'Noto Serif JP', serif; }
+.script__title > span { font-size: 26px; color: #1a1a1a; }
+.script__name { margin: 0; font-family: inherit; font-size: 34px; font-weight: 700; color: #1a1a1a; letter-spacing: .06em; overflow-wrap: anywhere; text-align: center; }
+.script__meta { margin: 30px 0 0; display: grid; gap: 6px; font-size: 13px; }
+.script__meta > div { display: grid; grid-template-columns: 56px 1fr; gap: 8px; padding-bottom: 6px; border-bottom: 1px dotted #b9b4a8; }
+.script__meta dt { color: #6d6a62; } .script__meta dd { margin: 0; overflow-wrap: anywhere; }
+.script__stamp { position: absolute; right: 16px; top: 74px; padding: 4px 8px; border: 2px solid #d6372b; color: #d6372b; font-weight: 700; font-size: 13px; letter-spacing: .2em; border-radius: 4px; transform: rotate(8deg); opacity: .85; }
+.script .look-avail { margin-top: 12px; }
+
+/* フィルム */
+.film { --sp: #e8ff47; width: 100%; max-width: 520px; margin: 0 auto; }
+.film--blue { --sp: #4f8cff; } .film--green { --sp: #2fbf71; } .film--red { --sp: #ff5a4e; } .film--mono { --sp: #f0f0f0; }
+.film__strip { background: #161512; border-radius: 4px; padding: 0 10px 14px; box-shadow: 0 16px 30px rgba(0,0,0,.5); }
+.film__holes { display: flex; justify-content: space-between; padding: 7px 2px; }
+.film__holes i { display: block; width: 14px; height: 10px; border-radius: 2px; background: #000; box-shadow: inset 0 0 0 1px #2a2822; }
+.film__frames { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; }
+.film__frame { position: relative; aspect-ratio: 4 / 5; background: #0a0a0a; border-radius: 3px; overflow: hidden; display: flex; flex-direction: column; justify-content: center; padding: 8px; color: #f2f2f2; min-width: 0; }
+.film__frame--photo { padding: 0; align-items: center; }
+.film__frame--photo img { width: 100%; height: 100%; object-fit: cover; }
+.film__initial { font-family: 'Bebas Neue', sans-serif; font-size: 72px; color: var(--sp); }
+.film__k { font: 700 8px 'DM Mono', monospace; letter-spacing: .2em; color: rgba(255,255,255,.5); }
+.film__name { margin: 2px 0 4px; font-size: 22px; font-weight: 700; line-height: 1.15; color: var(--sp); overflow-wrap: anywhere; letter-spacing: 0; }
+.film__id { font-size: 10px; color: rgba(255,255,255,.65); overflow-wrap: anywhere; }
+.film__role { margin: 0 0 6px; font-size: 12px; line-height: 1.4; overflow-wrap: anywhere; }
+.film__sub { margin: 0 0 4px; font-size: 10px; color: rgba(255,255,255,.6); letter-spacing: .06em; }
+.film__edge { display: block; margin-top: 2px; font-size: 9px; letter-spacing: .2em; color: #d39b2a; opacity: .8; }
+.film .look-avail { margin-top: 8px; }
+
+/* えらぶ欄：台本・フィルムの小さな絵、柄のボタン */
+.look-sk--script .a { left: 50%; top: 8px; width: 12px; height: 70px; margin-left: -34px; background: var(--accent); border-radius: 3px 0 0 3px; }
+.look-sk--script .b { left: 50%; top: 8px; width: 46px; height: 70px; margin-left: -22px; background: #fbfaf6; border-radius: 0 3px 3px 0; }
+.look-sk--script .c { left: 50%; top: 34px; width: 26px; height: 6px; margin-left: -12px; background: #1a1a1a; }
+.look-sk--film .a { left: 10px; right: 10px; top: 24px; height: 40px; background: #161512; border-radius: 2px; }
+.look-sk--film .b, .look-sk--film .c, .look-sk--film .d { top: 32px; width: 26%; height: 24px; background: #3a3a44; }
+.look-sk--film .b { left: 16px; } .look-sk--film .c { left: 50%; margin-left: -13%; background: var(--accent); } .look-sk--film .d { right: 16px; }
+.look-pat::before { content: ''; width: 16px; height: 16px; border-radius: 4px; border: 1px solid rgba(255,255,255,.3); background-color: #e8e8ee; }
+.look-pat { display: inline-flex; align-items: center; gap: 6px; padding: 6px 12px 6px 8px; border-radius: 999px; border: 1px solid var(--border); background: var(--surface); color: var(--text); font-size: 12px; cursor: pointer; }
+.look-pat.is-on { border-color: var(--accent); box-shadow: 0 0 0 1px var(--accent); }
+.look-pat--stripe::before { background-image: repeating-linear-gradient(45deg, #555 0 2px, transparent 2px 5px); }
+.look-pat--dot::before { background-image: radial-gradient(#555 1px, transparent 1.2px); background-size: 5px 5px; }
+.look-pat--grid::before { background-image: linear-gradient(#777 1px, transparent 1px), linear-gradient(90deg, #777 1px, transparent 1px); background-size: 5px 5px; }
+.look-pat--grain::before { background: radial-gradient(circle at 30% 30%, #999, #cfcfd6); }
+.script .script__meta { display: grid; grid-template-columns: 1fr; gap: 6px; }
+.script .script__meta dt, .script .script__meta dd { margin: 0; }

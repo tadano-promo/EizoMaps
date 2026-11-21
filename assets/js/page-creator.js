@@ -31,7 +31,7 @@
     function loadAll() {
     Promise.all([
       sb.from('creators')
-        .select('id,user_id,handle,display_name,headline,bio,area_pref,area_city,years_of_experience,response_time_hours,avatar_url,website_url,contact_pref,contact_dm_url,updated_at,share_availability,service_area,travel_ok,equipment,business_type,invoice_registered,moods,profile_layout,profile_color,creator_genres(genre_id)')
+        .select('id,user_id,handle,display_name,headline,bio,area_pref,area_city,years_of_experience,response_time_hours,avatar_url,website_url,contact_pref,contact_dm_url,updated_at,share_availability,service_area,travel_ok,equipment,business_type,invoice_registered,moods,profile_layout,profile_color,profile_pattern,creator_genres(genre_id)')
         .eq('id', id).maybeSingle(),
       sb.from('genres').select('id,name_ja'),
       sb.from('portfolios')
