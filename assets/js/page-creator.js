@@ -31,7 +31,7 @@
     function loadAll() {
     Promise.all([
       sb.from('creators')
-        .select('id,user_id,handle,display_name,headline,bio,area_pref,area_city,years_of_experience,response_time_hours,avatar_url,website_url,contact_pref,contact_dm_url,updated_at,share_availability,service_area,travel_ok,equipment,business_type,invoice_registered,moods,creator_genres(genre_id)')
+        .select('id,user_id,handle,display_name,headline,bio,area_pref,area_city,years_of_experience,response_time_hours,avatar_url,website_url,contact_pref,contact_dm_url,updated_at,share_availability,service_area,travel_ok,equipment,business_type,invoice_registered,moods,profile_layout,profile_color,creator_genres(genre_id)')
         .eq('id', id).maybeSingle(),
       sb.from('genres').select('id,name_ja'),
       sb.from('portfolios')
@@ -112,16 +112,21 @@
       var site = EM.safeUrl(c.website_url);
 
       EM.clear(box);
-      box.appendChild(el('div', { class: 'row profile-head' }, [
-        EM.avatar(c.avatar_url, c.display_name, true),
-        el('div', { class: 'profile-head__text' }, [
-          el('h1', { text: c.display_name }),
-          c.handle ? el('p', { class: 'profile-handle mono', text: '@' + c.handle }) : null,
-          el('p', { id: 'availBadge', hidden: true }),
-          el('p', { class: 'lead', text: c.headline || '' }),
-          el('p', { class: 'small muted', text: [c.area_pref, c.area_city].filter(Boolean).join(' ') }),
-        ])
-      ]));
+      if (c.profile_layout === 'staffpass' && EM.staffPass) {
+        // 見た目：STAFF PASS（名前の部分だけ。下の作品・評価・依頼ボタンは同じ）
+        box.appendChild(el('div', { class: 'profile-pass' }, EM.staffPass(c, { h1: true, extra: el('p', { id: 'availBadge', class: 'spass__avail', hidden: true }) })));
+      } else {
+        box.appendChild(el('div', { class: 'row profile-head' }, [
+          EM.avatar(c.avatar_url, c.display_name, true),
+          el('div', { class: 'profile-head__text' }, [
+            el('h1', { text: c.display_name }),
+            c.handle ? el('p', { class: 'profile-handle mono', text: '@' + c.handle }) : null,
+            el('p', { id: 'availBadge', hidden: true }),
+            el('p', { class: 'lead', text: c.headline || '' }),
+            el('p', { class: 'small muted', text: [c.area_pref, c.area_city].filter(Boolean).join(' ') }),
+          ])
+        ]));
+      }
       // 評価の平均と職種を1行に
       box.appendChild(el('div', { class: 'head-meta' }, [el('div', { class: 'row', id: 'ratingRow' }), tags]));
       // 自己紹介は2行だけ見せて「さらに表示」で全部（作品を最初の画面に入れるため）
