@@ -27,7 +27,8 @@
     var isInv = d.type === 'invoice';
     var iss = d.issuer || {}, rec = d.recipient || {}, wh = d.withholding || null;
     var rows = (d.items || []).map(function (it) {
-      return el('tr', null, [el('td', { text: it.name }), el('td', { class: 'num', text: String(it.qty || 1) }), el('td', { class: 'num', text: yen(it.amount) })]);
+      var q = String(it.qty == null ? 1 : Number(it.qty)) + (it.unit ? ' ' + it.unit : '');
+      return el('tr', null, [el('td', { text: it.name }), el('td', { class: 'num', text: q }), el('td', { class: 'num', text: it.unit_price != null ? yen(it.unit_price) : '' }), el('td', { class: 'num', text: yen(it.amount) })]);
     });
     var sum = [
       ['小計（税抜）', yen(d.total_excl)],
@@ -66,7 +67,7 @@
         ])
       ]),
       el('table', { class: 'docsheet__items' }, [
-        el('thead', null, el('tr', null, [el('th', { text: '内容' }), el('th', { class: 'num', text: '数量' }), el('th', { class: 'num', text: '金額（税込）' })])),
+        el('thead', null, el('tr', null, [el('th', { text: '内容' }), el('th', { class: 'num', text: '数量' }), el('th', { class: 'num', text: '単価（税込）' }), el('th', { class: 'num', text: '金額（税込）' })])),
         el('tbody', null, rows)
       ]),
       el('table', { class: 'docsheet__sum' }, el('tbody', null, sum.map(function (r, i) {
@@ -162,6 +163,86 @@
   }
 
   /* ---------- 案件ページの「書類」 ---------- */
+  /* ---------- 明細（内訳）の入力欄（2026-11-22）----------
+     書類の金額（税込）は記録から決まる。明細は、その金額の内訳を1行ずつ書く。合計がぴったり合うまで作れない */
+  function itemsForm(p, ctx, docs, type, label, opts) {
+    var amt = null;
+    if (type === 'quote') {
+      if (opts.quote) { var q = (ctx.quotes() || []).filter(function (x) { return x.id === opts.quote; })[0]; amt = q ? q.amount : null; }
+      else amt = p.terms_amount;
+    } else amt = p.final_amount != null ? p.final_amount : p.terms_amount;
+    // 前に出した書類に明細があれば、同じ明細で始める（合計が同じときだけ）。なければ「案件名 1式」の1行
+    var prev = null;
+    (docs || []).some(function (d) {
+      var its = d.data && d.data.items;
+      if (!its || its.length < 2) return false;
+      var s = its.reduce(function (a, x) { return a + Number(x.amount || 0); }, 0);
+      if (s === amt) { prev = its; return true; }
+      return false;
+    });
+    var start = prev ? prev.map(function (x) { return { name: x.name, qty: x.qty, unit: x.unit || '', unit_price: x.unit_price != null ? x.unit_price : x.amount }; })
+                     : [{ name: p.title + (p.kind ? '（' + p.kind + '）' : ''), qty: 1, unit: '式', unit_price: amt }];
+    var box = el('div', { class: 'card stack doc-items-form' });
+    var rowsBox = el('div', { class: 'doc-items' });
+    var sumP = el('p', { class: 'small doc-items__sum' });
+    var noteIn = el('textarea', { rows: 2, maxlength: 500, placeholder: '例：お支払いは月末締め・翌月末払いでお願いします' });
+    var go = el('button', { type: 'button', class: 'btn btn--primary btn--sm', text: label + 'を作る' });
+
+    function num(v) { var n = Number(String(v == null ? '' : v).replace(/[,，円\s]/g, '')); return isFinite(n) ? n : NaN; }
+    function rowEl(it) {
+      var name = el('input', { type: 'text', maxlength: 60, value: it.name || '', placeholder: '例：撮影（カメラマン1名）', 'aria-label': '内容' });
+      var qty = el('input', { type: 'text', inputmode: 'decimal', value: it.qty != null ? String(it.qty) : '1', 'aria-label': '数量' });
+      var unit = el('input', { type: 'text', maxlength: 6, value: it.unit || '', placeholder: '式', 'aria-label': '単位' });
+      var price = el('input', { type: 'text', inputmode: 'numeric', value: it.unit_price != null ? String(it.unit_price) : '', placeholder: '50000', 'aria-label': '単価（税込）' });
+      var line = el('span', { class: 'doc-items__line' });
+      var del = el('button', { type: 'button', class: 'btn btn--sm btn--ghost', text: '消す', 'aria-label': 'この行を消す' });
+      var r = el('div', { class: 'doc-items__row' }, [name, qty, unit, price, line, del]);
+      r._get = function () { return { name: name.value.trim(), qty: num(qty.value), unit: unit.value.trim(), unit_price: num(price.value) }; };
+      [name, qty, unit, price].forEach(function (x) { x.addEventListener('input', calc); });
+      del.addEventListener('click', function () { r.remove(); calc(); });
+      return r;
+    }
+    function rows() { return Array.prototype.slice.call(rowsBox.children).map(function (r) { return r._get(); }); }
+    function calc() {
+      var total = 0, bad = false;
+      Array.prototype.slice.call(rowsBox.children).forEach(function (r) {
+        var g = r._get(), a = Math.round(g.qty * g.unit_price);
+        r.querySelector('.doc-items__line').textContent = isFinite(a) ? yen(a) : '—';
+        if (!isFinite(a) || !g.name) bad = true; else total += a;
+      });
+      var diff = amt - total;
+      EM.clear(sumP);
+      sumP.appendChild(document.createTextNode('明細の合計：' + yen(total) + '　／　書類の金額：' + yen(amt) + '（税込）　'));
+      sumP.appendChild(el('strong', { class: diff === 0 && !bad ? 'ok' : 'ng', text: bad ? '入っていない欄があります' : diff === 0 ? 'ぴったり合っています' : (diff > 0 ? 'あと ' + yen(diff) : yen(-diff) + ' 多いです') }));
+      go.disabled = bad || diff !== 0 || !rowsBox.children.length;
+    }
+    start.forEach(function (it) { rowsBox.appendChild(rowEl(it)); });
+
+    box.appendChild(el('p', { class: 'flow-terms__title', text: label + 'を作る' }));
+    box.appendChild(el('p', { class: 'small muted', text: '明細は、書類の金額（' + yen(amt) + '・税込）の内訳です。1行ずつ「内容・数量・単位・単価（税込）」を入れてください。合計がぴったり合うと作れます。分けなくてよいときは、そのまま作れます。' }));
+    box.appendChild(el('div', { class: 'doc-items__head small muted' }, [el('span', { text: '内容' }), el('span', { text: '数量' }), el('span', { text: '単位' }), el('span', { text: '単価（税込）' }), el('span', { text: '金額' }), el('span')]));
+    box.appendChild(rowsBox);
+    box.appendChild(el('div', { class: 'form-actions' }, [
+      el('button', { type: 'button', class: 'btn btn--sm', text: '＋ 行を足す', onclick: function () { if (rowsBox.children.length >= 20) { EM.toast('明細は20行までです', 'error'); return; } var r = rowEl({ qty: 1, unit: '' }); rowsBox.appendChild(r); r.querySelector('input').focus(); calc(); } }),
+      el('button', { type: 'button', class: 'btn btn--sm btn--ghost', text: '1行（1式）にもどす', onclick: function () { EM.clear(rowsBox); rowsBox.appendChild(rowEl({ name: p.title + (p.kind ? '（' + p.kind + '）' : ''), qty: 1, unit: '式', unit_price: amt })); calc(); } })
+    ]));
+    box.appendChild(sumP);
+    box.appendChild(el('label', { class: 'stack' }, [el('span', { class: 'label', text: '備考（書類の下に載ります・なくてもOK）' }), noteIn]));
+    box.appendChild(el('p', { class: 'small muted', text: '作った書類は、その時点の内容で記録され、相手にも届きます。あとから直すときは、もう一度作ってください（番号が新しくなります）。' }));
+    box.appendChild(el('div', { class: 'form-actions' }, [go, el('button', { type: 'button', class: 'btn btn--sm btn--ghost', text: 'やめる', onclick: function () { box.remove(); } })]));
+    go.addEventListener('click', function () {
+      var its = rows();
+      var single = its.length === 1 && its[0].qty === 1 && its[0].unit_price === amt && its[0].name === p.title + (p.kind ? '（' + p.kind + '）' : '');
+      go.disabled = true;
+      ctx.sb.rpc('doc_issue', { p_project: p.id, p_type: type, p_quote: opts.quote || null, p_note: noteIn.value.trim() || null, p_include_payout: true, p_items: single ? null : its }).then(function (r) {
+        if (r.error) { go.disabled = false; EM.toast(EM.errorText(r.error), 'error'); return; }
+        EM.toast(label + 'を作りました'); EM.track('doc_issue', { content_type: type, items: its.length }); ctx.reload();
+      });
+    });
+    calc();
+    return box;
+  }
+
   function card(p, role, ctx) {
     var c = role === 'client';
     var box = el('div', { class: 'card flow-terms doc-card' }, [el('p', { class: 'flow-terms__title', text: '書類（見積書・発注書・納品書・請求書）' })]);
@@ -197,15 +278,13 @@
 
       // 作る
       var make = el('div', { class: 'form-actions doc-make' });
+      var formSlot = el('div');
       function issueBtn(type, label, opts) {
         opts = opts || {};
         return el('button', { type: 'button', class: 'btn btn--sm', text: label, disabled: !!opts.disabled, title: opts.why || '', onclick: function () {
-          if (!confirm(label + 'を作りますか？\n作った書類は、その時点の内容で記録され、相手にも届きます。')) return;
-          var note = window.prompt('備考（書類の下に載ります。なければ空のままOK）', '') || null;
-          ctx.sb.rpc('doc_issue', { p_project: p.id, p_type: type, p_quote: opts.quote || null, p_note: note, p_include_payout: true }).then(function (r) {
-            if (r.error) { EM.notice(ctx.msg, EM.errorText(r.error), 'error'); return; }
-            EM.toast(label + 'を作りました'); EM.track('doc_issue', { content_type: type }); ctx.reload();
-          });
+          EM.clear(formSlot);
+          formSlot.appendChild(itemsForm(p, ctx, docs, type, label, opts));
+          formSlot.scrollIntoView({ block: 'nearest' });
         } });
       }
       if (!c) {
@@ -222,6 +301,7 @@
       if (make.childNodes.length) {
         body.appendChild(el('p', { class: 'small', text: c ? '作れる書類' : '作れる書類（金額は、確定した記録から自動で入ります）' }));
         body.appendChild(make);
+        body.appendChild(formSlot);
         if (!settled) body.appendChild(el('p', { class: 'small muted', text: '確定待ちの見積もりや一時停止があるあいだは、発注書・納品書・請求書は作れません。' }));
         if (!c && ['delivered', 'paid', 'closed'].indexOf(p.status) === -1 && started) body.appendChild(el('p', { class: 'small muted', text: '納品書は「納品済み」にしてから作れます。' }));
       }
