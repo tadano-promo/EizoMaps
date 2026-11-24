@@ -237,7 +237,7 @@
       document.body.appendChild(a); a.click(); a.remove();
     });
     // お客さま向け：見積の金額だけ（実行・粗利は出さない）
-    EM.$('#estCopy').addEventListener('click', function () {
+    function customerText() {
       var t = E.totals(state.lines), tax = Math.round(t.sell * 0.1);
       var out = ['【お見積もり】' + (EM.$('#estTitle').value.trim() || '')], last = null;
       state.lines.forEach(function (l) {
@@ -248,8 +248,17 @@
       var c = EM.$('#estCond').value.trim(), x = EM.$('#estExcl').value.trim();
       if (c) { out.push(''); out.push('【前提条件】'); out.push(c); }
       if (x) { out.push(''); out.push('【このお見積もりに含まれないもの】'); out.push(x); }
-      var s = out.join('\n');
+      return out.join('\n');
+    }
+    EM.$('#estCopy').addEventListener('click', function () {
+      var s = customerText();
       (navigator.clipboard ? navigator.clipboard.writeText(s) : Promise.reject()).then(function () { EM.toast('コピーしました（実行の金額と粗利は入れていません）'); }, function () { window.prompt('下の文字をコピーしてください', s); });
+    });
+    // 書き出した見積もりの文章を、抜けチェックに渡す（送信はしない。このブラウザの中だけ）
+    var chk = EM.$('#estCheck');
+    if (chk) chk.addEventListener('click', function () {
+      try { sessionStorage.setItem('em_qc_text', customerText()); } catch (e) { /* 渡せなくても開く */ }
+      location.href = '/estimate/check/';
     });
   });
 })(window.EM);
