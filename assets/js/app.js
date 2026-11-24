@@ -95,8 +95,22 @@
     document.addEventListener('click', function (e) {
       var a = e.target && e.target.closest ? e.target.closest('a[data-cta], article.doc a.btn, #pitchClient a.btn, #pitchCreator a.btn') : null;
       if (!a) return;
-      EM.track('cta_click', { cta_id: a.getAttribute('data-cta') || (location.pathname.replace(/\/$/, '') || '/home'), cta_text: (a.textContent || '').trim().slice(0, 40), link_url: (a.getAttribute('href') || '').split('?')[0] });
+      var params = { cta_id: a.getAttribute('data-cta') || (location.pathname.replace(/\/$/, '') || '/home'), cta_text: (a.textContent || '').trim().slice(0, 40), link_url: (a.getAttribute('href') || '').split('?')[0] };
+      /* 2026-11-24：Google アナリティクスは記録をまとめて後から送るため、すぐ次のページに移ると
+         ページを閉じる瞬間の送信だけが頼りになり、スマホなどでは消えやすい（1週間 cta_click が0回だった）。
+         同じサイトの中へ同じタブで移るときは、押したことを手元に控えて、移った先のページで送る。 */
+      var sameTab = !a.target || a.target === '_self';
+      var plain = e.button === 0 && !e.metaKey && !e.ctrlKey && !e.shiftKey && !e.altKey;
+      var samePage = a.pathname === global.location.pathname && a.search === global.location.search;
+      if (sameTab && plain && a.origin === global.location.origin && !samePage && !a.hasAttribute('download')) {
+        try { global.sessionStorage.setItem('em_pending_cta', JSON.stringify({ t: Date.now(), p: params })); return; } catch (err) { /* 控えられないときはすぐ送る */ }
+      }
+      EM.track('cta_click', params);
     }, true);
+    // 前のページで押されたボタンを、ここで送る（30秒以内のものだけ）
+    var pend = null;
+    try { pend = JSON.parse(global.sessionStorage.getItem('em_pending_cta') || 'null'); global.sessionStorage.removeItem('em_pending_cta'); } catch (err) { pend = null; }
+    if (pend && pend.p && Date.now() - pend.t < 30000) EM.track('cta_click', pend.p);
   } catch (e) { /* 数えられなくても動く */ }
 
   /* ---------- Supabase クライアント ---------- */
