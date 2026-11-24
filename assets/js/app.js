@@ -74,6 +74,7 @@
      ・project_start   … クライアントが「この条件で始める」を押した＝取引が決まった（project_origin：direct／board）
      ・budget_estimate … 「予算の目安」を使った（video_type）
      ・estimate_save   … 実行表を新しく保存した
+     ・quote_check     … 見積もりの抜けチェックを実行した（side：issue／receive、missing_must：必ず書く項目の足りない数。文章は送らない）
      ・cta_click       … コラム・トップのボタンや data-cta の付いたリンクが押された（cta_id・cta_text）
      名前・メール・本文などの個人の情報は送らない。解析が動いていないとき（手元の試しなど）は何もしない。
      done を渡すと、送り終わってから（長くても1.2秒で）呼ぶ（すぐ別のページに移るときに記録が消えないように） */
@@ -890,6 +891,7 @@
     ['/schedule/gantt.html', 'ガントチャート'],
     ['/templates/', '定型文のひな形'],
     ['/estimate/', '実行表'],
+    ['/estimate/check/', '見積もりの抜けチェック'],
     ['/projects/', '案件管理'],
     ['/jobs/mine.html', '送った提案'],
     ['/report/', '問題報告']
@@ -902,6 +904,7 @@
     ['/jobs/new.html', '募集を出す'],
     ['/jobs/mine.html', '出した募集'],
     ['/estimate/quick/', '予算の目安'],
+    ['/estimate/check/?as=receive', '見積もりの抜けチェック'],
     ['/report/', '問題報告']
   ];
   var NAV_FOOT = [

@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; base-uri 'self'; object-src 'none'; form-action 'self'; script-src 'self' https://www.googletagmanager.com https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.116.0/; style-src 'self' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src 'self' data: https://img.youtube.com https://i.ytimg.com https://i.vimeocdn.com https://*.supabase.co https://*.google-analytics.com https://*.googletagmanager.com; connect-src 'self' https://*.supabase.co wss://*.supabase.co https://vimeo.com https://*.google-analytics.com https://*.analytics.google.com https://*.googletagmanager.com https://www.google.com; frame-src https://www.youtube.com https://player.vimeo.com; upgrade-insecure-requests">
+<meta name="referrer" content="strict-origin-when-cross-origin">
+<title>見積もりの抜けチェック — Eizo Maps</title>
+<meta name="description" content="映像制作の見積もりの文章を貼ると、書かれていない項目（修正の回数・使える範囲と期間・BGMの権利など）を知らせます。登録なし・無料。文章は送信されません。">
+<link rel="canonical" href="https://eizo-maps.com/estimate/check/">
+<meta property="og:site_name" content="Eizo Maps">
+<meta property="og:title" content="見積もりの抜けチェック — Eizo Maps">
+<meta property="og:description" content="映像制作の見積もりの文章を貼ると、書かれていない項目を知らせます。登録なし・無料。">
+<meta property="og:type" content="website">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bebas+Neue&amp;family=DM+Mono:wght@400;500&amp;family=Noto+Sans+JP:wght@300;400;500;700&amp;display=swap">
+<link rel="stylesheet" href="/assets/css/style.css">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.116.0/dist/umd/supabase.js" integrity="sha384-iLddHTLokph6Omwoyid4XKxHaWa6w41BnoEj0q5oOrzmYPpHIKt1wyjReA7s//pP" crossorigin="anonymous" referrerpolicy="no-referrer" defer></script>
+<script src="/assets/js/config.js" defer></script>
+<script src="/assets/js/app.js" defer></script>
+<script src="/assets/js/quote-check.js" defer></script>
+<script src="/assets/js/page-quote-check.js" defer></script>
+</head>
+<body>
+<main class="section">
+  <div class="wrap">
+    <p class="eyebrow" id="qcEyebrow">Check</p>
+    <h1>見積もりの抜けチェック</h1>
+    <p class="muted">見積もりの文章を貼ると、<strong>書かれていない項目</strong>を、揉めやすい理由つきで知らせます。登録なし・無料。貼った文章は送信されず、このブラウザの中だけで調べます。</p>
+
+    <fieldset class="qc-side" id="qcSide">
+      <legend class="label">どちらの立場で見ますか？</legend>
+      <label><input type="radio" name="qcSide" value="issue" checked> 自分が出す見積もり<span class="small muted">（足す文を出します）</span></label>
+      <label><input type="radio" name="qcSide" value="receive"> もらった見積もり<span class="small muted">（相手に聞く文を出します）</span></label>
+    </fieldset>
+
+    <label class="field"><span class="label">見積もりの文章</span>
+      <textarea id="qcText" rows="12" placeholder="見積もりの文章をここに貼ってください。&#10;例：&#10;撮影 1日　80,000円&#10;編集 3日　90,000円&#10;合計 170,000円"></textarea>
+    </label>
+    <div class="form-actions">
+      <button class="btn btn--primary" type="button" id="qcRun">チェックする</button>
+      <button class="btn" type="button" id="qcSample">例を入れる</button>
+      <button class="btn" type="button" id="qcClear">消す</button>
+    </div>
+
+    <section class="qc-result" id="qcResult" aria-live="polite"></section>
+
+    <section class="qc-about">
+      <h2 class="h3">このチェックについて</h2>
+      <ul class="small muted">
+        <li>言葉が書いてあるかどうかだけを見ています。金額が高い・安いは見ていません。</li>
+        <li>AI ではなく、決まった言葉で読んでいます。「MA」「整音」のような言い換えも拾いますが、見落とすこともあります。</li>
+        <li>項目の一覧は、映像制作の現場の経験から作ったものです。使いながら直していきます。</li>
+        <li>法律の相談ではありません。契約として大事な内容は、専門家にも確かめてください。</li>
+      </ul>
+      <p class="small"><a href="/estimate/quick/">予算の目安を出す</a>　／　<a href="/estimate/">実行表（見積もり・実行予算）を作る</a>　／　<a href="/help/#quote-check">使い方</a></p>
+    </section>
+  </div>
+</main>
+</body>
+</html>
