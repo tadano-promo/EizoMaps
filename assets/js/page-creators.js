@@ -177,7 +177,7 @@
       if (c.years_of_experience !== null && c.years_of_experience !== undefined) meta.push('キャリア' + c.years_of_experience + '年');
       if (c.response_time_hours !== null && c.response_time_hours !== undefined) meta.push('返信目安' + c.response_time_hours + '時間');
       if (completed[c.id]) meta.push('完了' + completed[c.id] + '件');
-      if (cancelled[c.id]) meta.push('途中キャンセル' + cancelled[c.id].cancelled + '件' + (cancelled[c.id].against ? '（相手の対応が理由 ' + cancelled[c.id].against + '）' : ''));
+      if (cancelled[c.id]) meta.push('途中キャンセル' + cancelled[c.id].cancelled + '件' + (cancelled[c.id].against ? '（対応が理由とされたもの ' + cancelled[c.id].against + '）' : ''));
 
       return el('a', { class: 'card creator-card', href: c.handle ? '/@' + c.handle : '/creators/detail.html?id=' + encodeURIComponent(c.id) }, [
         EM.avatar(c.avatar_url, c.display_name),
