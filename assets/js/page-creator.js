@@ -152,6 +152,13 @@
       more.appendChild(el('h2', { text: 'プロフィール' }));
       if (c.updated_at) more.appendChild(el('p', { class: 'small muted', text: 'プロフィール更新 ' + EM.date(c.updated_at) }));
       more.appendChild(stats);
+      // 途中キャンセルの記録（2026-11-25 翠くん。数だけ。個別の案件は出さない）
+      var cancelBox = el('div', { class: 'cancel-record-slot' });
+      more.appendChild(cancelBox);
+      sb.rpc('creator_cancel_stats', { p_creator_id: c.id }).then(function (r) {
+        var b = EM.cancelRecord(r && r.data, { who: 'このクリエイター' });
+        if (b) cancelBox.appendChild(b);
+      });
       var info = infoList(c);
       if (info) more.appendChild(info);
       if (site) more.appendChild(el('p', null, el('a', { class: 'btn btn--sm', href: site, rel: 'noopener noreferrer nofollow', target: '_blank', text: 'ウェブサイト' })));
@@ -673,6 +680,12 @@
         ])
       ]));
       page.appendChild(nums);
+      var pitchCancel = el('div', { class: 'cancel-record-slot' });
+      page.appendChild(pitchCancel);
+      sb.rpc('creator_cancel_stats', { p_creator_id: c.id }).then(function (r) {
+        var b = EM.cancelRecord(r && r.data, { short: true, who: 'このクリエイター' });
+        if (b) pitchCancel.appendChild(b);
+      });
 
       var pins = S.works.filter(function (p) { return p.pinned; });
       var feat = pins.length ? pins.slice(0, 4) : S.works.slice(0, 3);

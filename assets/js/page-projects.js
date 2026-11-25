@@ -86,8 +86,10 @@
         sb.from('project_quotes').select('id,version,amount,due_on,note,status,decline_reason,created_at,decided_at,no_pause').eq('project_id', projectId).order('version'),
         sb.from('project_pauses').select('id,started_at,ended_at,end_reason,shifted_days,due_before,due_after').eq('project_id', projectId).order('started_at'),
         sb.rpc('payout_get', { p_project: projectId }),
-        sb.from('creator_payout_profiles').select('bank_name,branch_name,account_type,account_number,holder_kana').eq('user_id', user.id).maybeSingle()
+        sb.from('creator_payout_profiles').select('bank_name,branch_name,account_type,account_number,holder_kana').eq('user_id', user.id).maybeSingle(),
+        sb.from('project_cancel_requests').select('id,requester_role,reason_code,reason_note,status,respond_note,reason_disputed,created_at,responded_at').eq('project_id', projectId).order('created_at')
       ]).then(function (res) {
+        cancelReqs = (res[7] && res[7].data) || [];
         payout = (res[5] && res[5].data && res[5].data[0]) || null;
         payoutProfile = (res[6] && res[6].data) || null;
         quotes = (res[3] && res[3].data) || [];
@@ -105,6 +107,7 @@
 
     /* お互いの名前（2026-11-17 翠くん「途中で名前を呼ぼうと思ったときに呼べなくて不便」） */
     var names = { me: 'あなた', other: '相手' };
+    var cancelReqs = [];
     function partyNames(p, role) {
       var cl = p.clients ? (p.clients.company ? p.clients.company + '（' + (p.clients.display_name || '') + '）' : (p.clients.display_name || '')) : '';
       var cr = (p.creators && p.creators.display_name) || '';
@@ -186,6 +189,109 @@
       }
       actions.appendChild(el('a', { class: 'btn btn--sm btn--ghost', href: '/report/?project_id=' + encodeURIComponent(p.id), text: 'この案件で問題を報告' }));
       box.appendChild(actions);
+      renderCancelPanel(box, p, role);
+    }
+
+    /* ---- 途中キャンセル（2026-11-25 翠くん） ----
+       進行中の案件は、片方だけでは取り消せない。申請 → 相手が同意 で成立。相手が3日返事をしなければ、申請した側が取り消せる。
+       「相手の対応」を理由にした申請は、相手が「理由には同意しません」を付けて同意できる（付いたものは相手の記録に数えない） */
+    var FAULT = ['no_contact', 'no_progress', 'late', 'quality', 'behavior'];
+    function cancelCall(rpcName, args, doneText) {
+      return sb.rpc(rpcName, args).then(function (r) {
+        if (r.error) { EM.notice(msg, r.error.message && !r.error.code ? r.error.message : EM.errorText(r.error), 'error'); return; }
+        EM.toast(doneText); loadDetail();
+      });
+    }
+    function renderCancelPanel(box, p, role) {
+      var wrap = el('div', { class: 'card cancel-panel' });
+      var open = null, past = [];
+      cancelReqs.forEach(function (q) { if (q.status === 'open') open = q; else past.push(q); });
+      var mineRole = role;
+
+      if (p.status === 'in_progress') {
+        wrap.appendChild(el('h3', { class: 'h3', text: '途中でやめたいとき' }));
+        if (open) {
+          var mine = open.requester_role === mineRole;
+          wrap.appendChild(el('p', null, [el('strong', { text: mine ? '途中キャンセルを申請中です' : '相手から、途中キャンセルの申請が届いています' })]));
+          wrap.appendChild(el('p', { class: 'small', text: '理由：' + EM.cancelReasonLabel(open.reason_code) + (open.reason_note ? '　／　' + open.reason_note : '') }));
+          wrap.appendChild(el('p', { class: 'small muted', text: EM.date(open.created_at) + ' に申請' }));
+          if (mine) {
+            var left = new Date(open.created_at).getTime() + 3 * 86400000 - Date.now();
+            var row = el('div', { class: 'form-actions' }, el('button', { class: 'btn', type: 'button', text: '申請を取り下げる', onclick: function () {
+              if (confirm('申請を取り下げます。案件は続きます。')) cancelCall('project_cancel_withdraw', { p_request: open.id }, '取り下げました');
+            } }));
+            if (left <= 0) {
+              row.appendChild(el('button', { class: 'btn btn--danger', type: 'button', text: '返事がないまま取り消す', onclick: function () {
+                if (confirm('申請から3日たっても返事がないため、この案件を取り消します。\n取り消すと元に戻せません。')) cancelCall('project_cancel_force', { p_request: open.id }, '案件を取り消しました');
+              } }));
+            } else {
+              wrap.appendChild(el('p', { class: 'small muted', text: '相手が返事をしないときは、申請から3日たつと取り消せます（あと約' + Math.ceil(left / 3600000) + '時間）。' }));
+            }
+            wrap.appendChild(row);
+          } else {
+            var note = el('textarea', { rows: 2, maxlength: 500, placeholder: 'ひとこと（任意）' });
+            var dispute = null;
+            if (FAULT.indexOf(open.reason_code) !== -1) {
+              dispute = el('input', { type: 'checkbox' });
+              wrap.appendChild(el('label', { class: 'small cancel-dispute' }, [dispute, document.createTextNode(' キャンセルには同意するが、上の理由には同意しません（相手が書いた理由が事実と違うとき）')]));
+            }
+            wrap.appendChild(el('label', { class: 'field' }, [el('span', { class: 'label', text: '返事のひとこと' }), note]));
+            wrap.appendChild(el('div', { class: 'form-actions' }, [
+              el('button', { class: 'btn btn--danger', type: 'button', text: '同意して、キャンセルする', onclick: function () {
+                if (confirm('同意すると、この案件はキャンセルになります。元に戻せません。')) cancelCall('project_cancel_respond', { p_request: open.id, p_action: 'agree', p_note: note.value, p_dispute: !!(dispute && dispute.checked) }, '案件をキャンセルしました');
+              } }),
+              el('button', { class: 'btn', type: 'button', text: '同意しない（案件を続ける）', onclick: function () {
+                cancelCall('project_cancel_respond', { p_request: open.id, p_action: 'decline', p_note: note.value }, '同意しないと伝えました');
+              } })
+            ]));
+            wrap.appendChild(el('p', { class: 'small muted', text: '3日たっても返事がないと、相手の方は一方的に取り消せるようになります。話し合っても決まらないときは「この案件で問題を報告」から運営に相談できます。' }));
+          }
+        } else {
+          var form = el('div', { class: 'cancel-form', hidden: true });
+          var radios = [];
+          [['other', '相手の対応が理由'], ['own', '自分の都合・お互いの都合']].forEach(function (g) {
+            form.appendChild(el('p', { class: 'small cancel-group', text: g[1] }));
+            EM.CANCEL_REASONS.filter(function (r) { return r[2] === g[0]; }).forEach(function (r) {
+              var inp = el('input', { type: 'radio', name: 'cancelReason', value: r[0] });
+              radios.push(inp);
+              form.appendChild(el('label', { class: 'cancel-opt' }, [inp, document.createTextNode(' ' + r[1])]));
+            });
+          });
+          var noteNew = el('textarea', { rows: 3, maxlength: 500, placeholder: '「くわしく書く」の理由のときは必ず書いてください。それ以外も、あとで見返せるように書いておくと安心です。' });
+          form.appendChild(el('label', { class: 'field' }, [el('span', { class: 'label', text: 'くわしい内容（相手に届きます）' }), noteNew]));
+          form.appendChild(el('p', { class: 'small muted', text: '申請すると、相手に届きます。相手が同意するとキャンセルになり、相手が3日間返事をしないときは取り消せます。「相手の対応が理由」のキャンセルは、相手の方のページに数として表示されます（案件の名前や中身は出ません）。事実と違う理由は選ばないでください。' }));
+          form.appendChild(el('div', { class: 'form-actions' }, el('button', { class: 'btn btn--danger', type: 'button', text: '申請を送る', onclick: function () {
+            var sel = radios.filter(function (x) { return x.checked; })[0];
+            if (!sel) { EM.toast('理由を選んでください', 'error'); return; }
+            cancelCall('project_cancel_request', { p_project: p.id, p_reason: sel.value, p_note: noteNew.value }, '申請を送りました');
+          } })));
+          wrap.appendChild(el('p', { class: 'small muted', text: '進行中の案件は、片方だけでは取り消せません。相手の同意が要ります。' }));
+          wrap.appendChild(el('div', { class: 'form-actions' }, el('button', { class: 'btn', type: 'button', text: '途中キャンセルを申請する', onclick: function () { form.hidden = !form.hidden; } })));
+          wrap.appendChild(form);
+        }
+      }
+
+      if (past.length) {
+        var det = el('details', { class: 'cancel-past' }, el('summary', { class: 'small', text: 'これまでの申請（' + past.length + '）' }));
+        var STATUS_JA = { agreed: '同意してキャンセル', declined: '同意なし', withdrawn: '取り下げ', no_reply: '返事がなく、取り消し' };
+        past.forEach(function (q) {
+          det.appendChild(el('p', { class: 'small' }, (q.requester_role === mineRole ? 'あなたが申請' : '相手が申請') + '：' + EM.cancelReasonLabel(q.reason_code)
+            + '　→　' + (STATUS_JA[q.status] || q.status) + (q.reason_disputed ? '（理由には同意なし）' : '') + '　' + EM.date(q.created_at)));
+        });
+        wrap.appendChild(det);
+      }
+
+      // 相手の途中キャンセルの記録（数だけ）
+      var rec = el('div', { class: 'cancel-record-slot' });
+      wrap.appendChild(rec);
+      var other = role === 'client' ? { rpc: 'creator_cancel_stats', arg: { p_creator_id: p.creator_id } } : { rpc: 'client_cancel_stats', arg: { p_client_id: p.client_id } };
+      sb.rpc(other.rpc, other.arg).then(function (r) {
+        var b = EM.cancelRecord(r && r.data, { short: true, who: '相手' });
+        if (b) { rec.appendChild(el('p', { class: 'small muted', text: '相手（' + names.other + '）の途中キャンセルの記録' })); rec.appendChild(b); wrap.hidden = false; }
+      });
+      // 進行中でもなく、申請の記録もないときは、相手の記録があるときだけ出す
+      if (wrap.children.length === 1) wrap.hidden = true;
+      box.appendChild(wrap);
     }
 
     /* ---- 依頼してから始まるまで（2026-11-15 翠くん） ----

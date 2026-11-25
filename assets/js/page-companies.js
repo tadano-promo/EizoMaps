@@ -70,6 +70,13 @@
         el('span', { class: 'stars', text: EM.stars(avg) }),
         el('span', { class: 'count', text: rows.length + '件の評価' })
       ])));
+      // 途中キャンセルの記録（2026-11-25 翠くん。数だけ。個別の案件は出さない）
+      var cancelBox = el('div', { class: 'cancel-record-slot' });
+      box.appendChild(cancelBox);
+      sb.rpc('client_cancel_stats', { p_client_id: id }).then(function (cr) {
+        var b = EM.cancelRecord(cr && cr.data, { who: 'この会社' });
+        if (b) cancelBox.appendChild(b);
+      });
 
       var sec = EM.$('#reviewSection'), listEl = EM.$('#reviewList');
       sec.hidden = false;

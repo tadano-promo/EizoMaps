@@ -20,7 +20,7 @@
     var MOODS = ['シネマティック', 'ドキュメンタリー', 'ポップ', 'クール', 'やさしい', 'ユニーク', 'シンプル', '上品', 'エネルギッシュ', 'かわいい'];
     var indsOf = {};  // クリエイターごとの、公開している作品の業種
     var medsOf = {};  // クリエイターごとの、公開している作品の媒体（大きな分け方）
-    var all = [], genres = [], ratings = {}, completed = {};
+    var all = [], genres = [], ratings = {}, completed = {}, cancelled = {};
     // 空き状況の絞り込み。busyIds が null のときは絞り込みをしていない状態。
     var busyIds = null;
 
@@ -47,6 +47,7 @@
         .limit(300),
       sb.from('creator_rating_stats').select('user_id,avg_score,rated_count'),
       sb.from('creator_project_stats').select('creator_id,completed_count'),
+      sb.rpc('creator_cancel_counts'),
       sb.from('portfolios').select('creator_id,industry,media').eq('visibility', 'public').or('industry.not.is.null,media.not.is.null').limit(5000)
     ]).then(function (res) {
       if (res[0].data) genres = res[0].data;
@@ -54,7 +55,8 @@
       all = res[1].data || [];
       (res[2].data || []).forEach(function (r) { ratings[r.user_id] = r; });
       (res[3].data || []).forEach(function (r) { completed[r.creator_id] = r.completed_count; });
-      (res[4] && res[4].data || []).forEach(function (r) {
+      (res[4] && res[4].data || []).forEach(function (r) { cancelled[r.creator_id] = r; });
+      (res[5] && res[5].data || []).forEach(function (r) {
         if (r.industry) (indsOf[r.creator_id] = indsOf[r.creator_id] || {})[r.industry] = true;
         var g = r.media && EM.mediaGroup ? EM.mediaGroup(r.media) : null;
         if (g) (medsOf[r.creator_id] = medsOf[r.creator_id] || {})[g] = true;
@@ -175,6 +177,7 @@
       if (c.years_of_experience !== null && c.years_of_experience !== undefined) meta.push('キャリア' + c.years_of_experience + '年');
       if (c.response_time_hours !== null && c.response_time_hours !== undefined) meta.push('返信目安' + c.response_time_hours + '時間');
       if (completed[c.id]) meta.push('完了' + completed[c.id] + '件');
+      if (cancelled[c.id]) meta.push('途中キャンセル' + cancelled[c.id].cancelled + '件' + (cancelled[c.id].against ? '（相手の対応が理由 ' + cancelled[c.id].against + '）' : ''));
 
       return el('a', { class: 'card creator-card', href: c.handle ? '/@' + c.handle : '/creators/detail.html?id=' + encodeURIComponent(c.id) }, [
         EM.avatar(c.avatar_url, c.display_name),

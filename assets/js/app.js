@@ -349,12 +349,13 @@
 
   /* ---------- 取引の決まり（2026-11-18 翠くん「取引開始時にちゃんと知らせる」「想定力大事」） ----------
      どの画面でも同じ文を出すため、ここ1か所にまとめる。版を変えたら、データベースの project_start の版も変える */
-  EM.DEAL_RULES_VERSION = '2026-11-18';
+  EM.DEAL_RULES_VERSION = '2026-11-25';
   EM.DEAL_RULES = [
     ['始めたときの金額と納期は、記録に残ります', '「この条件で始める」を押した時点の金額と納期は、あとから書き換えられません。'],
     ['途中で金額が変わるときは「見積もりの出し直し」で', 'クリエイターが新しい見積もりを出し、クライアントが「確定」するまで、金額は変わりません。'],
     ['見積もりを「見送る」と、作業は一時停止・納期はその分うしろへ', '話がまとまるまで作業は止まり、納期は止まった日数だけ自動でうしろにずれます。例：3日止まったら、納期 11/30 → 12/3。'],
     ['納期を動かせない事情は、始める前に伝える', 'イベントや公開日などで納期を1日もずらせないときは、始める前にメッセージで伝え、条件のメモに書いてもらってください。'],
+    ['始めたあとは、片方だけではキャンセルできません', '途中でやめるときは「途中キャンセルの申請」を出し、相手が同意するとキャンセルになります。相手が3日間返事をしないときは、申請した側が取り消せます。途中キャンセルの数と理由の内訳は、お互いのページに表示されます（案件の名前や中身は出ません）。'],
     ['ぜんぶ記録に残り、お互いに見られます', '見積もり・返事・止まった日数は、あとから消したり書き換えたりできません。']
   ];
   // opts.title / opts.lead / opts.compact（説明を省く）
@@ -802,9 +803,49 @@
     if (status === 'delivered' && role === 'client') out.push(['paid', '入金済みにする']);
     if (status === 'paid') out.push(['closed', '完了にする']);
     // 返事の前後でクリエイターがやめるときは「お断りする」を使う
-    if ((role === 'client' && ['draft', 'offered', 'proposed', 'in_progress'].indexOf(status) !== -1) ||
-        (role === 'creator' && status === 'in_progress')) out.push(['cancelled', 'キャンセルする']);
+    // 始まる前（依頼中・返事待ち）は、依頼した側だけでやめられる。始まったあと（進行中）は「途中キャンセルの申請」→ 相手の同意（案件ページ）
+    if (role === 'client' && ['draft', 'offered', 'proposed'].indexOf(status) !== -1) out.push(['cancelled', 'キャンセルする']);
     return out;
+  };
+
+  /* ---------- 途中キャンセル（2026-11-25 翠くん） ----------
+     始まった案件は、申請 → 相手が同意 で取り消す。理由は選ぶ。「相手の対応」が理由のものだけが、相手の記録として数えられる */
+  EM.CANCEL_REASONS = [
+    // [コード, 見える文, グループ（other＝相手の対応／own＝自分の都合）]
+    ['no_contact', '連絡が返ってこない', 'other'],
+    ['no_progress', '進み具合が分からない', 'other'],
+    ['late', '納期に間に合わない・守られない', 'other'],
+    ['quality', '内容が、決めた水準に届かない', 'other'],
+    ['behavior', '進め方・対応に問題がある（くわしく書く）', 'other'],
+    ['own_change', '依頼の内容が変わった・仕事が無くなった（自分の都合）', 'own'],
+    ['own_budget', '予算・スケジュールの事情（自分の都合）', 'own'],
+    ['own_other', 'そのほかの自分の都合（くわしく書く）', 'own'],
+    ['mutual', '話し合って、お互いの都合で', 'own']
+  ];
+  EM.cancelReasonLabel = function (code) {
+    for (var i = 0; i < EM.CANCEL_REASONS.length; i++) if (EM.CANCEL_REASONS[i][0] === code) return EM.CANCEL_REASONS[i][1].replace(/（くわしく書く）$/, '');
+    return code;
+  };
+  // 途中キャンセルの記録（数だけ。個別の案件は出さない）。stats = creator_cancel_stats / client_cancel_stats の結果
+  EM.cancelRecord = function (stats, opts) {
+    opts = opts || {};
+    if (!stats || !stats.started) return null;
+    var against = Number(stats.against) || 0, cancelled = Number(stats.cancelled) || 0;
+    var kids = [
+      el('span', { class: 'tag' + (against > 0 ? ' tag--warn' : ''), text: '途中キャンセル ' + cancelled + '件' }),
+      el('span', { class: 'small muted', text: '（仕事が始まった案件 ' + stats.started + '件のうち）' })
+    ];
+    var box = el('div', { class: 'cancel-record' }, [el('p', { class: 'cancel-record__main' }, kids)]);
+    if (cancelled > 0) {
+      var parts = [];
+      EM.CANCEL_REASONS.forEach(function (r) { if (stats.reasons && stats.reasons[r[0]]) parts.push(EM.cancelReasonLabel(r[0]) + ' ' + stats.reasons[r[0]]); });
+      box.appendChild(el('p', { class: 'small' + (against > 0 ? ' cancel-record__against' : ' muted') },
+        'うち、' + (opts.who || 'この方') + 'の対応が理由とされたもの：' + against + '件' + (parts.length ? '（' + parts.join('・') + '）' : '')));      box.appendChild(el('p', { class: 'small muted', text: 'うち、' + (opts.who || 'この方') + '自身の都合でやめたもの：' + (Number(stats.own) || 0) + '件' }));
+    }
+    if (!opts.short) {
+      box.appendChild(el('p', { class: 'small muted' }, ['仕事が始まったあとのキャンセルだけを数えています。相手の都合や、話し合いでのキャンセルも件数に入るので、理由の内訳もあわせて見てください。', el('a', { class: 'help-q', href: '/help/#project-cancel', 'aria-label': '途中キャンセルの説明', text: '?' })]));
+    }
+    return box;
   };
 
   EM.canReview = function (status) {
