@@ -2540,3 +2540,16 @@ h1 .help-q { width: 26px; height: 26px; font-size: 15px; }
 .qc-more .qc-list { margin-top: 10px; }
 .qc-ok { margin: 8px 0 0; padding-left: 1.2em; font-size: .9rem; }
 .qc-about { margin-top: 32px; }
+
+/* 途中キャンセル（2026-11-25） */
+.cancel-record { display: grid; gap: 4px; margin: 10px 0; }
+.cancel-record p { margin: 0; }
+.cancel-record__main { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+.cancel-record__against { color: #ffb39c; }
+.cancel-panel { display: grid; gap: 8px; margin-top: 16px; }
+.cancel-panel h3 { margin: 0; }
+.cancel-panel p { margin: 0; }
+.cancel-form { display: grid; gap: 6px; margin-top: 8px; }
+.cancel-group { margin: 10px 0 0; font-weight: 700; }
+.cancel-opt, .cancel-dispute { display: flex; gap: 6px; align-items: baseline; padding: 4px 0; }
+.cancel-past summary { cursor: pointer; }
