@@ -189,7 +189,17 @@
       }
       actions.appendChild(el('a', { class: 'btn btn--sm btn--ghost', href: '/report/?project_id=' + encodeURIComponent(p.id), text: 'この案件で問題を報告' }));
       box.appendChild(actions);
-      renderCancelPanel(box, p, role);
+      // 途中キャンセルは、ページのいちばん下に置く（ふだんは目立たせない）。申請が届いているときだけ、上にも知らせを出す
+      var cbox = EM.$('#cancelBox') || box;
+      EM.clear(cbox);
+      var openReq = cancelReqs.filter(function (q) { return q.status === 'open'; })[0];
+      if (openReq && p.status === 'in_progress') {
+        box.appendChild(el('p', { class: 'notice' }, [
+          document.createTextNode(openReq.requester_role === role ? '途中キャンセルを申請中です。' : '相手から、途中キャンセルの申請が届いています。'),
+          el('a', { href: '#cancelBox', text: 'ページの下で確認する' })
+        ]));
+      }
+      renderCancelPanel(cbox, p, role);
     }
 
     /* ---- 途中キャンセル（2026-11-25 翠くん） ----
