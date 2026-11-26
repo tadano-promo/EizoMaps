@@ -355,7 +355,7 @@
     ['途中で金額が変わるときは「見積もりの出し直し」で', 'クリエイターが新しい見積もりを出し、クライアントが「確定」するまで、金額は変わりません。'],
     ['見積もりを「見送る」と、作業は一時停止・納期はその分うしろへ', '話がまとまるまで作業は止まり、納期は止まった日数だけ自動でうしろにずれます。例：3日止まったら、納期 11/30 → 12/3。'],
     ['納期を動かせない事情は、始める前に伝える', 'イベントや公開日などで納期を1日もずらせないときは、始める前にメッセージで伝え、条件のメモに書いてもらってください。'],
-    ['始めたあとは、片方だけではキャンセルできません', '途中でやめるときは「途中キャンセルの申請」を出し、相手が同意するとキャンセルになります。相手が3日間返事をしないときは、申請した側が取り消せます。途中キャンセルの数と理由の内訳は、お互いのページに表示されます（案件の名前や中身は出ません）。'],
+    ['始めたあとは、片方だけではキャンセルできません', '途中でやめるときは「途中キャンセルの申請」を出し、相手が同意するとキャンセルになります。相手が3日間返事をしないときは、申請した側が取り消せます。話し合っても決まらないときは、運営が中身を確かめて取り消すことがあります。途中キャンセルの数と理由の内訳は、お互いのページに表示されます（案件の名前や中身は出ません）。ここまでの作業分のお金は、申請のときに希望を出して、2人で決めます。'],
     ['ぜんぶ記録に残り、お互いに見られます', '見積もり・返事・止まった日数は、あとから消したり書き換えたりできません。']
   ];
   // opts.title / opts.lead / opts.compact（説明を省く）
@@ -822,6 +822,16 @@
     ['own_other', 'そのほかの自分の都合（くわしく書く）', 'own'],
     ['mutual', '話し合って、お互いの都合で', 'own']
   ];
+  // 申請のときに選ぶ「ここまでの作業分のお金」（記録に残すだけ。決めるのは当事者）
+  EM.CANCEL_SETTLE = [
+    ['pay_done', 'ここまでの作業分は、支払う（受け取る）形にしたい'],
+    ['no_pay', 'お金のやり取りは、なしにしたい'],
+    ['talk', '話し合って決めたい']
+  ];
+  EM.cancelSettleLabel = function (code) {
+    for (var i = 0; i < EM.CANCEL_SETTLE.length; i++) if (EM.CANCEL_SETTLE[i][0] === code) return EM.CANCEL_SETTLE[i][1];
+    return '';
+  };
   EM.cancelReasonLabel = function (code) {
     for (var i = 0; i < EM.CANCEL_REASONS.length; i++) if (EM.CANCEL_REASONS[i][0] === code) return EM.CANCEL_REASONS[i][1].replace(/（くわしく書く）$/, '');
     return code;
@@ -840,10 +850,18 @@
       var parts = [];
       EM.CANCEL_REASONS.forEach(function (r) { if (stats.reasons && stats.reasons[r[0]]) parts.push(EM.cancelReasonLabel(r[0]) + ' ' + stats.reasons[r[0]]); });
       box.appendChild(el('p', { class: 'small' + (against > 0 ? ' cancel-record__against' : ' muted') },
-        'うち、' + (opts.who || 'この方') + 'の対応が理由とされたもの：' + against + '件' + (parts.length ? '（' + parts.join('・') + '）' : '')));      box.appendChild(el('p', { class: 'small muted', text: 'うち、' + (opts.who || 'この方') + '自身の都合でやめたもの：' + (Number(stats.own) || 0) + '件' }));
+        'うち、' + (opts.who || 'この方') + 'の対応が理由とされたもの：' + against + '件' + (parts.length ? '（' + parts.join('・') + '）' : '')));
+      // 本人が「理由には同意しません」と付けたものも数には入れ、その件数を並べて出す（付ければ消える、をなくす）
+      var disputed = Number(stats.disputed) || 0, noReply = Number(stats.no_reply) || 0;
+      if (disputed > 0 || noReply > 0) {
+        var bits = [];
+        if (disputed > 0) bits.push(disputed + '件は、本人が理由に同意していません');
+        if (noReply > 0) bits.push(noReply + '件は、3日間返事がなく取り消されたものです');
+        box.appendChild(el('p', { class: 'small muted', text: '　（うち ' + bits.join('／') + '）' }));
+      }      box.appendChild(el('p', { class: 'small muted', text: 'うち、' + (opts.who || 'この方') + '自身の都合でやめたもの：' + (Number(stats.own) || 0) + '件' }));
     }
     if (!opts.short) {
-      box.appendChild(el('p', { class: 'small muted' }, ['仕事が始まったあとのキャンセルだけを数えています。相手の都合や、話し合いでのキャンセルも件数に入るので、理由の内訳もあわせて見てください。', el('a', { class: 'help-q', href: '/help/#project-cancel', 'aria-label': '途中キャンセルの説明', text: '?' })]));
+      box.appendChild(el('p', { class: 'small muted' }, ['仕事が始まったあとのキャンセルだけを数えています。相手の都合や、話し合いでのキャンセルも件数に入ります。「対応が理由とされたもの」は申請した側の言い分で、運営が事実を確かめた数ではありません。', el('a', { class: 'help-q', href: '/help/#project-cancel', 'aria-label': '途中キャンセルの説明', text: '?' })]));
     }
     return box;
   };

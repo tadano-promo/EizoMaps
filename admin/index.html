@@ -25,6 +25,7 @@
 <script src="/assets/js/page-admin-creators.js" defer></script>
 <script src="/assets/js/page-admin-withdrawals.js" defer></script>
 <script src="/assets/js/page-admin-inquiries.js" defer></script>
+<script src="/assets/js/page-admin-cancels.js" defer></script>
 </head>
 <body>
 <main class="section">
@@ -74,6 +75,12 @@
         <p class="small muted">お問い合わせフォームから届いたものです（新しい順・100件まで）。付いた画像・動画は、運営だけが開けます（リンクは1時間で切れます）。<br>「対応済みにする」を押してから30日たつと、画像・動画だけ自動で消えます（文章は残ります）。押すまでは消えません。置き場は全部で500MBまでで、400MBを超えるとメールでお知らせします。</p>
         <div class="notice" id="adminInqMsg" hidden></div>
         <div id="adminInquiries" class="stack"></div>
+
+        <hr class="divider">
+        <h2 id="cancels">途中キャンセルの申請</h2>
+        <p class="small muted">進行中の案件に出された、途中キャンセルの申請の一覧です（新しい順・200件まで）。当事者どうしで決まらないもの（返事待ち・同意なし）は、やり取りを読んだうえで、運営として取り消せます。</p>
+        <div class="notice" id="adminCancelMsg" hidden></div>
+        <div id="adminCancels" class="stack"></div>
 
         <hr class="divider">
         <h2>退会の手続き</h2>
