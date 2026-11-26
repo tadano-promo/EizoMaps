@@ -2553,3 +2553,14 @@ h1 .help-q { width: 26px; height: 26px; font-size: 15px; }
 .cancel-group { margin: 10px 0 0; font-weight: 700; }
 .cancel-opt, .cancel-dispute { display: flex; gap: 6px; align-items: baseline; padding: 4px 0; }
 .cancel-past summary { cursor: pointer; }
+
+/* 依頼の「どこまで頼むか」と、お断りの文（2026-11-26） */
+.scope-pick { border: 1px solid var(--border); border-radius: var(--radius-s); padding: 10px 14px; margin: 0 0 12px; display: grid; gap: 8px; }
+.scope-pick legend { padding: 0 6px; }
+.scope-pick label, .scope-ask { display: flex; gap: 8px; align-items: baseline; flex-wrap: wrap; }
+.scope-hint { border-left: 4px solid var(--client); display: grid; gap: 6px; }
+.scope-hint p { margin: 0; }
+.decline-presets { flex-wrap: wrap; gap: 6px; }
+.next-step { margin-top: 8px; }
+.next-step ul { margin: 4px 0 0; padding-left: 1.2em; }
+.scope-roles { margin: 0; padding-left: 1.2em; display: grid; gap: 4px; }

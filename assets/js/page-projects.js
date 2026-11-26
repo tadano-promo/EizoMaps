@@ -750,11 +750,23 @@
       return f;
     }
     function renderFlow(box, p, role) {
+      // 編集だけの依頼：Eizo Maps が先に伝えてあることを、クリエイターに知らせる（自分から言わなくてよいと分かるように）
+      if (role === 'creator' && ['offered', 'proposed', 'in_progress'].indexOf(p.status) !== -1 && /^■ 頼みたい範囲：編集(\n|$)/.test(String(p.description || ''))) {
+        box.appendChild(el('p', { class: 'notice small scope-hint', text: EM.ASSIST.toCreator }));
+      }
       if (p.status === 'declined') {
         box.appendChild(el('div', { class: 'notice' }, [
           el('strong', { text: 'クリエイターがお断りしました。' }),
-          p.declined_reason ? el('p', { text: '理由：' + p.declined_reason }) : null,
-          role === 'client' ? el('p', null, [document.createTextNode('ほかのクリエイターを '), el('a', { href: '/creators/', text: '探す' }), document.createTextNode(' か、'), el('a', { href: '/jobs/new.html', text: '募集を出す' }), document.createTextNode(' こともできます。')]) : null
+          p.declined_reason ? el('p', { class: 'pre-line', text: 'クリエイターからの返事：' + p.declined_reason }) : null,
+          role === 'client' && EM.ASSIST.declineNote(p.declined_reason) ? el('p', { class: 'small' }, [el('strong', { text: 'Eizo Maps から：' }), document.createTextNode(EM.ASSIST.declineNote(p.declined_reason))]) : null,
+          role === 'client' ? el('div', { class: 'next-step' }, [
+            el('p', { class: 'small' }, [el('strong', { text: 'つぎの一歩' }), document.createTextNode('　断られた理由は、次に頼むときの手がかりになります。')]),
+            el('ul', { class: 'small' }, [
+              el('li', null, [el('a', { href: '/estimate/quick/', text: '予算の目安を出す' }), document.createTextNode('（この内容に、どのくらいかかるかを見る）')]),
+              el('li', null, [el('a', { href: '/jobs/new.html', text: '募集を出す' }), document.createTextNode('（内容や予算を見直して、何人かから見積もりを集める）')]),
+              el('li', null, [el('a', { href: '/creators/', text: 'ほかのクリエイターを探す' })])
+            ])
+          ]) : null
         ]));
         return;
       }
@@ -840,15 +852,31 @@
       return f;
     }
     function declineForm(p) {
-      var why = el('textarea', { rows: '3', maxlength: '500', placeholder: '例：その日は別の撮影が入っているため。（書かなくても大丈夫です）' });
+      var why = el('textarea', { rows: '5', maxlength: '500', placeholder: '例：その日は別の撮影が入っているため。（書かなくても大丈夫です）' });
+      // 言いにくい理由は、選ぶだけにする（2026-11-27 翠くん）。文は Eizo Maps が用意し、相手には Eizo Maps からの説明も添えて出す
+      var picked = null;
+      var chipEls = EM.ASSIST.declines.map(function (d, idx) {
+        return el('button', { type: 'button', class: 'chip', 'aria-pressed': 'false', text: d[0], onclick: function () {
+          picked = picked === idx ? null : idx;
+          chipEls.forEach(function (c, k) { c.setAttribute('aria-pressed', String(k === picked)); });
+          preview.textContent = picked === null ? '' : '相手に届く文：' + d[1];
+        } });
+      });
+      var preview = el('p', { class: 'small muted' });
+      why.setAttribute('placeholder', 'ひとこと足したいときだけ書いてください（書かなくても大丈夫です）');
       var f = el('form', { class: 'card stack flow-form', hidden: true, novalidate: true }, [
-        el('label', { class: 'field' }, [el('span', { class: 'label', text: 'お断りの理由（相手に届きます・任意）' }), why]),
+        el('p', { class: 'small muted', text: '理由を選ぶだけで送れます。相手の方には、Eizo Maps から「次にどうすればよいか」の説明も一緒に出ます。' }),
+        el('div', { class: 'row decline-presets' }, chipEls),
+        preview,
+        el('label', { class: 'field' }, [el('span', { class: 'label', text: 'ひとこと（相手に届きます・任意）' }), why]),
         el('div', { class: 'form-actions' }, el('button', { type: 'submit', class: 'btn btn--danger', text: 'お断りを送る' }))
       ]);
       f.addEventListener('submit', function (e) {
         e.preventDefault();
         if (!confirm('この依頼をお断りしますか？\nあとから取り消せません。')) return;
-        respond(p, 'decline', null, null, why.value.trim() || null);
+        var line = picked === null ? '' : EM.ASSIST.declines[picked][1];
+        var extra = why.value.trim();
+        respond(p, 'decline', null, null, ((line + (line && extra ? '\n' : '') + extra).slice(0, 500)) || null);
       });
       return f;
     }
