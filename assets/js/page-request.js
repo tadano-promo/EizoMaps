@@ -82,11 +82,13 @@
       var noPlan = sc.length && sc.indexOf('企画・構成') === -1 && sc.indexOf('まだ決めていない') === -1;
       if (!noPlan) { box.hidden = true; return; }
       box.hidden = false;
-      box.appendChild(el('p', { class: 'small' }, [el('strong', { text: 'Eizo Maps から：' }),
-        document.createTextNode(editOnly
-          ? '編集だけを頼む場合、動画が伸びるかどうかは、企画と素材でほぼ決まります。編集で変えられるのは、見やすさとテンポです。'
-          : '企画をご自分で決める場合、動画が伸びるかどうかは、その企画でほぼ決まります。')]));
-      box.appendChild(el('p', { class: 'small', text: '企画から頼むと、ねらいに合わせて撮影と編集を組めるので、成果につながりやすくなります。企画・撮影は、編集とは別の予算です。金額が読めないときは「予算は相談」で大丈夫です。' }));
+      var A = EM.ASSIST;
+      box.appendChild(el('p', { class: 'small' }, [el('strong', { text: editOnly ? '編集だけのご依頼ですね。先に1つだけお伝えします。' : '先に、動画づくりの3つの役割をお伝えします。' })]));
+      if (editOnly) box.appendChild(el('p', { class: 'small', text: A.editOnlyLead }));
+      box.appendChild(el('ul', { class: 'small scope-roles' }, A.roles.map(function (r) {
+        return el('li', null, [el('strong', { text: r[0] }), document.createTextNode('：' + r[1])]);
+      })));
+      box.appendChild(el('p', { class: 'small', text: A.consult }));
       planAsk = el('input', { type: 'checkbox' });
       box.appendChild(el('label', { class: 'small scope-ask' }, [planAsk, document.createTextNode(' 企画も相談したい（予算は相談）')]));
     }

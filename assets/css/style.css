@@ -2563,3 +2563,4 @@ h1 .help-q { width: 26px; height: 26px; font-size: 15px; }
 .decline-presets { flex-wrap: wrap; gap: 6px; }
 .next-step { margin-top: 8px; }
 .next-step ul { margin: 4px 0 0; padding-left: 1.2em; }
+.scope-roles { margin: 0; padding-left: 1.2em; display: grid; gap: 4px; }

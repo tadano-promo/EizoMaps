@@ -750,10 +750,15 @@
       return f;
     }
     function renderFlow(box, p, role) {
+      // 編集だけの依頼：Eizo Maps が先に伝えてあることを、クリエイターに知らせる（自分から言わなくてよいと分かるように）
+      if (role === 'creator' && ['offered', 'proposed', 'in_progress'].indexOf(p.status) !== -1 && /^■ 頼みたい範囲：編集(\n|$)/.test(String(p.description || ''))) {
+        box.appendChild(el('p', { class: 'notice small scope-hint', text: EM.ASSIST.toCreator }));
+      }
       if (p.status === 'declined') {
         box.appendChild(el('div', { class: 'notice' }, [
           el('strong', { text: 'クリエイターがお断りしました。' }),
-          p.declined_reason ? el('p', { text: '理由：' + p.declined_reason }) : null,
+          p.declined_reason ? el('p', { class: 'pre-line', text: 'クリエイターからの返事：' + p.declined_reason }) : null,
+          role === 'client' && EM.ASSIST.declineNote(p.declined_reason) ? el('p', { class: 'small' }, [el('strong', { text: 'Eizo Maps から：' }), document.createTextNode(EM.ASSIST.declineNote(p.declined_reason))]) : null,
           role === 'client' ? el('div', { class: 'next-step' }, [
             el('p', { class: 'small' }, [el('strong', { text: 'つぎの一歩' }), document.createTextNode('　断られた理由は、次に頼むときの手がかりになります。')]),
             el('ul', { class: 'small' }, [
@@ -848,27 +853,30 @@
     }
     function declineForm(p) {
       var why = el('textarea', { rows: '5', maxlength: '500', placeholder: '例：その日は別の撮影が入っているため。（書かなくても大丈夫です）' });
-      // 言いにくい理由を、選ぶだけで書けるようにする（2026-11-26 翠くん）。選ぶと下の欄に入り、直してから送れる
-      var PRESETS = [
-        ['予算が合わない', 'このご予算では、この内容をお受けするのが難しいです。この内容だと、目安は（　　）円からになります。内容を減らすか、ご予算を見直していただければ、あらためてご相談できます。'],
-        ['企画から関わりたい', '企画と素材が決まったあとの編集だけだと、成果に責任を持ってお受けするのが難しいです。企画からご一緒できる形であれば、お受けできます（企画の分は、別の費用になります）。'],
-        ['内容と金額が合わない', 'ご希望の作業の量に対して、ご予算が合っていないように思います。この金額でできるのは（　　）までです。'],
-        ['日程が合わない', 'ご希望の納期では、スケジュールの都合でお受けできません。（　　）以降であれば、ご相談できます。'],
-        ['専門が違う', 'この内容は、私の得意な分野と違うため、ご期待に添えないと思います。']
-      ];
-      var chips = el('div', { class: 'row decline-presets' }, PRESETS.map(function (ps) {
-        return el('button', { type: 'button', class: 'chip', text: ps[0], onclick: function () { why.value = ps[1]; why.focus(); } });
-      }));
+      // 言いにくい理由は、選ぶだけにする（2026-11-27 翠くん）。文は Eizo Maps が用意し、相手には Eizo Maps からの説明も添えて出す
+      var picked = null;
+      var chipEls = EM.ASSIST.declines.map(function (d, idx) {
+        return el('button', { type: 'button', class: 'chip', 'aria-pressed': 'false', text: d[0], onclick: function () {
+          picked = picked === idx ? null : idx;
+          chipEls.forEach(function (c, k) { c.setAttribute('aria-pressed', String(k === picked)); });
+          preview.textContent = picked === null ? '' : '相手に届く文：' + d[1];
+        } });
+      });
+      var preview = el('p', { class: 'small muted' });
+      why.setAttribute('placeholder', 'ひとこと足したいときだけ書いてください（書かなくても大丈夫です）');
       var f = el('form', { class: 'card stack flow-form', hidden: true, novalidate: true }, [
-        el('p', { class: 'small muted', text: '理由を選ぶと、下に文が入ります。（　）を埋めたり、直したりしてから送れます。理由が伝わると、相手の方も次にどうすればよいかが分かります。' }),
-        chips,
-        el('label', { class: 'field' }, [el('span', { class: 'label', text: 'お断りの理由（相手に届きます・任意）' }), why]),
+        el('p', { class: 'small muted', text: '理由を選ぶだけで送れます。相手の方には、Eizo Maps から「次にどうすればよいか」の説明も一緒に出ます。' }),
+        el('div', { class: 'row decline-presets' }, chipEls),
+        preview,
+        el('label', { class: 'field' }, [el('span', { class: 'label', text: 'ひとこと（相手に届きます・任意）' }), why]),
         el('div', { class: 'form-actions' }, el('button', { type: 'submit', class: 'btn btn--danger', text: 'お断りを送る' }))
       ]);
       f.addEventListener('submit', function (e) {
         e.preventDefault();
         if (!confirm('この依頼をお断りしますか？\nあとから取り消せません。')) return;
-        respond(p, 'decline', null, null, why.value.trim() || null);
+        var line = picked === null ? '' : EM.ASSIST.declines[picked][1];
+        var extra = why.value.trim();
+        respond(p, 'decline', null, null, ((line + (line && extra ? '\n' : '') + extra).slice(0, 500)) || null);
       });
       return f;
     }
