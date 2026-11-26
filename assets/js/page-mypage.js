@@ -28,6 +28,7 @@
       if (creator) setTimeout(mountLook, 0);   // 入力欄に値が入ってから試し見を描く
       if (creator) {
         EM.$('#displayName').value   = creator.display_name || '';
+        if (EM.$('#nameAlt')) EM.$('#nameAlt').value = creator.name_alt || '';
         EM.$('#headline').value      = creator.headline || '';
         EM.$('#bio').value           = creator.bio || '';
         EM.$('#areaPref').value      = creator.area_pref || '';
@@ -144,6 +145,20 @@
       // クライアントから見える自分のページを別タブで開く（2026-11-20 翠くん「テストビューがなくなった気がする」）
       var v = EM.$('#viewAsClientBtn');
       if (v) { v.href = '/@' + h; v.hidden = !creator.is_published; v.title = '公開しているプロフィールを、クライアントが見るのと同じ形で別のタブに開きます'; }
+      // 自分のページを SNS に貼ってもらう（2026-11-27 翠くん。名前の検索で出やすくするため。外から貼られたリンクがいちばん効く）
+      var sh = EM.$('#shareSns');
+      if (sh) {
+        sh.hidden = !creator.is_published;
+        var said = '作品と実績を Eizo Maps にまとめました。\n' + url + '\n#EizoMaps';
+        EM.$('#shareX').href = 'https://x.com/intent/post?text=' + encodeURIComponent(said);
+        EM.$('#shareThreads').href = 'https://www.threads.net/intent/post?text=' + encodeURIComponent(said);
+        EM.$('#shareCopyBio').onclick = function () {
+          var bio = '作品・実績はこちら → ' + url;
+          (navigator.clipboard ? navigator.clipboard.writeText(bio) : Promise.reject()).then(function () { EM.toast('コピーしました'); EM.track('share_profile', { to: 'bio' }); }, function () { window.prompt('下の文字をコピーしてください', bio); });
+        };
+        EM.$('#shareX').onclick = function () { EM.track('share_profile', { to: 'x' }); };
+        EM.$('#shareThreads').onclick = function () { EM.track('share_profile', { to: 'threads' }); };
+      }
       EM.$('#handleSummary').hidden = false;
       EM.$('#handleEditor').hidden = true;
       EM.$('#handleIntro').hidden = true;
@@ -342,6 +357,7 @@
         }
         payload = {
           display_name: name,
+          name_alt: (EM.$('#nameAlt') && EM.$('#nameAlt').value.trim()) || null,
           headline: EM.$('#headline').value.trim() || null,
           bio: EM.$('#bio').value.trim() || null,
           area_pref: EM.$('#areaPref').value || null,

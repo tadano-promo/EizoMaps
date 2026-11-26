@@ -74,6 +74,7 @@
      ・project_start   … クライアントが「この条件で始める」を押した＝取引が決まった（project_origin：direct／board）
      ・budget_estimate … 「予算の目安」を使った（video_type）
      ・estimate_save   … 実行表を新しく保存した
+     ・share_profile   … 自分のページを SNS に貼る・紹介するボタンを押した（to：bio／x／threads）
      ・quote_check     … 見積もりの抜けチェックを実行した（side：issue／receive、missing_must：必ず書く項目の足りない数。文章は送らない）
      ・cta_click       … コラム・トップのボタンや data-cta の付いたリンクが押された（cta_id・cta_text）
      名前・メール・本文などの個人の情報は送らない。解析が動いていないとき（手元の試しなど）は何もしない。
