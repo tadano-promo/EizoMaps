@@ -51,7 +51,7 @@ const PLATFORM = { youtube: 'YouTube', vimeo: 'Vimeo', tiktok: 'TikTok', x: 'X',
 
 const todayJst = new Date(Date.now() + 9 * 3600000).toISOString().slice(0, 10);
 
-const creators = await get('creators?select=id,user_id,handle,search_visible,display_name,headline,bio,area_pref,area_city,years_of_experience,response_time_hours,avatar_url,website_url,updated_at,service_area,travel_ok,equipment,business_type,invoice_registered,moods,creator_genres(genre_id)&is_published=eq.true&approved=eq.true&suspended=eq.false&order=created_at');
+const creators = await get('creators?select=id,user_id,handle,search_visible,display_name,name_alt,headline,bio,area_pref,area_city,years_of_experience,response_time_hours,avatar_url,website_url,updated_at,service_area,travel_ok,equipment,business_type,invoice_registered,moods,creator_genres(genre_id)&is_published=eq.true&approved=eq.true&suspended=eq.false&order=created_at');
 const genres = await get('genres?select=id,name_ja');
 const gmap = Object.fromEntries(genres.map((g) => [g.id, g.name_ja]));
 
@@ -116,14 +116,14 @@ for (const c of creators) {
   const url = SITE + path;
   const name = c.display_name;
   const ratingText = avg !== null ? `評価 ${avg.toFixed(1)}（${myReviews.length}件）` : '評価はまだありません';
-  const desc = clip(`${name}${c.headline ? '（' + c.headline + '）' : ''}のプロフィール。${tags.length ? tags.join('・') + '。' : ''}${area ? area + '。' : ''}${ratingText}。${c.bio || ''}`, 150);
+  const desc = clip(`${name}${c.name_alt ? '（' + c.name_alt + '）' : ''}${c.headline ? '（' + c.headline + '）' : ''}のプロフィール。${tags.length ? tags.join('・') + '。' : ''}${area ? area + '。' : ''}${ratingText}。${c.bio || ''}`, 150);
   const title = `${name}${c.headline ? '｜' + clip(c.headline, 30) : ''} — Eizo Maps`;
 
   // ---- 見た目（ページを開いた人のブラウザでは、最新のデータで描き直される）
   const profile = `
 <div class="row profile-head">
   <div class="profile-head__text">
-    <h1>${esc(name)}</h1>
+    <h1>${esc(name)}</h1>${c.name_alt ? `\n    <p class="small muted name-alt">${esc(c.name_alt)}</p>` : ''}
     ${c.handle ? `<p class="profile-handle mono">@${esc(c.handle)}</p>` : ''}
     <p class="lead">${esc(c.headline || '')}</p>
     ${area ? `<p class="small muted">${esc(area)}</p>` : ''}
@@ -158,7 +158,7 @@ ${myLinks.length ? `<div class="chips stock-links">${myLinks.map((l) => `<a clas
   const person = {
     '@type': 'Person',
     name,
-    ...(c.handle ? { alternateName: '@' + c.handle } : {}),
+    ...((c.handle || c.name_alt) ? { alternateName: [...(c.handle ? ['@' + c.handle] : []), ...String(c.name_alt || '').split(/[、,，\/／]/).map((x) => x.trim()).filter(Boolean)] } : {}),
     url,
     ...(c.headline ? { jobTitle: c.headline } : {}),
     ...(c.bio ? { description: clip(c.bio, 500) } : {}),

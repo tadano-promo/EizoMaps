@@ -31,7 +31,7 @@
     function loadAll() {
     Promise.all([
       sb.from('creators')
-        .select('id,user_id,handle,display_name,headline,bio,area_pref,area_city,years_of_experience,response_time_hours,avatar_url,website_url,contact_pref,contact_dm_url,updated_at,share_availability,service_area,travel_ok,equipment,business_type,invoice_registered,moods,profile_layout,profile_color,profile_pattern,creator_genres(genre_id)')
+        .select('id,user_id,handle,display_name,name_alt,headline,bio,area_pref,area_city,years_of_experience,response_time_hours,avatar_url,website_url,contact_pref,contact_dm_url,updated_at,share_availability,service_area,travel_ok,equipment,business_type,invoice_registered,moods,profile_layout,profile_color,profile_pattern,creator_genres(genre_id)')
         .eq('id', id).maybeSingle(),
       sb.from('genres').select('id,name_ja'),
       sb.from('portfolios')
@@ -121,6 +121,7 @@
           EM.avatar(c.avatar_url, c.display_name, true),
           el('div', { class: 'profile-head__text' }, [
             el('h1', { text: c.display_name }),
+            c.name_alt ? el('p', { class: 'small muted name-alt', text: c.name_alt }) : null,
             c.handle ? el('p', { class: 'profile-handle mono', text: '@' + c.handle }) : null,
             el('p', { id: 'availBadge', hidden: true }),
             el('p', { class: 'lead', text: c.headline || '' }),

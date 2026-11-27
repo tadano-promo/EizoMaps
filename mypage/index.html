@@ -51,6 +51,15 @@
             <button class="btn btn--sm" type="button" id="handleChangeBtn">変更する</button>
           </div>
         </div>
+        <div class="share-sns" id="shareSns" hidden>
+          <p class="small"><strong>このページを、SNS のプロフィールに貼りましょう</strong></p>
+          <p class="small muted">あなたの名前で検索されたとき、このページが出やすくなります。検索エンジンは、ほかの場所から貼られているページを「本人のページ」として強く見るためです。X・Threads・Instagram のプロフィールのリンク欄に、上の URL を入れてください。</p>
+          <div class="form-actions">
+            <button class="btn btn--sm" type="button" id="shareCopyBio">プロフィール用の文をコピー</button>
+            <a class="btn btn--sm" id="shareX" href="#" target="_blank" rel="noopener">X で紹介する ↗</a>
+            <a class="btn btn--sm" id="shareThreads" href="#" target="_blank" rel="noopener">Threads で紹介する ↗</a>
+          </div>
+        </div>
         <p class="small muted" id="handleNeedProfile" hidden>下のプロフィールを一度保存すると、@ハンドルを決められます。</p>
         <div id="handleEditor" hidden>
           <label class="field">
@@ -110,6 +119,11 @@
         <label class="field">
           <span class="label">表示名 <span class="muted">（必須・40文字まで）</span></span>
           <input type="text" id="displayName" maxlength="40" required>
+        </label>
+        <label class="field">
+          <span class="label">名前の読み・別の書き方 <span class="muted">（任意・80文字まで）</span></span>
+          <input type="text" id="nameAlt" maxlength="80" placeholder="例：ヒロトーキョー、ひろ東京、Hiro Tokyo">
+          <span class="small muted">カタカナや英字など、別の書き方で検索されても、あなたのページが出やすくなります。公開ページの名前の下に小さく出ます。</span>
         </label>
 
         <label class="field">
