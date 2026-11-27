@@ -33,13 +33,18 @@ function esc(s: string) {
 const FOOT = 'このメールは Eizo Maps からのお知らせです（送信専用のアドレスです）。\n'
   + 'お知らせのメールを止めるときは、マイページの「アカウント」から設定できます：' + SITE + '/mypage/#account';
 
+// このメールへの返信・絵文字の反応は、相手には届かない（運営の受信箱に来るだけ）。2026-11-27 に実際に起きたので、ボタンのすぐ上に1行で知らせる。
+// 翠くん「大きく入れすぎないで」→ 本文より小さめの字・色も薄め
+const NOREPLY = '※ このメールへの返信や絵文字の反応は、相手には届きません。お返事は、下のボタンから Eizo Maps でお願いします。';
+
 export function render(subject: string, body: string, link: string) {
   const url = SITE + link;
-  const text = body + '\n\n▼ 開く\n' + url + '\n\n――――\n' + FOOT + '\n';
+  const text = body + '\n\n' + NOREPLY + '\n\n▼ 開く\n' + url + '\n\n――――\n' + FOOT + '\n';
   const html = '<!doctype html><html lang="ja"><body style="margin:0;padding:24px;background:#f4f4f7;font-family:sans-serif;color:#1a1a22">'
     + '<div style="max-width:560px;margin:0 auto;background:#fff;border-radius:12px;padding:28px">'
     + '<p style="margin:0 0 16px;font-weight:700;font-size:18px">Eizo <span style="color:#7a8c00">Maps</span></p>'
     + '<p style="white-space:pre-wrap;line-height:1.8;margin:0 0 24px">' + esc(body) + '</p>'
+    + '<p style="font-size:13px;color:#55556a;line-height:1.7;margin:0 0 12px">' + esc(NOREPLY) + '</p>'
     + '<p style="margin:0 0 24px"><a href="' + esc(url) + '" style="display:inline-block;background:#e8ff47;color:#0a0a0f;text-decoration:none;font-weight:700;padding:12px 22px;border-radius:8px">Eizo Maps で開く</a></p>'
     + '<p style="font-size:12px;color:#6b6b80;line-height:1.7;white-space:pre-wrap;margin:0">' + esc(FOOT) + '</p>'
     + '</div></body></html>';
