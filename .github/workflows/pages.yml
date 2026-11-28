@@ -24,7 +24,7 @@ jobs:
     runs-on: ubuntu-latest
     environment:
       name: github-pages
-      url: ${{ steps.deployment.outputs.page_url }}
+      url: ${{ steps.deploy1.outputs.page_url || steps.deploy2.outputs.page_url || steps.deploy3.outputs.page_url }}
     steps:
       - uses: actions/checkout@v4
 
@@ -87,5 +87,21 @@ jobs:
       - uses: actions/upload-pages-artifact@v3
         with:
           path: .
-      - id: deployment
+      # 公開（2026-11-29）：上げた直後は GitHub 側でファイルが見つからず失敗することがある（11/13〜11/27 の失敗6回はすべてこれ）。
+      # 失敗するたびに「失敗しました」のメールが届くので、待ってから自動でやり直す。3回とも失敗したときだけ、失敗として知らせる
+      - id: deploy1
+        uses: actions/deploy-pages@v4
+        continue-on-error: true
+      - name: Wait before retry (1)
+        if: steps.deploy1.outcome == 'failure'
+        run: sleep 30
+      - id: deploy2
+        if: steps.deploy1.outcome == 'failure'
+        uses: actions/deploy-pages@v4
+        continue-on-error: true
+      - name: Wait before retry (2)
+        if: steps.deploy1.outcome == 'failure' && steps.deploy2.outcome == 'failure'
+        run: sleep 90
+      - id: deploy3
+        if: steps.deploy1.outcome == 'failure' && steps.deploy2.outcome == 'failure'
         uses: actions/deploy-pages@v4
