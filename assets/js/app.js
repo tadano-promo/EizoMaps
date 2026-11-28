@@ -74,6 +74,7 @@
      ・project_start   … クライアントが「この条件で始める」を押した＝取引が決まった（project_origin：direct／board）
      ・budget_estimate … 「予算の目安」を使った（video_type）
      ・estimate_save   … 実行表を新しく保存した
+     ・message_like    … メッセージにいいねを押した（kind：project／dm。取り消しは送らない）
      ・share_profile   … 自分のページを SNS に貼る・紹介するボタンを押した（to：bio／x／threads）
      ・quote_check     … 見積もりの抜けチェックを実行した（side：issue／receive、missing_must：必ず書く項目の足りない数。文章は送らない）
      ・cta_click       … コラム・トップのボタンや data-cta の付いたリンクが押された（cta_id・cta_text）
@@ -823,6 +824,37 @@
     ['own_other', 'そのほかの自分の都合（くわしく書く）', 'own'],
     ['mutual', '話し合って、お互いの都合で', 'own']
   ];
+  /* ---------- メッセージの「いいね」（2026-11-29 翠くん） ----------
+     相手のメッセージにだけ押せる。もう一度押すと取り消し。お知らせのメールは送らない。
+     likes = message_likes_for の結果（[{message_id, user_id}]）。kind = 'project'／'dm' */
+  EM.likeRow = function (sb, kind, m, meId, likes) {
+    var mine = m.sender_id === meId;
+    var who = likes.filter(function (l) { return l.message_id === m.id; });
+    var byMe = who.some(function (l) { return l.user_id === meId; });
+    var byOther = who.some(function (l) { return l.user_id !== meId; });
+    if (mine) {
+      // 自分のメッセージ：相手が押していれば、それだけ見せる
+      return byOther ? el('p', { class: 'msg-like msg-like--got small', text: '👍 相手がいいねしました' }) : null;
+    }
+    var btn = el('button', { type: 'button', class: 'msg-like__btn' + (byMe ? ' is-on' : ''), 'aria-pressed': String(byMe),
+      title: byMe ? 'もう一度押すと取り消します' : '了解の気持ちを、ひと押しで伝えます',
+      text: byMe ? '👍 いいねしました' : '👍 いいね' });
+    btn.addEventListener('click', function () {
+      btn.disabled = true;
+      sb.rpc('toggle_message_like', { p_kind: kind, p_message: m.id }).then(function (r) {
+        btn.disabled = false;
+        if (r.error) { EM.toast(r.error.message && !r.error.code ? r.error.message : EM.errorText(r.error), 'error'); return; }
+        var on = r.data === true;
+        btn.classList.toggle('is-on', on);
+        btn.setAttribute('aria-pressed', String(on));
+        btn.textContent = on ? '👍 いいねしました' : '👍 いいね';
+        btn.title = on ? 'もう一度押すと取り消します' : '了解の気持ちを、ひと押しで伝えます';
+        if (on) EM.track('message_like', { kind: kind });
+      });
+    });
+    return el('div', { class: 'msg-like' }, btn);
+  };
+
   /* ---------- クライアントに、Eizo Maps が先に伝える文（2026-11-27 翠くんが言い方を確認） ----------
      クリエイターから言いにくいことを、プラットフォームの言葉で伝える。言い方は、クライアントの反応を見ながら直していく（ストック済み） */
   EM.ASSIST = {

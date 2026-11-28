@@ -2568,3 +2568,11 @@ h1 .help-q { width: 26px; height: 26px; font-size: 15px; }
 /* 自分のページを SNS に貼る（2026-11-27） */
 .share-sns { border-top: 1px solid var(--border); padding-top: 10px; display: grid; gap: 6px; }
 .share-sns p { margin: 0; }
+
+/* メッセージの「いいね」（2026-11-29） */
+.msg-like { margin-top: 6px; }
+.msg-like__btn { font: inherit; font-size: .82rem; line-height: 1; padding: 6px 10px; border-radius: 999px; border: 1px solid var(--border); background: transparent; color: var(--muted, #999); cursor: pointer; }
+.msg-like__btn:hover { border-color: var(--accent); color: var(--text, #eee); }
+.msg-like__btn.is-on { border-color: var(--accent); color: var(--accent); }
+.msg-like__btn:disabled { opacity: .6; cursor: default; }
+.msg-like--got { margin: 6px 0 0; color: var(--accent); }

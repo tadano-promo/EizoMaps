@@ -918,11 +918,11 @@
 
     /* ---------------- メッセージ ---------------- */
     function loadMessages() {
-      return sb.from('project_messages')
-        .select('id,sender_id,body,files,created_at')
-        .eq('project_id', projectId)
-        .order('created_at')
-        .then(function (r) {
+      return Promise.all([
+        sb.from('project_messages').select('id,sender_id,body,files,created_at').eq('project_id', projectId).order('created_at'),
+        sb.rpc('message_likes_for', { p_kind: 'project', p_parent: projectId })
+      ]).then(function (both) {
+          var r = both[0], likes = (both[1] && both[1].data) || [];
           var box = EM.clear(EM.$('#messages'));
           var whoBox = EM.clear(EM.$('#msgWho'));
           if (names.otherRole) {
@@ -957,7 +957,8 @@
                 document.createTextNode(' / ' + EM.datetime(m.created_at))
               ]),
               (m.body && m.body !== FILE_ONLY) ? el('p', { class: 'msg__body' }, EM.linkify(m.body)) : null,
-              filesBox
+              filesBox,
+              EM.likeRow(sb, 'project', m, user.id, likes)
             ]));
           });
         });

@@ -109,8 +109,10 @@
       var reload = function () { loadThreads().then(function () { var hit = find(x.id); openThread(hit || x); }); };
       return Promise.all([
         sb.from('dm_messages').select('id,sender_id,body,created_at,kind,meta').eq('thread_id', x.id).order('created_at').limit(500),
-        reqQ
+        reqQ,
+        sb.rpc('message_likes_for', { p_kind: 'dm', p_parent: x.id })
       ]).then(function (res) {
+        var likes = (res[2] && res[2].data) || [];
         var r = res[0];
         if (r.error) { EM.notice(msg, EM.errorText(r.error), 'error'); return; }
         var ctx = { thread: x, me: me, requests: (res[1] && res[1].data) || [], reload: reload };
@@ -119,7 +121,8 @@
           var isCard = m.kind && m.kind !== 'text' && EM.stockShare;
           log.appendChild(el('div', { class: 'dm-msg' + (mine ? ' is-mine' : '') + (isCard ? ' dm-msg--card' : '') }, [
             isCard ? EM.stockShare.card(m, ctx) : el('p', { class: 'dm-msg__body pre', text: m.body }),
-            el('p', { class: 'small muted', text: (mine ? 'あなた' : x.other_name) + '・' + EM.datetime(m.created_at) })
+            el('p', { class: 'small muted', text: (mine ? 'あなた' : x.other_name) + '・' + EM.datetime(m.created_at) }),
+            isCard ? null : EM.likeRow(sb, 'dm', m, me.id, likes)
           ]));
         });
         log.scrollTop = log.scrollHeight;
